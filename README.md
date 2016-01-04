@@ -1,4 +1,4 @@
-# kozaskop
+# MoonStalker
 
 **Software for GoTo telescope control**
 
