@@ -1,4 +1,4 @@
-update=sre 06 jan 2016 23:16:22 CET
+update=pet 08 jan 2016 00:10:16 CET
 version=1
 last_client=kicad
 [pcbnew]
@@ -23,8 +23,6 @@ ModuleOutlineThickness=0.150000000000
 [cvpcb]
 version=1
 NetIExt=net
-[general]
-version=1
 [eeschema]
 version=1
 LibDir=
@@ -59,3 +57,5 @@ LibName27=atmel
 LibName28=contrib
 LibName29=valves
 LibName30=/home/saso/work/MoonStalker/Hardware/PCB/MoonStalker
+[general]
+version=1
