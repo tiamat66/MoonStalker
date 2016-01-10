@@ -1,4 +1,4 @@
-update=ned 10 jan 2016 02:43:12 CET
+update=pon 11 jan 2016 00:08:14 CET
 version=1
 last_client=kicad
 [pcbnew]
@@ -57,5 +57,15 @@ LibName27=atmel
 LibName28=contrib
 LibName29=valves
 LibName30=/home/saso/work/MoonStalker/Hardware/PCB/MoonStalker
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=/home/saso/work/MoonStalker/Hardware/PCB/
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=
+SpiceForceRefPrefix=0
+SpiceUseNetNumbers=0
+LabSize=79
 [general]
 version=1
