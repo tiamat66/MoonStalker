@@ -134,6 +134,11 @@ int vtsk_move(t_astronomical_coordinates *new_pos)
     double dif_az;
     double dif_hi;
 
+    printf("Premik teleskopa na:\nRektascenzija = %lf\nDeklinacija = %lf\nLatitude = %lf",
+          new_pos->rec,
+          new_pos->dec,
+          new_pos->latitude);
+
     vtsk_astronomical_to_telescope(new_pos, &tel);
     printf("azimuth=%lf visina=%lf ", 
             tel.azimuth, tel.height);
@@ -149,6 +154,7 @@ int vtsk_move(t_astronomical_coordinates *new_pos)
     
     return(0); 
 }
+
 #define VTSK_FOLLOW_TIME 1
 void vtsk_follow()
 {
@@ -195,11 +201,10 @@ int main(int argc, char **argv)
     ast.dec =       DEC;
     ast.latitude =  LAT;
     vtsk_move(&ast);
-    sleep(1);
 
+    sleep(1);
     printf("Ajmo follow......\n\n");
     vtsk_follow();
-
     return(0);
 }
 
