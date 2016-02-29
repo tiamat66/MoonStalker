@@ -5,9 +5,9 @@
 #define MOONSTALKER_H
 
 #define RA  15.0
-#define DEC 30.0
+#define DEC 0.0
 
-#define LATITUDE 0.0 //equator
+#define LATITUDE 50.0
 
 /*
  * Polaris coordinates
@@ -18,7 +18,7 @@
 #define VTSK_WILDCARD 0.0
 
 
-#define VTSK_FOLLOW_TIME 1000
+#define VTSK_FOLLOW_TIME 1000000
 #define VTSK_DEBUG printf
 
 #define RA_OFFSET 9*15

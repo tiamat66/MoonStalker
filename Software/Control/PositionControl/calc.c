@@ -78,7 +78,7 @@ int vtsk_equatorial_to_telescope(
         t_telescope_coordinates  *out)
 {
    double tmp1, tmp2, tmp3, tmp4;
-   double alpha, omega, azimuth;
+   double alpha, omega;
    t_sferical_coordinates sfr;
 
    vtsk_equatorial_to_sferical(in, &sfr);
@@ -89,18 +89,7 @@ int vtsk_equatorial_to_telescope(
    tmp3 = sin(sfr.t)*sin(sfr.d)*sin(sfr.fi);
    tmp4 = tmp2 - tmp3;
    alpha = atan(tmp1/tmp2);
-   RAD_TO_DEG(azimuth, alpha);
-
-   if ((in->ra >= 3.0) && (in->ra < 9.0))
-	azimuth += 360.0;
-
-   out->azimuth = azimuth;
-
-   // omega -> heigh
-   tmp1 = sin(sfr.t)*cos(sfr.d);
-   tmp2 = cos(sfr.t)*sin(sfr.d)*sin(sfr.fi);
-   omega = asin(tmp1 + tmp2); 
-   RAD_TO_DEG(out->height, omega);
+   RAD_TO_DEG(out->azimuth, alpha);
 
    //debug
 #if 0
@@ -109,6 +98,23 @@ int vtsk_equatorial_to_telescope(
           sfr.d*VTSK_DEGREE, sfr.fi*VTSK_DEGREE, sfr.t*VTSK_DEGREE);
    VTSK_DEBUG("\talpha=%4.1lf, omega=%4.1lf\n", 
          alpha*VTSK_DEGREE, omega*VTSK_DEGREE);
+#endif
+#if 1
+   VTSK_DEBUG("X=%4.1lf, Y=%4.1lf ",
+         tmp1, tmp4);
+
+#endif
+
+   // omega -> heigh
+   tmp1 = sin(sfr.t)*cos(sfr.d);
+   tmp2 = cos(sfr.t)*sin(sfr.d)*sin(sfr.fi);
+   omega = asin(tmp1 + tmp2); 
+   RAD_TO_DEG(out->height, omega);
+
+#if 1
+   VTSK_DEBUG("Z=%4.1lf  ",
+         tmp1+tmp2);
+
 #endif
 
    return(0);
@@ -205,15 +211,13 @@ void vtsk_track()
     {
         new_eq_crds.ra -= SEC_TO_HOUR;
 	if(new_eq_crds.ra < 0.0) new_eq_crds.ra = 24 + new_eq_crds.ra;
-#if 1
-        VTSK_DEBUG("Second: [%4.1lf]\n", seconds);
-        VTSK_DEBUG("RA=%4.3lf\n", new_eq_crds.ra); 
-#endif
         vtsk_move(&new_eq_crds);
         //usleep(VTSK_FOLLOW_TIME);
         seconds++;
 #if 1
-   VTSK_DEBUG("\tAzimuth=%4.3lf, Height=%4.3lf\n", 
+        VTSK_DEBUG("Second: [%d]", (int)seconds);
+        VTSK_DEBUG("  RA=%lf", new_eq_crds.ra); 
+        VTSK_DEBUG("  Azimuth=%lf, Height=%lf\n", 
          cur_tel_pos.azimuth, cur_tel_pos.height);
 #endif
 
