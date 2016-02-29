@@ -78,7 +78,7 @@ int vtsk_equatorial_to_telescope(
         t_telescope_coordinates  *out)
 {
    double tmp1, tmp2, tmp3, tmp4;
-   double alpha, omega;
+   double alpha, omega, azimuth;
    t_sferical_coordinates sfr;
 
    vtsk_equatorial_to_sferical(in, &sfr);
@@ -89,7 +89,12 @@ int vtsk_equatorial_to_telescope(
    tmp3 = sin(sfr.t)*sin(sfr.d)*sin(sfr.fi);
    tmp4 = tmp2 - tmp3;
    alpha = atan(tmp1/tmp2);
-   RAD_TO_DEG(out->azimuth, alpha);
+   RAD_TO_DEG(azimuth, alpha);
+
+   if ((in->ra >= 3.0) && (in->ra < 9.0))
+	azimuth += 360.0;
+
+   out->azimuth = azimuth;
 
    // omega -> heigh
    tmp1 = sin(sfr.t)*cos(sfr.d);
@@ -134,7 +139,7 @@ int vtsk_calibration()
    char a;
 
    printf("Manually move telescope to POLARIS and hit ENTER\n");
-   scanf("%c", &a);
+   //scanf("%c", &a);
 
    printf("Telescope calibrated to POLARIS\n");
    cur_eq_crds.ra =       RA_POLARIS;
@@ -172,7 +177,7 @@ int vtsk_move(t_equatorial_coordinates *new_pos)
     cur_tel_pos.azimuth = tel.azimuth;
     cur_tel_pos.height = tel.height;
 
-#if 1
+#if 0
     //debug
     VTSK_DEBUG("vtsk_move:\n");
     VTSK_DEBUG("\tra=%lf, dec=%lf\n", 
@@ -198,14 +203,21 @@ void vtsk_track()
     new_eq_crds.latitude = cur_eq_crds.latitude;
     do
     {
-        new_eq_crds.ra = new_eq_crds.ra - SEC_TO_HOUR;
+        new_eq_crds.ra -= SEC_TO_HOUR;
+	if(new_eq_crds.ra < 0.0) new_eq_crds.ra = 24 + new_eq_crds.ra;
 #if 1
         VTSK_DEBUG("Second: [%4.1lf]\n", seconds);
-        VTSK_DEBUG("RA=%lf\n", new_eq_crds.ra); 
+        VTSK_DEBUG("RA=%4.3lf\n", new_eq_crds.ra); 
 #endif
         vtsk_move(&new_eq_crds);
-        sleep(VTSK_FOLLOW_TIME);
+        //usleep(VTSK_FOLLOW_TIME);
         seconds++;
+#if 1
+   VTSK_DEBUG("\tAzimuth=%4.3lf, Height=%4.3lf\n", 
+         cur_tel_pos.azimuth, cur_tel_pos.height);
+#endif
+
+     if(seconds > 86400) break;
     } 
     while (1);
 }
@@ -252,7 +264,7 @@ int main(int argc, char **argv)
 #if 1
     char c;
     printf("Hit ENTER to start tracking mode\n");
-    scanf("%c", &c);
+    //scanf("%c", &c);
     vtsk_track();
 #endif
     return(0);

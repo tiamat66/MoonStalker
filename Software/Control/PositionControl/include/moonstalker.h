@@ -18,7 +18,7 @@
 #define VTSK_WILDCARD 0.0
 
 
-#define VTSK_FOLLOW_TIME 1
+#define VTSK_FOLLOW_TIME 1000
 #define VTSK_DEBUG printf
 
 #define RA_OFFSET 9*15
