@@ -10,7 +10,7 @@ LIBS=-lm -lncurses
 _DEPS = moonstalker.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = calc.o
+_OBJ = calc.o ui.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 

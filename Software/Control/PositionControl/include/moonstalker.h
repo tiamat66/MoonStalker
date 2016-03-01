@@ -5,9 +5,8 @@
 #define MOONSTALKER_H
 
 #define RA  15.0
-#define DEC 30
-
-#define LATITUDE 50.0
+#define DEC 0.0
+#define LATITUDE 40.0 
 
 /*
  * Polaris coordinates
@@ -20,12 +19,14 @@
 
 #define VTSK_FOLLOW_TIME 1000000
 #define VTSK_DEBUG printf
+#define VTSK_DEBUG_ON 0
 
 #define RA_OFFSET 9*15
 
 #define DEGREE 0.0174532925
 #define PI     3.141592654
 #define SEC_TO_HOUR (1.0 / 3600.0)
+#define SEC_TO_HOUR_DEBUG (1.0)
 #define DEG_TO_RAD(rad, deg) rad = deg * DEGREE;
 #define RAD_TO_DEG(deg, rad) deg = rad * (1 / DEGREE);
 
@@ -69,4 +70,6 @@ int vtsk_move(t_equatorial_coordinates *new_pos);
 void vtsk_track();
 
 void vtsk_draw();
+
+void vtsk_print_current();
 #endif

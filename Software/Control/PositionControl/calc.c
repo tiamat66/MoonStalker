@@ -75,7 +75,7 @@ int vtsk_equatorial_to_sferical(
     //theta 
     DEG_TO_RAD(out->t, in->latitude); 
 
-    //debug
+    //debugging
 #if 0
     VTSK_DEBUG("vtsk_astronomical_to_sferical:\n");
     VTSK_DEBUG("\tra=%4.1lf, dec=%4.1lf latitude=%4.1lf\n", 
@@ -121,7 +121,7 @@ int vtsk_equatorial_to_telescope(
    X = tmp1;
    Y = tmp4;
 
-   //debug
+   //debugging
 #if 0
    VTSK_DEBUG("vtsk_equatorial_to_telescope:\n");
    VTSK_DEBUG("\tdelta=%4.1lf, fi=%4.1lf, theta=%4.1lf\n", 
@@ -129,7 +129,7 @@ int vtsk_equatorial_to_telescope(
    VTSK_DEBUG("\talpha=%4.1lf, omega=%4.1lf\n", 
          alpha*VTSK_DEGREE, omega*VTSK_DEGREE);
 #endif
-#if 1
+#if 0
    VTSK_DEBUG("X=%4.1lf, Y=%4.1lf ",
          tmp1, tmp4);
 
@@ -144,9 +144,9 @@ int vtsk_equatorial_to_telescope(
 
    vtsk_alpha_to_azimuth(&out->azimuth, alpha, X, Y, Z);
 
-   // debug
-#if 1
-   VTSK_DEBUG("Z=%4.1lf  ",
+   // debugging
+#if 0
+   VTSK_DEBUG("Z=%4.1lf  \n",
          tmp1+tmp2);
 
 #endif
@@ -178,10 +178,7 @@ int vtsk_calibration()
 {
    char a;
 
-   printf("Manually move telescope to POLARIS and hit ENTER\n");
-   //scanf("%c", &a);
-
-   printf("Telescope calibrated to POLARIS\n");
+   // The default calibration position is POLARIS
    cur_eq_crds.ra =       RA_POLARIS;
    cur_eq_crds.dec =      DEC_POLARIS;
    cur_eq_crds.latitude = LATITUDE;
@@ -217,8 +214,8 @@ int vtsk_move(t_equatorial_coordinates *new_pos)
     cur_tel_pos.azimuth = tel.azimuth;
     cur_tel_pos.height = tel.height;
 
+    //debugging
 #if 0
-    //debug
     VTSK_DEBUG("vtsk_move:\n");
     VTSK_DEBUG("\tra=%lf, dec=%lf\n", 
           new_pos->ra, new_pos->dec);
@@ -236,31 +233,39 @@ void vtsk_track()
     t_equatorial_coordinates new_eq_crds;
     double                   seconds = 0.0;
 
-    printf("Tracking mode\n\n");
-
     new_eq_crds.ra =       cur_eq_crds.ra;
     new_eq_crds.dec =      cur_eq_crds.dec;
     new_eq_crds.latitude = cur_eq_crds.latitude;
     do
     {
-        new_eq_crds.ra -= SEC_TO_HOUR;
+        new_eq_crds.ra -= SEC_TO_HOUR_DEBUG;
 	if(new_eq_crds.ra < 0.0) new_eq_crds.ra = 24 + new_eq_crds.ra;
         vtsk_move(&new_eq_crds);
-        //usleep(VTSK_FOLLOW_TIME);
+        usleep(VTSK_FOLLOW_TIME);
         seconds++;
+        if(seconds >= 24) break;
+
+     // debugging
 #if 1
         VTSK_DEBUG("Second: [%d]", (int)seconds);
-        VTSK_DEBUG("  RA=%lf", new_eq_crds.ra); 
-        VTSK_DEBUG("  Azimuth=%lf, Height=%lf\n", 
-         cur_tel_pos.azimuth, cur_tel_pos.height);
+        vtsk_print_current();
 #endif
-
-     if(seconds > 86400) break;
     } 
     while (1);
 }
 
+/*
+ * vtsk_print_current
+ */
 
+void vtsk_print_current()
+{
+   VTSK_DEBUG("  Azimuth=%4.3lf, Height=%4.3lf", 
+         cur_tel_pos.azimuth, cur_tel_pos.height);
+   VTSK_DEBUG("  ra=%4.3lf, dec=%4.3lf\n",
+      cur_eq_crds.ra,
+      cur_eq_crds.dec);
+}
 /*
  * Draw
  */
@@ -271,40 +276,5 @@ void vtsk_draw()
     refresh();                   //Print it on to the real screen
     getch();                     //Wait for user input
     endwin();                    //End curses modev
-}
-
-/*
- * Main
- */
-int main(int argc, char **argv)
-{
-    t_equatorial_coordinates eq_crds;
-
-
-    eq_crds.ra =        RA;
-    eq_crds.dec =       DEC;
-    eq_crds.latitude =  LATITUDE;
-
-#if 0  
-    t_sferical_coordinates   sf_crds;
-    vtsk_equatorial_to_sferical(&eq_crds, &sf_crds);
-#endif
-#if 0
-    t_telescope_coordinates tel_crds;
-    vtsk_equatorial_to_telescope(&eq_crds, &tel_crds);
-#endif
-#if 1
-    vtsk_calibration();
-#endif
-#if 1
-    vtsk_move(&eq_crds);
-#endif
-#if 1
-    char c;
-    printf("Hit ENTER to start tracking mode\n");
-    //scanf("%c", &c);
-    vtsk_track();
-#endif
-    return(0);
 }
 
