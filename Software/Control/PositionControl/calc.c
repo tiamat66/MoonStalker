@@ -11,6 +11,34 @@ t_telescope_coordinates    cur_tel_pos;
 t_equatorial_coordinates   cur_eq_crds;
 double                     cur_time;
 
+/*
+ * Converts alpha angle to azimuth coordinate
+ * 
+ * azimuth: [0..360]
+ *          azimuth in degrees, 0 is N, 90 is E, 180 is
+ * X, Y, Z, alpha: 
+ *          coordinates of sferical system
+ */
+static 
+int vtsk_alpha_to_azimuth(double *azimuth, 
+       double alpha, 
+       double X, 
+       double Y, 
+       double Z)
+{
+   RAD_TO_DEG(*azimuth, alpha);
+
+   if(Y < 0.0) 
+      *azimuth += 180.0;
+
+   if(Y >= 0.0)
+      *azimuth += 360.0;
+
+   if(*azimuth >= 360.0)
+	*azimuth -= 360.0;
+   return(0);
+}
+
 /* 
  * Converts equatorial to sferical coordinates 
  * 
@@ -78,6 +106,7 @@ int vtsk_equatorial_to_telescope(
         t_telescope_coordinates  *out)
 {
    double tmp1, tmp2, tmp3, tmp4;
+   double X, Y, Z;
    double alpha, omega;
    t_sferical_coordinates sfr;
 
@@ -88,8 +117,9 @@ int vtsk_equatorial_to_telescope(
    tmp2 = cos(sfr.t)*cos(sfr.d);
    tmp3 = sin(sfr.t)*sin(sfr.d)*sin(sfr.fi);
    tmp4 = tmp2 - tmp3;
-   alpha = atan(tmp1/tmp2);
-   RAD_TO_DEG(out->azimuth, alpha);
+   alpha = atan(tmp1/tmp4);
+   X = tmp1;
+   Y = tmp4;
 
    //debug
 #if 0
@@ -109,8 +139,12 @@ int vtsk_equatorial_to_telescope(
    tmp1 = sin(sfr.t)*cos(sfr.d);
    tmp2 = cos(sfr.t)*sin(sfr.d)*sin(sfr.fi);
    omega = asin(tmp1 + tmp2); 
+   Z = tmp1 + tmp2;
    RAD_TO_DEG(out->height, omega);
 
+   vtsk_alpha_to_azimuth(&out->azimuth, alpha, X, Y, Z);
+
+   // debug
 #if 1
    VTSK_DEBUG("Z=%4.1lf  ",
          tmp1+tmp2);

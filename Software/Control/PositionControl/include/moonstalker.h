@@ -5,7 +5,7 @@
 #define MOONSTALKER_H
 
 #define RA  15.0
-#define DEC 0.0
+#define DEC 30
 
 #define LATITUDE 50.0
 
