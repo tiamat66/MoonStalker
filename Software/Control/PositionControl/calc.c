@@ -156,19 +156,27 @@ int vtsk_equatorial_to_telescope(
 
 /* 
  * Get current time 
+ *
+ * return: number of second since vernal equinox 2015
  */
-double vtsk_get_time()
+int vtsk_get_time()
 {
-    time_t timer;
-    struct tm y2k;
-    double seconds;
+   time_t timer;
+   struct tm vernal_equinox;
+   double seconds;
 
-    y2k.tm_hour = 0;   y2k.tm_min = 0; y2k.tm_sec = 0;
-    y2k.tm_year = 100; y2k.tm_mon = 0; y2k.tm_mday = 1;
-    time(&timer);  /* get current time; same as: timer = time(NULL)  */
-    seconds = difftime(timer,mktime(&y2k));
+   vernal_equinox.tm_hour =   EQUINOX_HOUR;
+   vernal_equinox.tm_min =    EQUINOX_MIN; 
+   vernal_equinox.tm_sec =    EQUINOX_SEC;
+   vernal_equinox.tm_year =   EQUINOX_YEAR;
+   vernal_equinox.tm_mon =    EQUINOX_MON;
+   vernal_equinox.tm_mday =   EQUINOX_DAY;
 
-    return seconds;
+   /* get current time; same as: timer = time(NULL)  */
+   time(&timer);     
+   seconds = difftime(timer,mktime(&vernal_equinox));
+
+   return (int)seconds;
 }
 
 /* 
@@ -177,11 +185,16 @@ double vtsk_get_time()
 int vtsk_calibration()
 {
    char a;
+   double lat, lon;
 
    // The default calibration position is POLARIS
    cur_eq_crds.ra =       RA_POLARIS;
    cur_eq_crds.dec =      DEC_POLARIS;
-   cur_eq_crds.latitude = LATITUDE;
+
+   // Get geographical coordinates from GPS module
+   get_geo_coordinates(&lat, &lon);
+   cur_eq_crds.latitude = lat;
+   
    vtsk_equatorial_to_telescope(&cur_eq_crds, &cur_tel_pos);
 
    return(0);
@@ -260,11 +273,18 @@ void vtsk_track()
 
 void vtsk_print_current()
 {
+   int seconds;
+
+   int day_modulo;
+   int year_modulo;
+
+   seconds = vtsk_get_time();
    VTSK_DEBUG("  Azimuth=%4.3lf, Height=%4.3lf", 
          cur_tel_pos.azimuth, cur_tel_pos.height);
-   VTSK_DEBUG("  ra=%4.3lf, dec=%4.3lf\n",
+   VTSK_DEBUG("  ra=%4.3lf, dec=%4.3lf, T=%ds\n",
       cur_eq_crds.ra,
-      cur_eq_crds.dec);
+      cur_eq_crds.dec,
+      seconds % 86400);
 }
 /*
  * Draw

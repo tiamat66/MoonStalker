@@ -37,6 +37,9 @@ int main(int argc, char **argv)
 
    char c;
    t_equatorial_coordinates eq_crds;
+   double lat, lon;
+
+   get_geo_coordinates(&lat, &lon);
 
    do
    {
@@ -62,7 +65,7 @@ int main(int argc, char **argv)
             scanf("%lf", &eq_crds.ra);
             printf("dec=");
             scanf("%lf", &eq_crds.dec);
-            eq_crds.latitude =  LATITUDE;
+            eq_crds.latitude = lat;
             vtsk_move(&eq_crds);
             break;
          case '3':
@@ -89,12 +92,12 @@ int main(int argc, char **argv)
 
 
 #else
-    t_equatorial_coordinates eq_crds;
 
+   // Get geographical coordinates from GPS module
+   eq_crds.ra =        RA;
+   eq_crds.dec =       DEC;
+   eq_crds.latitude =  lat;
 
-    eq_crds.ra =        RA;
-    eq_crds.dec =       DEC;
-    eq_crds.latitude =  LATITUDE;
 
 #if 0  
     t_sferical_coordinates   sf_crds;

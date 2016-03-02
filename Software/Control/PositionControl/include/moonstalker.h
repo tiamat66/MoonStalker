@@ -1,12 +1,26 @@
 /*
  Main header file for moonstalker
 */
+
 #ifndef MOONSTALKER_H
 #define MOONSTALKER_H
 
+/*
+ * Vernal equinox 2015
+ * TODO: Check correct vernal equinox date!!!
+ */
+#define EQUINOX_SEC   0
+#define EQUINOX_MIN   0
+#define EQUINOX_HOUR  0
+#define EQUINOX_DAY  20
+#define EQUINOX_MON  2
+#define EQUINOX_YEAR 115
+
+#define DAY 86400
+#define YEAR 365*DAY
+
 #define RA  15.0
 #define DEC 0.0
-#define LATITUDE 40.0 
 
 /*
  * Polaris coordinates
@@ -61,7 +75,7 @@ int vtsk_equatorial_to_sferical(
         t_equatorial_coordinates *in,
         t_sferical_coordinates   *out);
 
-double vtsk_get_time();
+int vtsk_get_time();
 
 int vtsk_calibration();
 
