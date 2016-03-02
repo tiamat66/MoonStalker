@@ -60,6 +60,9 @@ int vtsk_equatorial_to_sferical(
 {
     double ra =  in->ra;
     double dec = in->dec;
+    int seconds;
+    double day_modulo_offset;  //The Earth is turning around its own axis
+    double year_modulo_offset; //The Earth is turning around the sun
     double tmp1;
    
     //delta
@@ -67,6 +70,16 @@ int vtsk_equatorial_to_sferical(
     DEG_TO_RAD(out->d, out->d);
 
     //fi
+    seconds = vtsk_get_time();
+    seconds %= VTSK_DAY;
+    day_modulo_offset = (double)seconds / (double)VTSK_HOUR;
+    seconds = vtsk_get_time();
+    seconds %= VTSK_YEAR;
+    year_modulo_offset = ((double)seconds*24.0) / (double)VTSK_YEAR;
+    ra -= day_modulo_offset;
+    if(ra < 0.0) ra += 24.0;
+    ra -= year_modulo_offset;
+    if(ra < 0.0) ra += 24.0;
     tmp1 = (ra * 15.0) + RA_OFFSET;
     if(tmp1 > 360.0) tmp1 -= 360.0;
     tmp1 = 360.0 - tmp1;
@@ -251,13 +264,9 @@ void vtsk_track()
     new_eq_crds.latitude = cur_eq_crds.latitude;
     do
     {
-        new_eq_crds.ra -= SEC_TO_HOUR_DEBUG;
-	if(new_eq_crds.ra < 0.0) new_eq_crds.ra = 24 + new_eq_crds.ra;
         vtsk_move(&new_eq_crds);
         usleep(VTSK_FOLLOW_TIME);
         seconds++;
-        if(seconds >= 24) break;
-
      // debugging
 #if 1
         VTSK_DEBUG("Second: [%d]", (int)seconds);
@@ -275,16 +284,13 @@ void vtsk_print_current()
 {
    int seconds;
 
-   int day_modulo;
-   int year_modulo;
-
    seconds = vtsk_get_time();
    VTSK_DEBUG("  Azimuth=%4.3lf, Height=%4.3lf", 
          cur_tel_pos.azimuth, cur_tel_pos.height);
    VTSK_DEBUG("  ra=%4.3lf, dec=%4.3lf, T=%ds\n",
       cur_eq_crds.ra,
       cur_eq_crds.dec,
-      seconds % 86400);
+      seconds);
 }
 /*
  * Draw

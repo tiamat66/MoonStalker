@@ -16,8 +16,9 @@
 #define EQUINOX_MON  2
 #define EQUINOX_YEAR 115
 
-#define DAY 86400
-#define YEAR 365*DAY
+#define VTSK_HOUR 3600
+#define VTSK_DAY  86400
+#define VTSK_YEAR 31536000
 
 #define RA  15.0
 #define DEC 0.0
@@ -39,7 +40,6 @@
 
 #define DEGREE 0.0174532925
 #define PI     3.141592654
-#define SEC_TO_HOUR (1.0 / 3600.0)
 #define SEC_TO_HOUR_DEBUG (1.0)
 #define DEG_TO_RAD(rad, deg) rad = deg * DEGREE;
 #define RAD_TO_DEG(deg, rad) deg = rad * (1 / DEGREE);

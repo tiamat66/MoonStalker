@@ -47,6 +47,7 @@ int main(int argc, char **argv)
       vtsk_print_current();
       printf("moonstalker>");
       scanf("%c", &c);
+      vtsk_get_time();
 
       switch(c)
       {
