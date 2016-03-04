@@ -25,6 +25,7 @@ void vtsk_print_menu()
       {
          printf("2-Move\n");
          printf("3-Trace\n");
+         printf("4-Move to current\n");
       }
 }
 
@@ -72,6 +73,9 @@ int main(int argc, char **argv)
          case '3':
             printf("TRACKING MODE\n");
             vtsk_track();
+            break;
+         case '4':
+            vtsk_move_to_current();
             break;
          default:
             break;

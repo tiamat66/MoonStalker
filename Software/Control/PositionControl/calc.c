@@ -247,18 +247,15 @@ int vtsk_move(t_equatorial_coordinates *new_pos)
     h_steps += (dif_az * VTSK_K) / 360.0;
     v_steps += (dif_hi * VTSK_K) / 360.0;
 
-    if(abs(h_steps) >= 1.0)
+    if((abs(h_steps) >= VTSK_PRECISION) ||
+          (abs(v_steps) >= VTSK_PRECISION))
     {
        cur_h_steps = (int)h_steps;
-       h_steps = 0.0;
-    }
-    if(abs(v_steps) >= 1.0)
-    {
        cur_v_steps = (int)v_steps;
-       v_steps = 0.0;
-    }
-    if((abs(cur_h_steps) > 0) || (abs(cur_v_steps) > 0))
+       h_steps -= cur_h_steps;
+       v_steps -= cur_v_steps;
        vtsk_mv(cur_h_steps, cur_v_steps);
+    }
 
     //debugging
 #if 0
@@ -270,38 +267,43 @@ int vtsk_move(t_equatorial_coordinates *new_pos)
     VTSK_DEBUG("K=%lf, h_steps=%lf, v_steps=%lf\n", 
           VTSK_K, h_steps, v_steps);
 #endif
+
     return(0); 
 }
 
 /*
- * Tracking
+ * Track
  */
 void vtsk_track()
 {
-    t_equatorial_coordinates new_eq_crds;
-    double                   seconds = 0.0;
+   double seconds = 0.0;
 
-    new_eq_crds.ra =       cur_eq_crds.ra;
-    new_eq_crds.dec =      cur_eq_crds.dec;
-    new_eq_crds.latitude = cur_eq_crds.latitude;
-    do
-    {
-        vtsk_move(&new_eq_crds);
-        usleep(VTSK_FOLLOW_TIME);
-        seconds++;
-     // debugging
+   do
+   {
+      vtsk_move_to_current();
+      usleep(VTSK_FOLLOW_TIME);
+      seconds++;
+
+      // debugging
 #if 1
-        VTSK_DEBUG("Second: [%d]", (int)seconds);
-        vtsk_print_current();
+      VTSK_DEBUG("Second: [%d]", (int)seconds);
+      vtsk_print_current();
 #endif
-    } 
-    while (1);
+   } 
+   while (1);
+}
+
+/* 
+ * Move to current equatorial position 
+ */
+void vtsk_move_to_current()
+{
+   vtsk_move(&cur_eq_crds);
 }
 
 /*
  * vtsk_print_current
  */
-
 void vtsk_print_current()
 {
    int seconds;
@@ -314,15 +316,5 @@ void vtsk_print_current()
       cur_eq_crds.dec,
       seconds);
 }
-/*
- * Draw
- */
-void vtsk_draw()
-{
-    initscr();                   //Start curses mode
-    printw("Hello World !!!");   //Print Hello World
-    refresh();                   //Print it on to the real screen
-    getch();                     //Wait for user input
-    endwin();                    //End curses modev
-}
+
 
