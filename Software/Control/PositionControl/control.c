@@ -21,3 +21,13 @@ int get_geo_coordinates(
    
    return(0);
 }
+
+/*
+ * Send message to low-level controller via BlueTooth
+ */
+
+void vtsk_bt_send(char *message)
+{
+   //TODO: Send via BT
+   printf("%s\n", message);
+}

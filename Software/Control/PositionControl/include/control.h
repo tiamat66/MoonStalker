@@ -9,6 +9,8 @@ int vtsk_get_geo_coordinates(
       double *latitude, 
       double *longitude);
 
+
+void vtsk_bt_send(char *message);
 #endif
 
 

@@ -12,7 +12,10 @@
 
 void vtsk_mv(int horiz, int vert)
 {
-   char message[VTSK_MAX_MSG_LEN]
+   char message[VTSK_MAX_MSG_LEN];
+
    /* <MV A,B> */
    sprintf(message, VTSK_MSG_MV, horiz, vert);
+   vtsk_bt_send(message);
+
 }

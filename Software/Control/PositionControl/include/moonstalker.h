@@ -23,6 +23,11 @@
 #define RA  15.0
 #define DEC 0.0
 
+#define VTSK_STEPS 200.0
+#define VTSK_I 30.0
+#define VTSK_R (48.0 / 14.0)
+#define VTSK_K (VTSK_STEPS * VTSK_I * VTSK_R)
+
 /*
  * Polaris coordinates
  */

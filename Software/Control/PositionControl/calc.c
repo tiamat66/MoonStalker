@@ -224,11 +224,15 @@ int vtsk_calibration()
  *          +90 on N pole, -90 on S pole in degrees
  */
 
+double h_steps = 0.0;
+double v_steps = 0.0;
 int vtsk_move(t_equatorial_coordinates *new_pos)
 {
     t_telescope_coordinates   tel;
     double                    dif_az;
     double                    dif_hi;
+    int                       cur_h_steps = 0;
+    int                       cur_v_steps = 0;
 
     vtsk_equatorial_to_telescope(new_pos, &tel);
 
@@ -240,6 +244,22 @@ int vtsk_move(t_equatorial_coordinates *new_pos)
     cur_tel_pos.azimuth = tel.azimuth;
     cur_tel_pos.height = tel.height;
 
+    h_steps += (dif_az * VTSK_K) / 360.0;
+    v_steps += (dif_hi * VTSK_K) / 360.0;
+
+    if(abs(h_steps) >= 1.0)
+    {
+       cur_h_steps = (int)h_steps;
+       h_steps = 0.0;
+    }
+    if(abs(v_steps) >= 1.0)
+    {
+       cur_v_steps = (int)v_steps;
+       v_steps = 0.0;
+    }
+    if((abs(cur_h_steps) > 0) || (abs(cur_v_steps) > 0))
+       vtsk_mv(cur_h_steps, cur_v_steps);
+
     //debugging
 #if 0
     VTSK_DEBUG("vtsk_move:\n");
@@ -247,6 +267,8 @@ int vtsk_move(t_equatorial_coordinates *new_pos)
           new_pos->ra, new_pos->dec);
     VTSK_DEBUG("\tdif_az=%lf, dif_hi=%lf\n",
           dif_az, dif_hi);
+    VTSK_DEBUG("K=%lf, h_steps=%lf, v_steps=%lf\n", 
+          VTSK_K, h_steps, v_steps);
 #endif
     return(0); 
 }

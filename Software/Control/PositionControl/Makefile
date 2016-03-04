@@ -7,10 +7,10 @@ LDIR =../lib
 
 LIBS=-lm -lncurses
 
-_DEPS = moonstalker.h
+_DEPS = moonstalker.h control.h messages.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = calc.o ui.o control.o
+_OBJ = calc.o ui.o control.o messages.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
