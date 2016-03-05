@@ -86,11 +86,12 @@ int vtsk_get_time();
 
 int vtsk_calibration();
 
-int vtsk_move(t_equatorial_coordinates *new_pos);
+int vtsk_move();
+
+void vtsk_set(t_equatorial_coordinates *new_pos);
 
 void vtsk_track();
 
-void vtsk_move_to_current();
-
 void vtsk_print_current();
+
 #endif
