@@ -7,9 +7,11 @@
 
 #include "moonstalker.h"
 
+/* Globals */
 t_telescope_coordinates    cur_tel_pos;
 t_equatorial_coordinates   cur_eq_crds;
-double                     cur_time;
+double h_steps = 0.0;
+double v_steps = 0.0;
 
 /*
  * Converts alpha angle to azimuth coordinate
@@ -71,6 +73,7 @@ int vtsk_equatorial_to_sferical(
 
     //fi
     seconds = vtsk_get_time();
+    //printf("Seconds:%d\n", seconds);
     seconds %= VTSK_DAY;
     day_modulo_offset = (double)seconds / (double)VTSK_HOUR;
     seconds = vtsk_get_time();
@@ -207,14 +210,14 @@ int vtsk_calibration()
    // Get geographical coordinates from GPS module
    get_geo_coordinates(&lat, &lon);
    cur_eq_crds.latitude = lat;
-   
+
    vtsk_equatorial_to_telescope(&cur_eq_crds, &cur_tel_pos);
 
    return(0);
 }
 
 /*
- * Move
+ * Set new equatorial coordinates
  *
  * in:   ra [0..24] 
  *          right accesion, at the vernal equinox in hours
@@ -223,10 +226,15 @@ int vtsk_calibration()
  *       latitude [+90..-90]
  *          +90 on N pole, -90 on S pole in degrees
  */
+void vtsk_set(t_equatorial_coordinates *new_pos)
+{
+   memcpy(&cur_eq_crds, new_pos, sizeof(t_equatorial_coordinates));
+}
 
-double h_steps = 0.0;
-double v_steps = 0.0;
-int vtsk_move(t_equatorial_coordinates *new_pos)
+/*
+ * Move the telescope
+ */
+int vtsk_move()
 {
     t_telescope_coordinates   tel;
     double                    dif_az;
@@ -234,95 +242,64 @@ int vtsk_move(t_equatorial_coordinates *new_pos)
     int                       cur_h_steps = 0;
     int                       cur_v_steps = 0;
 
-    vtsk_equatorial_to_telescope(new_pos, &tel);
+    vtsk_get_time();
+    vtsk_get_time();
+    vtsk_get_time();
 
-    dif_az    = tel.azimuth - cur_tel_pos.azimuth;
-    dif_hi    = tel.height  - cur_tel_pos.height;
-
-    cur_eq_crds.ra = new_pos->ra;
-    cur_eq_crds.dec = new_pos->dec;
+    //vtsk_print_current();
+    vtsk_equatorial_to_telescope(&cur_eq_crds, &tel);
+    dif_az = tel.azimuth - cur_tel_pos.azimuth;
+    dif_hi = tel.height  - cur_tel_pos.height;
     cur_tel_pos.azimuth = tel.azimuth;
     cur_tel_pos.height = tel.height;
+    //vtsk_print_current();
+
+    //printf("dif_az=%lf\n", dif_az);
+    //printf("dif_hi=%lf\n", dif_hi);
 
     h_steps += (dif_az * VTSK_K) / 360.0;
     v_steps += (dif_hi * VTSK_K) / 360.0;
 
-    if(abs(h_steps) >= 1.0)
+   // printf("h_steps=%lf\n", h_steps);
+   // printf("v_steps=%lf\n", v_steps);
+
+    if((abs(h_steps) >= VTSK_PRECISION) ||
+          (abs(v_steps) >= VTSK_PRECISION))
     {
        cur_h_steps = (int)h_steps;
-       h_steps = 0.0;
-    }
-    if(abs(v_steps) >= 1.0)
-    {
        cur_v_steps = (int)v_steps;
-       v_steps = 0.0;
-    }
-    if((abs(cur_h_steps) > 0) || (abs(cur_v_steps) > 0))
+       h_steps -= cur_h_steps;
+       v_steps -= cur_v_steps;
        vtsk_mv(cur_h_steps, cur_v_steps);
+    }
 
-    //debugging
-#if 0
-    VTSK_DEBUG("vtsk_move:\n");
-    VTSK_DEBUG("\tra=%lf, dec=%lf\n", 
-          new_pos->ra, new_pos->dec);
-    VTSK_DEBUG("\tdif_az=%lf, dif_hi=%lf\n",
-          dif_az, dif_hi);
-    VTSK_DEBUG("K=%lf, h_steps=%lf, v_steps=%lf\n", 
-          VTSK_K, h_steps, v_steps);
-#endif
     return(0); 
 }
 
 /*
- * Tracking
+ * Track
  */
 void vtsk_track()
 {
-    t_equatorial_coordinates new_eq_crds;
-    double                   seconds = 0.0;
-
-    new_eq_crds.ra =       cur_eq_crds.ra;
-    new_eq_crds.dec =      cur_eq_crds.dec;
-    new_eq_crds.latitude = cur_eq_crds.latitude;
-    do
-    {
-        vtsk_move(&new_eq_crds);
-        usleep(VTSK_FOLLOW_TIME);
-        seconds++;
-     // debugging
-#if 1
-        VTSK_DEBUG("Second: [%d]", (int)seconds);
-        vtsk_print_current();
-#endif
-    } 
-    while (1);
+   int i=0;
+   while(1)
+   {
+      vtsk_move();
+      usleep(1000000);
+      if(i++ == 60) break;
+   }
 }
 
 /*
  * vtsk_print_current
  */
-
 void vtsk_print_current()
 {
-   int seconds;
-
-   seconds = vtsk_get_time();
    VTSK_DEBUG("  Azimuth=%4.3lf, Height=%4.3lf", 
          cur_tel_pos.azimuth, cur_tel_pos.height);
-   VTSK_DEBUG("  ra=%4.3lf, dec=%4.3lf, T=%ds\n",
+   VTSK_DEBUG("  ra=%4.3lf, dec=%4.3lf\n",
       cur_eq_crds.ra,
-      cur_eq_crds.dec,
-      seconds);
+      cur_eq_crds.dec);
 }
-/*
- * Draw
- */
-void vtsk_draw()
-{
-    initscr();                   //Start curses mode
-    printw("Hello World !!!");   //Print Hello World
-    refresh();                   //Print it on to the real screen
-    getch();                     //Wait for user input
-    endwin();                    //End curses modev
-}
+
 

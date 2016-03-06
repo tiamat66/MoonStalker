@@ -12,6 +12,7 @@
  */
 
 int is_calibrated = false;
+FILE *fp;
 
 /*
  * Prints menu with available commands
@@ -25,6 +26,7 @@ void vtsk_print_menu()
       {
          printf("2-Move\n");
          printf("3-Trace\n");
+         printf("4-Move to current\n");
       }
 }
 
@@ -40,11 +42,12 @@ int main(int argc, char **argv)
    double lat, lon;
 
    get_geo_coordinates(&lat, &lon);
+   fp = fopen("log.txt", "w");
 
    do
    {
-      vtsk_print_menu();
-      vtsk_print_current();
+      //vtsk_print_menu();
+      //vtsk_print_current();
       printf("moonstalker>");
       scanf("%c", &c);
       vtsk_get_time();
@@ -67,18 +70,26 @@ int main(int argc, char **argv)
             printf("dec=");
             scanf("%lf", &eq_crds.dec);
             eq_crds.latitude = lat;
-            vtsk_move(&eq_crds);
+
+            vtsk_set(&eq_crds);
+            vtsk_move();
             break;
          case '3':
             printf("TRACKING MODE\n");
             vtsk_track();
+            break;
+         case '4':
+            vtsk_move();
+            break;
+         case '5':
+            vtsk_print_current();
             break;
          default:
             break;
       }
    } 
    while (c != '0');
-
+   fclose(fp);
 
 
 

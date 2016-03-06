@@ -28,6 +28,8 @@
 #define VTSK_R (48.0 / 14.0)
 #define VTSK_K (VTSK_STEPS * VTSK_I * VTSK_R)
 
+#define VTSK_PRECISION 2.0
+
 /*
  * Polaris coordinates
  */
@@ -84,11 +86,12 @@ int vtsk_get_time();
 
 int vtsk_calibration();
 
-int vtsk_move(t_equatorial_coordinates *new_pos);
+int vtsk_move();
+
+void vtsk_set(t_equatorial_coordinates *new_pos);
 
 void vtsk_track();
 
-void vtsk_draw();
-
 void vtsk_print_current();
+
 #endif
