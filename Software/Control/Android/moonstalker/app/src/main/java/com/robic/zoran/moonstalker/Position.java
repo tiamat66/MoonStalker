@@ -4,6 +4,10 @@ package com.robic.zoran.moonstalker;
  * Created by zoran on 7.3.2016.
  */
 public class Position {
+    private static final int VTSK_HOUR = 3600;
+    private static final int VTSK_DAY = 86400;
+    private static final int VTSK_YEAR = 31536000;
+    private static final int RA_OFFSET= 9*15;
 
     //Globe coordinates
     double latitude;
@@ -38,6 +42,14 @@ public class Position {
         this.ra = ra;
     }
 
+    public double getAzimuth() {
+        return azimuth;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
     private void equatorialToSferical()
     {
         double ra_tmp =  ra;
@@ -52,10 +64,10 @@ public class Position {
         d = Math.toRadians(d);
 
         //fi
-        seconds = vtsk_get_time();
+        seconds = VTSK_YEAR; //TODO: getTime
         seconds %= VTSK_DAY;
         day_modulo_offset = (double)seconds / (double)VTSK_HOUR;
-        seconds = vtsk_get_time();
+        seconds = VTSK_YEAR; //TODO: getTime
         seconds %= VTSK_YEAR;
         year_modulo_offset = ((double)seconds*24.0) / (double)VTSK_YEAR;
         ra_tmp -= day_modulo_offset;

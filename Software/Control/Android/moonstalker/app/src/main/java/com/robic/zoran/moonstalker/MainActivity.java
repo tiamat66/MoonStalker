@@ -13,8 +13,11 @@ import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
 
     TextView mainTextView;
-
     Telescope telescope;
+
+    public MainActivity() {
+        telescope = new Telescope();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +27,19 @@ public class MainActivity extends AppCompatActivity {
         // 1. Access the TextView defined in layout XML
         // and then set its text
         mainTextView = (TextView) findViewById(R.id.main_textview);
-        mainTextView.setText("Set in Java! Njurka ban");
+
+        //TODO
+        //Calibrate the telescope
+        telescope.calibration();
+        telescope.Move(7,-20);
+
+        String output = "Height=" +
+                telescope.getPosition().getHeight() +
+                "\nAzimuth=" +
+                telescope.getPosition().getAzimuth();
+
+        mainTextView.setText(output);
+        /**************************************************/
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
