@@ -14,6 +14,8 @@ public class MainActivity extends AppCompatActivity {
 
     TextView mainTextView;
 
+    Telescope telescope;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
