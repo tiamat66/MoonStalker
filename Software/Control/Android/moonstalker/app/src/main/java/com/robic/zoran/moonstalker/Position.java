@@ -1,9 +1,13 @@
 package com.robic.zoran.moonstalker;
 
+import java.util.GregorianCalendar;
+
 /**
  * Created by zoran on 7.3.2016.
  */
 public class Position {
+    GregorianCalendar calendar;
+
     private static final int VTSK_HOUR = 3600;
     private static final int VTSK_DAY = 86400;
     private static final int VTSK_YEAR = 31536000;
@@ -25,6 +29,10 @@ public class Position {
     //Telescope coordinates
     double azimuth; //[deg]
     double height;  //[deg]
+
+    public Position() {
+        calendar = new GregorianCalendar(2015,3,20);
+    }
 
     public void setLatitude(double latitude) {
         this.latitude = latitude;
@@ -54,7 +62,7 @@ public class Position {
     {
         double ra_tmp =  ra;
 
-        int seconds;
+        long seconds;
         double day_modulo_offset;  //The Earth is turning around its own axis
         double year_modulo_offset; //The Earth is turning around the sun
         double tmp1;
@@ -64,10 +72,10 @@ public class Position {
         d = Math.toRadians(d);
 
         //fi
-        seconds = VTSK_YEAR; //TODO: getTime
+        seconds = getTime();
         seconds %= VTSK_DAY;
         day_modulo_offset = (double)seconds / (double)VTSK_HOUR;
-        seconds = VTSK_YEAR; //TODO: getTime
+        seconds = getTime();
         seconds %= VTSK_YEAR;
         year_modulo_offset = ((double)seconds*24.0) / (double)VTSK_YEAR;
         ra_tmp -= day_modulo_offset;
@@ -122,5 +130,17 @@ public class Position {
         omega = Math.asin(tmp1 + tmp2);
         Z = tmp1 + tmp2;
         height = Math.toDegrees(omega);
+    }
+
+    private long getCurrentTime() {
+        return(System.currentTimeMillis());
+    }
+
+    private long getVernalEquinoxTime() {
+        return(calendar.getTimeInMillis());
+    }
+
+    public long getTime() {
+        return(getCurrentTime() - getVernalEquinoxTime());
     }
 }

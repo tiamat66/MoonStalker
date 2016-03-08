@@ -1,5 +1,7 @@
 package com.robic.zoran.moonstalker;
 
+import java.util.GregorianCalendar;
+
 /**
  * Created by zoran on 7.3.2016.
  */
@@ -74,9 +76,6 @@ public class Telescope {
 
         hSteps += (dif_az * K) / 360.0;
         vSteps += (dif_hi * K) / 360.0;
-
-        // printf("h_steps=%lf\n", h_steps);
-        // printf("v_steps=%lf\n", v_steps);
 
         if((Math.abs(hSteps) >= PRECISION) ||
                 (Math.abs(vSteps) >= PRECISION))

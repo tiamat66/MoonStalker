@@ -33,10 +33,15 @@ public class MainActivity extends AppCompatActivity {
         telescope.calibration();
         telescope.Move(7,-20);
 
+        long time = telescope.getPosition().getTime() / 1000 / 86400;
+
         String output = "Height=" +
                 telescope.getPosition().getHeight() +
                 "\nAzimuth=" +
-                telescope.getPosition().getAzimuth();
+                telescope.getPosition().getAzimuth() +
+                "\nTimeFroVernalEquinox=" +
+                time;
+
 
         mainTextView.setText(output);
         /**************************************************/
