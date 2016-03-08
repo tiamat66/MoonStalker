@@ -1,11 +1,16 @@
 package com.robic.zoran.moonstalker;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -14,6 +19,18 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
+
+    /* GPS Constant Permission */
+    private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
+    private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 12;
+
+    /* Position */
+    private static final int MINIMUM_TIME = 10000;  // 10s
+    private static final int MINIMUM_DISTANCE = 50; // 50m
+
+    /* GPS */
+    private LocationManager mLocationManager;
+    GPSService mLocationListener;
 
     TextView mainTextView;
     Telescope telescope;
@@ -27,18 +44,23 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //get Your Current Location
-        LocationManager locationManager=    (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        //Get Your Current Location
         GPSService locationListener = new GPSService();
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        GPSService mLocationListener = new GPSService();
+        // We have to check if ACCESS_FINE_LOCATION and/or ACCESS_COARSE_LOCATION permission are granted
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, (LocationListener) locationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MINIMUM_TIME, MINIMUM_DISTANCE, locationListener);
+        }
+        telescope.position.setLongitude(mLocationListener.getLongitude());
+        telescope.position.setLatitude(mLocationListener.getLatitude());
 
-
-        // 1. Access the TextView defined in layout XML
+        // Access the TextView defined in layout XML
         // and then set its text
         mainTextView = (TextView) findViewById(R.id.main_textview);
 
-        //TODO
         //Calibrate the telescope
         telescope.calibration();
         telescope.Move(7,-20);
@@ -50,7 +72,9 @@ public class MainActivity extends AppCompatActivity {
                 "\nAzimuth=" +
                 telescope.getPosition().getAzimuth() +
                 "\nTimeFroVernalEquinox=" +
-                time;
+                time +
+                "\nLocation=" +
+                mLocationListener.getMyLocation();
 
 
         mainTextView.setText(output);

@@ -1,5 +1,9 @@
 package com.robic.zoran.moonstalker;
 
+import android.content.Context;
+import android.location.LocationListener;
+import android.location.LocationManager;
+
 import java.util.GregorianCalendar;
 
 /**
@@ -40,10 +44,6 @@ public class Telescope {
         // The default calibration position is POLARIS
         position.setRa(POLARIS_RA);
         position.setDec(POLARIS_DEC);
-
-        // TODO Get globe coordinates from GPS module
-        position.setLatitude(40);
-        position.setLongitude(40);
         position.equatorialToTelescope();
         isCalibrated = true;
     }
