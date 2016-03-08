@@ -1,5 +1,8 @@
 package com.robic.zoran.moonstalker;
 
+import android.content.Context;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -23,6 +26,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //get Your Current Location
+        LocationManager locationManager=    (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        GPSService locationListener = new GPSService();
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, (LocationListener) locationListener);
+
 
         // 1. Access the TextView defined in layout XML
         // and then set its text
