@@ -36,9 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     TextView  mainTextView;
     Telescope telescope;
-
-    /* Bluetooth */
-    BluetoothAdapter mBluetoothAdapter;
+    BlueToothService btService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +44,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         telescope = new Telescope();
+        btService = new BlueToothService(this);
 
-        enableBluetoothService();
         enableGPSService();
 
         myTest();
@@ -87,23 +85,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void enableBluetoothService() {
-
-        BluetoothAdapter mBluetoothAdapter;
-
-            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (mBluetoothAdapter == null) {
-                //TODO emulator does not support BT
-                return;
-                // Device does not support Bluetooth
-            }
-
-            if (!mBluetoothAdapter.isEnabled()) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }
-        }
-
     private void enableGPSService() {
 
         mLocationListener = new GPSService();
@@ -136,10 +117,19 @@ public class MainActivity extends AppCompatActivity {
                 "\nAzimuth=" +
                 telescope.getPosition().getAzimuth() +
                 "\nTimeFromVernalEquinox=" +
-                time +
-                "\nLocation=" +
-        mLocationListener.getMyLocation();
+                time;
 
+        if (btService.isBtPresent()) {
+            output += "\n BlueTooth is present on this device\n";
+        } else {
+            output += "\n BlueTooth not present on this device\n";
+        }
+
+        if (btService.isBtPOn()) {
+            output += "BlueTooth is ON\n";
+        } else {
+            output += "BlueTooth is OFF\n";
+        }
         mainTextView.setText(output);
     }
 }
