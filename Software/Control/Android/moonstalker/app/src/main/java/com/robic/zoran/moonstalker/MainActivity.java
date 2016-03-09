@@ -1,5 +1,6 @@
 package com.robic.zoran.moonstalker;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -23,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     /* GPS Constant Permission */
     private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 12;
+    private final static int REQUEST_ENABLE_BT = 1;
 
     /* Position */
     private static final int MINIMUM_TIME = 10000;  // 10s
@@ -30,55 +32,25 @@ public class MainActivity extends AppCompatActivity {
 
     /* GPS */
     private LocationManager mLocationManager;
-    GPSService mLocationListener;
+    private GPSService      mLocationListener;
 
-    TextView mainTextView;
+    TextView  mainTextView;
     Telescope telescope;
 
-    public MainActivity() {
-        telescope = new Telescope();
-    }
+    /* Bluetooth */
+    BluetoothAdapter mBluetoothAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Get Your Current Location
-        GPSService locationListener = new GPSService();
-        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        GPSService mLocationListener = new GPSService();
-        // We have to check if ACCESS_FINE_LOCATION and/or ACCESS_COARSE_LOCATION permission are granted
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        telescope = new Telescope();
 
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MINIMUM_TIME, MINIMUM_DISTANCE, locationListener);
-        }
-        telescope.position.setLongitude(mLocationListener.getLongitude());
-        telescope.position.setLatitude(mLocationListener.getLatitude());
+        enableBluetoothService();
+        enableGPSService();
 
-        // Access the TextView defined in layout XML
-        // and then set its text
-        mainTextView = (TextView) findViewById(R.id.main_textview);
-
-        //Calibrate the telescope
-        telescope.calibration();
-        telescope.Move(7,-20);
-
-        long time = telescope.getPosition().getTime() / 1000 / 86400;
-
-        String output = "Height=" +
-                telescope.getPosition().getHeight() +
-                "\nAzimuth=" +
-                telescope.getPosition().getAzimuth() +
-                "\nTimeFroVernalEquinox=" +
-                time +
-                "\nLocation=" +
-                mLocationListener.getMyLocation();
-
-
-        mainTextView.setText(output);
-        /**************************************************/
+        myTest();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -113,5 +85,61 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void enableBluetoothService() {
+
+        BluetoothAdapter mBluetoothAdapter;
+
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (mBluetoothAdapter == null) {
+                //TODO emulator does not support BT
+                return;
+                // Device does not support Bluetooth
+            }
+
+            if (!mBluetoothAdapter.isEnabled()) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            }
+        }
+
+    private void enableGPSService() {
+
+        mLocationListener = new GPSService();
+        mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+
+        // We have to check if ACCESS_FINE_LOCATION and/or ACCESS_COARSE_LOCATION permission are granted
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MINIMUM_TIME, MINIMUM_DISTANCE, mLocationListener);
+        }
+        telescope.position.setLongitude(mLocationListener.getLongitude());
+        telescope.position.setLatitude(mLocationListener.getLatitude());
+    }
+
+    private void myTest() {
+
+        // Access the TextView defined in layout XML
+        // and then set its text
+        mainTextView = (TextView) findViewById(R.id.main_textview);
+
+        //Calibrate the telescope
+        telescope.calibration();
+        telescope.Move(15, 0);
+
+        long time = telescope.getPosition().getTime() / 1000 / 86400;
+
+        String output = "Height=" +
+                telescope.getPosition().getHeight() +
+                "\nAzimuth=" +
+                telescope.getPosition().getAzimuth() +
+                "\nTimeFromVernalEquinox=" +
+                time +
+                "\nLocation=" +
+        mLocationListener.getMyLocation();
+
+        mainTextView.setText(output);
     }
 }

@@ -11,7 +11,13 @@ public class Position {
     private static final int VTSK_HOUR = 3600;
     private static final int VTSK_DAY = 86400;
     private static final int VTSK_YEAR = 31536000;
-    private static final int RA_OFFSET= 9*15;
+    private static final int RA_OFFSET= 9 * 15;
+    //Vernal equinox time
+    private static final int VEQ_YEAR = 2015;
+    private static final int VEQ_MONTH = 2;
+    private static final int VEQ_DAY = 20;
+    private static final int VEQ_HOUR = 5;
+    private static final int VEQ_MIN = 30;
 
     //Globe coordinates
     double latitude;
@@ -31,7 +37,7 @@ public class Position {
     double height;  //[deg]
 
     public Position() {
-        calendar = new GregorianCalendar(2015,3,20);
+        calendar = new GregorianCalendar(VEQ_YEAR,VEQ_MONTH, VEQ_DAY, VEQ_HOUR, VEQ_MIN);
     }
 
     public void setLatitude(double latitude) {
@@ -72,10 +78,10 @@ public class Position {
         d = Math.toRadians(d);
 
         //fi
-        seconds = getTime();
+        seconds = getTime() / 1000;
         seconds %= VTSK_DAY;
         day_modulo_offset = (double)seconds / (double)VTSK_HOUR;
-        seconds = getTime();
+        seconds = getTime() / 1000;
         seconds %= VTSK_YEAR;
         year_modulo_offset = ((double)seconds*24.0) / (double)VTSK_YEAR;
         ra_tmp -= day_modulo_offset;
