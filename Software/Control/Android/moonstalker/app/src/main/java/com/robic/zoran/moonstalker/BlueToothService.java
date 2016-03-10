@@ -40,6 +40,7 @@ public class BlueToothService {
 
     TextView txtArduino;
     static Handler h;
+    String rcvdMsg;
 
     public BlueToothService(MainActivity myMainActivity) {
 
@@ -58,6 +59,7 @@ public class BlueToothService {
                             String sbprint = sb.substring(0, endOfLineIndex);               // extract string
                             sb.delete(0, sb.length());                                      // and clear
                             txtArduino.setText("Data from Arduino: " + sbprint);            // update TextView
+                            rcvdMsg = sbprint;
                         }
                         //Log.d(TAG, "...String:"+ sb.toString() +  "Byte:" + msg.arg1 + "...");
                         break;
@@ -174,6 +176,20 @@ public class BlueToothService {
 
     public boolean isBtPresent() {
         return isBtPresent;
+    }
+
+    public void sendMsg(String msg) {
+
+        mConnectedThread.write(msg);
+    }
+
+    public void waitForMsg() {
+
+        mConnectedThread.run();
+    }
+
+    public String getRcvdMsg() {
+        return rcvdMsg;
     }
 
     private class ConnectedThread extends Thread {

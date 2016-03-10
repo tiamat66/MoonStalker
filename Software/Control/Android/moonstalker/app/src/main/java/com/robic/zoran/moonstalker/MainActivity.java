@@ -21,34 +21,30 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    /* GPS Constant Permission */
     private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 12;
     private final static int REQUEST_ENABLE_BT = 1;
 
-    /* Position */
-    private static final int MINIMUM_TIME = 10000;  // 10s
-    private static final int MINIMUM_DISTANCE = 50; // 50m
-
-    /* GPS */
-    private LocationManager mLocationManager;
-    private GPSService      mLocationListener;
-
     TextView  mainTextView;
     Telescope telescope;
     BlueToothService btService;
+    GPSService gpsService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        telescope = new Telescope();
-        btService = new BlueToothService(this);
+        telescope = new  Telescope();
+        btService = new  BlueToothService(this);
+        gpsService = new GPSService(this);
 
-        enableGPSService();
+        if(telescope != null &&
+                btService != null &&
+                gpsService != null) {
 
-        myTest();
+            myTest();
+        }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -63,14 +59,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-//    @Override
+    @Override
     public void onResume() {
         super.onResume();
 
         btService.onResume();
     }
 
-    @Override
+    //@Override
     public void onPause() {
         super.onPause();
 
@@ -98,21 +94,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void enableGPSService() {
-
-        mLocationListener = new GPSService();
-        mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-
-        // We have to check if ACCESS_FINE_LOCATION and/or ACCESS_COARSE_LOCATION permission are granted
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MINIMUM_TIME, MINIMUM_DISTANCE, mLocationListener);
-        }
-        telescope.position.setLongitude(mLocationListener.getLongitude());
-        telescope.position.setLatitude(mLocationListener.getLatitude());
-    }
-
     private void myTest() {
 
         // Access the TextView defined in layout XML
@@ -120,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
         mainTextView = (TextView) findViewById(R.id.main_textview);
 
         //Calibrate the telescope
+        telescope.position.setLongitude(gpsService.getLongitude());
+        telescope.position.setLatitude(gpsService.getLatitude());
         telescope.calibration();
         telescope.Move(15, 0);
 
