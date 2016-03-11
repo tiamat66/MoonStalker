@@ -11,6 +11,7 @@ import java.util.GregorianCalendar;
  */
 public class Telescope {
     Position position;
+    Control  control;
 
     private static final double POLARIS_RA =  0;
     private static final double POLARIS_DEC = 90;
@@ -26,10 +27,12 @@ public class Telescope {
     boolean isCalibrated;
     double hSteps;
     double vSteps;
+    ConnectedThread connectedThread;
 
-
-    public Telescope() {
+    public Telescope(BlueToothService myBtService) {
+        control = new Control(myBtService);
         position = new Position();
+        connectedThread = new ConnectedThread();
         isCalibrated = false;
         hSteps = 0;
         vSteps = 0;
@@ -84,7 +87,33 @@ public class Telescope {
             cur_v_steps = (int)vSteps;
             hSteps -= cur_h_steps;
             vSteps -= cur_v_steps;
-            //vtsk_mv(cur_h_steps, cur_v_steps);
+            control.move(cur_h_steps, cur_v_steps);
         }
+    }
+
+    private class ConnectedThread extends Thread {
+
+        public ConnectedThread() {
+
+        }
+
+        public void run() {
+            while(true)
+            {
+                try {
+                    Thread.sleep(1000);
+                    // Do some stuff
+                } catch (Exception e) {
+                    e.getLocalizedMessage();
+                }
+                
+                Move();
+            }
+        }
+    }
+
+    public void Trace() {
+
+        connectedThread.run();
     }
 }

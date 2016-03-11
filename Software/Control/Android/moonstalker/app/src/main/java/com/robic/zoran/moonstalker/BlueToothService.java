@@ -36,7 +36,7 @@ public class BlueToothService {
     private boolean isBtPresent = false;
     private boolean isBtPOn = false;
     private StringBuilder sb = new StringBuilder();
-    private ConnectedThread mConnectedThread;
+    private ConnectedThread mConnectedThread = null;
 
     TextView txtArduino;
     static Handler h;
@@ -144,11 +144,8 @@ public class BlueToothService {
         // Create a data stream so we can talk to server.
         Log.d(TAG, "...Create Socket...");
 
-        try {
-            outStream = btSocket.getOutputStream();
-        } catch (IOException e) {
-            errorExit("Fatal Error", "In onResume() and output stream creation failed:" + e.getMessage() + ".");
-        }
+        mConnectedThread = new ConnectedThread(btSocket);
+        mConnectedThread.start();
     }
 
     public void onPause() {
@@ -180,12 +177,16 @@ public class BlueToothService {
 
     public void sendMsg(String msg) {
 
-        mConnectedThread.write(msg);
+        if(mConnectedThread != null) {
+            mConnectedThread.write(msg);
+        }
     }
 
     public void waitForMsg() {
 
+        if(mConnectedThread != null) {
         mConnectedThread.run();
+        }
     }
 
     public String getRcvdMsg() {
@@ -230,6 +231,7 @@ public class BlueToothService {
         /* Call this from the main activity to send data to the remote device */
         public void write(String message) {
             Log.d(TAG, "...Data to send: " + message + "...");
+
             byte[] msgBuffer = message.getBytes();
             try {
                 mmOutStream.write(msgBuffer);

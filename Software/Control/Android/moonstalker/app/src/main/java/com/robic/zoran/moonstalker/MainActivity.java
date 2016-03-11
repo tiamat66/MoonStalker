@@ -35,9 +35,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        telescope = new  Telescope();
         btService = new  BlueToothService(this);
         gpsService = new GPSService(this);
+        telescope = new  Telescope(btService);
 
         if(telescope != null &&
                 btService != null &&
@@ -104,7 +104,10 @@ public class MainActivity extends AppCompatActivity {
         telescope.position.setLongitude(gpsService.getLongitude());
         telescope.position.setLatitude(gpsService.getLatitude());
         telescope.calibration();
+
+        //Move the telescope
         telescope.Move(15, 0);
+        telescope.Trace();
 
         long time = telescope.getPosition().getTime() / 1000 / 86400;
 
