@@ -102,11 +102,10 @@ public class Telescope {
             {
                 try {
                     Thread.sleep(1000);
-                    // Do some stuff
                 } catch (Exception e) {
                     e.getLocalizedMessage();
                 }
-                
+
                 Move();
             }
         }

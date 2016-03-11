@@ -12,15 +12,15 @@ public class Control {
     BlueToothService BTservice;
     private String inMessage;
     private String outMessage;
+    //For debugging msg processing we have simple Arduino emulator
+    ArduinoDebug arduinoDebug;
 
     public Control(BlueToothService myBTservice) {
 
         BTservice = myBTservice;
+        arduinoDebug = new ArduinoDebug();
+
         Log.d(TAG, "...Control created...");
-    }
-
-    public void Track() {
-
     }
 
     public void move(double h, double v) {
@@ -28,7 +28,12 @@ public class Control {
         // send <MV H,V>
         outMessage = "<MV " + h + "," + v + ">";
         Log.d(TAG, outMessage);
-                sendMessage(outMessage);
+
+        //TODO following line is just for Arduino emulator
+        outMessage = "<MV>";
+
+        sendMessage(outMessage);
+
         // wait for <RDY>
         inMessage = "<RDY>";
         Log.d(TAG, "...waiting for " + inMessage + "...");
@@ -37,15 +42,22 @@ public class Control {
 
     private void sendMessage(String msg) {
 
-        BTservice.sendMsg(msg);
+        //TODO: Test the BlueTooth
+        //BTservice.sendMsg(msg);
+
+        arduinoDebug.sendMsg(msg);
     }
 
     private void waitForMsg(String msg) {
 
-        String rcvdMessage;
+        String rcvdMessage = "";
 
-        BTservice.waitForMsg(); //...thread waits for message from Arduino
-        rcvdMessage = BTservice.getRcvdMsg();
+        //TODO: Test the BlueTooth
+        //BTservice.waitForMsg(); //...thread waits for message from Arduino
+        //rcvdMessage = BTservice.getRcvdMsg();
+
+        arduinoDebug.waitForMsg();
+        rcvdMessage = arduinoDebug.getRcvdMsg();
 
         if (rcvdMessage == msg) {
             Log.d(TAG, "..." + msg + " received...");

@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Move the telescope
         telescope.Move(15, 0);
-        telescope.Trace();
+        //telescope.Trace();
 
         long time = telescope.getPosition().getTime() / 1000 / 86400;
 
