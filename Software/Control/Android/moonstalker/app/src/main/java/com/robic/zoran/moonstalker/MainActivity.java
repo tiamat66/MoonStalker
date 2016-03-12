@@ -8,15 +8,20 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 12;
     private final static int REQUEST_ENABLE_BT = 1;
 
     TextView  mainTextView;
+    Button traceButton;
+    Button traceOffButton;
+    Button updateButton;
+
     Telescope telescope;
     BlueToothService btService;
     GPSService gpsService;
@@ -129,12 +134,52 @@ public class MainActivity extends AppCompatActivity {
         }
         mainTextView.setText(output);
 
-        // TODO: Button action!
-        onTrace();
+        // 2. Access the Button defined in layout XML
+        // and listen for it here
+        traceButton = (Button) findViewById(R.id.trace_button);
+        traceButton.setOnClickListener(this);
+
+        traceOffButton = (Button) findViewById(R.id.trace_off_button);
+        traceOffButton.setOnClickListener(this);
+
+        updateButton = (Button) findViewById(R.id.update_button);
+        updateButton.setOnClickListener(this);
     }
 
-    public void onTrace() {
+    private void updateView()
+    {
 
-        telescope.onTrace();
+        long time = telescope.getPosition().getTime() / 1000 / 86400;
+
+        String output = "Height=" +
+                telescope.getPosition().getHeight() +
+                "\nAzimuth=" +
+                telescope.getPosition().getAzimuth() +
+                "\nTimeFromVernalEquinox=" +
+                time;
+
+        mainTextView.setText(output);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+
+            case R.id.trace_button:
+                mainTextView.setText("Trace on");
+                telescope.onTrace();
+                break;
+
+            case R.id.trace_off_button:
+                mainTextView.setText("Trace Off");
+                break;
+
+            case R.id.update_button:
+                updateView();
+                break;
+
+            default:
+                break;
+        }
     }
 }

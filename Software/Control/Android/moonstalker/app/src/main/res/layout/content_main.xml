@@ -16,4 +16,29 @@
         android:layout_marginLeft="20dp"
         android:layout_marginTop="20dp"
         android:text="Hello World!" />
+
+    <!-- Set OnClickListener to trigger results when pressed -->
+    <Button
+        android:id="@+id/trace_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="@string/button1" />
+
+    <Button
+        android:id="@+id/trace_off_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="@string/button2" />
+
+    <Button
+        android:id="@+id/update_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="@string/button3" />
 </LinearLayout>
