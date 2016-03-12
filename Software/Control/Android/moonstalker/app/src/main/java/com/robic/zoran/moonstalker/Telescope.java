@@ -1,11 +1,5 @@
 package com.robic.zoran.moonstalker;
 
-import android.content.Context;
-import android.location.LocationListener;
-import android.location.LocationManager;
-
-import java.util.GregorianCalendar;
-
 /**
  * Created by zoran on 7.3.2016.
  */
@@ -27,15 +21,20 @@ public class Telescope {
     boolean isCalibrated;
     double hSteps;
     double vSteps;
-    ConnectedThread connectedThread;
+    Thread traceThread;
 
     public Telescope(BlueToothService myBtService) {
         control = new Control(myBtService);
         position = new Position();
-        connectedThread = new ConnectedThread();
         isCalibrated = false;
         hSteps = 0;
         vSteps = 0;
+
+        traceThread = new Thread(new Runnable() {
+            public void run(){
+                trace();
+            }
+        });
     }
 
     public boolean isCalibrated() {
@@ -55,13 +54,13 @@ public class Telescope {
         return position;
     }
 
-    public void Move(double ra, double dec) {
+    public void onMove(double ra, double dec) {
         position.setRa(ra);
         position.setDec(dec);
-        Move();
+        move();
     }
 
-    public void Move()
+    private void move()
     {
         double dif_az;
         double dif_hi;
@@ -91,28 +90,21 @@ public class Telescope {
         }
     }
 
-    private class ConnectedThread extends Thread {
+    private void trace() {
+        while (true) {
+            try {
 
-        public ConnectedThread() {
-
-        }
-
-        public void run() {
-            while(true)
-            {
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception e) {
-                    e.getLocalizedMessage();
-                }
-
-                Move();
+                traceThread.sleep(1000);
+                move();
+            } catch (InterruptedException e) {
+                break;
             }
         }
     }
 
-    public void Trace() {
+    public void onTrace() {
 
-        connectedThread.run();
+        traceThread.start();
     }
+
 }
