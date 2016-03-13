@@ -100,8 +100,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void myTest() {
 
-        // Access the TextView defined in layout XML
-        // and then set its text
+        String output;
+
         mainTextView = (TextView) findViewById(R.id.main_textview);
 
         //Calibrate the telescope
@@ -111,28 +111,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //Move the telescope
         telescope.onMove(15, 0);
-
-        long time = telescope.getPosition().getTime() / 1000 / 86400;
-
-        String output = "Height=" +
-                telescope.getPosition().getHeight() +
-                "\nAzimuth=" +
-                telescope.getPosition().getAzimuth() +
-                "\nTimeFromVernalEquinox=" +
-                time;
-
-        if (btService.isBtPresent()) {
-            output += "\n BlueTooth is present on this device\n";
-        } else {
-            output += "\n BlueTooth not present on this device\n";
-        }
-
-        if (btService.isBtPOn()) {
-            output += "BlueTooth is ON\n";
-        } else {
-            output += "BlueTooth is OFF\n";
-        }
-        mainTextView.setText(output);
 
         // 2. Access the Button defined in layout XML
         // and listen for it here
@@ -144,11 +122,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         updateButton = (Button) findViewById(R.id.update_button);
         updateButton.setOnClickListener(this);
+
+        updateView();
     }
 
-    private void updateView()
+    private String showPosition()
     {
-
         long time = telescope.getPosition().getTime() / 1000 / 86400;
 
         String output = "Height=" +
@@ -156,8 +135,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 "\nAzimuth=" +
                 telescope.getPosition().getAzimuth() +
                 "\nTimeFromVernalEquinox=" +
-                time;
+                time + "\n";
 
+        return(output);
+    }
+
+    private String showLocation()
+    {
+        String output = "Latitude=" +
+                gpsService.getLatitude() +
+                "\nLongitude=" +
+                gpsService.getLongitude() + "\n";
+
+        return(output);
+    }
+
+    private void updateView()
+    {
+
+        String output = showLocation() + showPosition();
         mainTextView.setText(output);
     }
 
@@ -172,6 +168,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.trace_off_button:
                 mainTextView.setText("Trace Off");
+                telescope.offTrace();
                 break;
 
             case R.id.update_button:

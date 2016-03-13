@@ -22,6 +22,7 @@ public class Telescope {
     double hSteps;
     double vSteps;
     Thread traceThread;
+    boolean a = false;
 
     public Telescope(BlueToothService myBtService) {
         control = new Control(myBtService);
@@ -32,10 +33,13 @@ public class Telescope {
 
         traceThread = new Thread(new Runnable() {
             public void run(){
-                trace();
+
+               trace();
             }
         });
+        traceThread.start();
     }
+
 
     public boolean isCalibrated() {
         return isCalibrated;
@@ -92,11 +96,14 @@ public class Telescope {
 
     private void trace() {
         while (true) {
-            try {
 
-                traceThread.sleep(1000);
+            try {
+                if(a) {
                 move();
+                traceThread.sleep(1000);
+                }
             } catch (InterruptedException e) {
+
                 break;
             }
         }
@@ -104,7 +111,11 @@ public class Telescope {
 
     public void onTrace() {
 
-        traceThread.start();
+        a = true;
     }
 
+    public void offTrace() {
+
+        a = false;
+    }
 }
