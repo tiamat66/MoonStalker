@@ -41,4 +41,52 @@
         android:layout_marginTop="20dp"
         android:layout_marginLeft="20dp"
         android:text="@string/button3" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="@string/button4" />
+
+    <Button
+        android:id="@+id/move_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="@string/button5" />
+
+    <!-- Displays keyboard when touched -->
+    <EditText
+        android:id="@+id/main_edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:hint="@string/hint" />
+    <EditText
+        android:id="@+id/ra_edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:hint="@string/editRA" />
+
+    <EditText
+        android:id="@+id/dec_edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:hint="@string/editDEC" />
+
+    <!-- List whose dataset is defined in code with an adapter -->
+    <ListView
+        android:id="@+id/main_listview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="20dp"/>
 </LinearLayout>

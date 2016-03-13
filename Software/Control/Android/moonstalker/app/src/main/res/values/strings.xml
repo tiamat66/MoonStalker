@@ -4,4 +4,9 @@
     <string name="button1">Trace</string>
     <string name="button2">Trace Off</string>
     <string name="button3">Update</string>
+    <string name="button4">Click Me</string>
+    <string name="button5">Move Telescope</string>
+    <string name="hint">A Name</string>
+    <string name="editRA">RA     </string>
+    <string name="editDEC">DEC    </string>
 </resources>

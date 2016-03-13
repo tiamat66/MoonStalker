@@ -64,6 +64,14 @@ public class Position {
         return height;
     }
 
+    public double getRa() {
+        return ra;
+    }
+
+    public double getDec() {
+        return dec;
+    }
+
     private void equatorialToSferical()
     {
         double ra_tmp =  ra;
