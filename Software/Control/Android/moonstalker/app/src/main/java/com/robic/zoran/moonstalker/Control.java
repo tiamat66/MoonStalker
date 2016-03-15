@@ -9,16 +9,24 @@ import android.util.Log;
 public class Control {
 
     private static final String TAG = "control";
+    private static final String RDY = "<RDY>";
     BlueToothService BTservice;
     private String inMessage;
     private String outMessage;
-    //For debugging msg processing we have simple Arduino emulator
-    ArduinoDebug arduinoDebug;
+    Thread thread;
+    Telescope telescope;
 
-    public Control(BlueToothService myBTservice) {
+    public Control(BlueToothService myBTservice, Telescope myTelescope) {
 
         BTservice = myBTservice;
-        arduinoDebug = new ArduinoDebug();
+        telescope = myTelescope;
+        thread = new Thread(new Runnable() {
+            public void run(){
+
+                waitForMsg();
+            }
+        });
+        thread.start();
 
         Log.d(TAG, "...Control created...");
     }
@@ -28,42 +36,33 @@ public class Control {
         // send <MV H,V>
         outMessage = "<MV " + h + "," + v + ">";
         Log.d(TAG, outMessage);
-
-        //TODO following line is just for Arduino emulator
-        outMessage = "<MV>";
-
         sendMessage(outMessage);
-
-        // wait for <RDY>
-        inMessage = "<RDY>";
-        Log.d(TAG, "...waiting for " + inMessage + "...");
-        waitForMsg(inMessage);
     }
 
     private void sendMessage(String msg) {
 
-        //TODO: Test the BlueTooth
-        //BTservice.sendMsg(msg);
-
-        //arduinoDebug.sendMsg(msg);
+        BTservice.write(msg);
     }
 
-    private void waitForMsg(String msg) {
+    private void waitForMsg() {
 
-        String rcvdMessage = "";
+        while (true) {
 
-        //TODO: Test the BlueTooth
-        //BTservice.waitForMsg(); //...thread waits for message from Arduino
-        //rcvdMessage = BTservice.getRcvdMsg();
+            try {
+                inMessage = BTservice.getRcvdMsg();
 
-        arduinoDebug.waitForMsg();
-        rcvdMessage = arduinoDebug.getRcvdMsg();
+                // TODO: Do different actions for different messages
+                if(inMessage == RDY) {
+                    telescope.setReady();
+                }
 
-        if (rcvdMessage == msg) {
-            Log.d(TAG, "..." + msg + " received...");
+                thread.sleep(1000);
+            } catch (InterruptedException e) {
+
+                break;
+            }
         }
-     }
-
+    }
 }
 
 

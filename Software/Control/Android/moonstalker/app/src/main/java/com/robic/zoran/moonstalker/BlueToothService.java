@@ -34,7 +34,7 @@ public class BlueToothService {
     private BluetoothDevice pairedDevice;
 
     static Handler h;
-    String rcvdMsg;
+    String rcvdMsg = "";
 
     public BlueToothService(MainActivity myMainActivity) {
 
@@ -217,6 +217,10 @@ public class BlueToothService {
     }
 
     public String getRcvdMsg() {
-        return rcvdMsg;
+
+        String msg = rcvdMsg;
+        rcvdMsg = "";
+
+        return(msg);
     }
 }

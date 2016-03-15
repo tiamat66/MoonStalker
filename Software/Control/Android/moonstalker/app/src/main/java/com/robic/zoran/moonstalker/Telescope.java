@@ -1,5 +1,7 @@
 package com.robic.zoran.moonstalker;
 
+import android.util.Log;
+
 /**
  * Created by zoran on 7.3.2016.
  */
@@ -7,6 +9,7 @@ public class Telescope {
     Position position;
     Control  control;
 
+    private static final String TAG="control1";
     private static final double POLARIS_RA =  0;
     private static final double POLARIS_DEC = 90;
     private static final double PRECISION = 2.0;
@@ -19,13 +22,15 @@ public class Telescope {
             BELT_TRANSMITION;
 
     boolean isCalibrated;
+    boolean isReady = true;
+    boolean isTracing = false;
     double hSteps;
     double vSteps;
     Thread traceThread;
-    boolean a = false;
+
 
     public Telescope(BlueToothService myBtService) {
-        control = new Control(myBtService);
+        control = new Control(myBtService, this);
         position = new Position();
         isCalibrated = false;
         hSteps = 0;
@@ -86,11 +91,16 @@ public class Telescope {
         if((Math.abs(hSteps) >= PRECISION) ||
                 (Math.abs(vSteps) >= PRECISION))
         {
-            cur_h_steps = (int)hSteps;
-            cur_v_steps = (int)vSteps;
-            hSteps -= cur_h_steps;
-            vSteps -= cur_v_steps;
-            control.move(cur_h_steps, cur_v_steps);
+            if(isReady) {
+                cur_h_steps = (int) hSteps;
+                cur_v_steps = (int) vSteps;
+                hSteps -= cur_h_steps;
+                vSteps -= cur_v_steps;
+                control.move(cur_h_steps, cur_v_steps);
+                clearReady();
+            } else {
+                Log.d(TAG, "Telescope is busy");
+            }
         }
     }
 
@@ -98,10 +108,10 @@ public class Telescope {
         while (true) {
 
             try {
-                if(a) {
-                move();
-                traceThread.sleep(1000);
+                if(isTracing) {
+                    move();
                 }
+                traceThread.sleep(1000);
             } catch (InterruptedException e) {
 
                 break;
@@ -111,11 +121,22 @@ public class Telescope {
 
     public void onTrace() {
 
-        a = true;
+        isTracing = true;
     }
 
     public void offTrace() {
 
-        a = false;
+        isTracing = false;
     }
+
+    public void setReady() {
+
+        isReady = true;
+    }
+
+    public void clearReady() {
+
+        isReady = false;
+    }
+
 }
