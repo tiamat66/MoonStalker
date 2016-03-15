@@ -328,6 +328,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.button:
+                /*
                 mainTextView.setText(mainEditText.getText().toString()
                         + " is learning Android development!");
                 // Also add that value to the list shown in the ListView
@@ -337,6 +338,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // 6. The text you'd like to share has changed,
                 // and you need to update
                 setShareIntent();
+                */
+                btService.write("Zoran+Maruša");
 
             default:
                 break;

@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.main_button:
                 mainTextView.setText("Sent message: " +
                         mainEditText.getText().toString());
-                //btService.sendMsg(mainEditText.getText().toString());
+                btService.write(mainEditText.getText().toString());
                 break;
             case R.id.button2:
                 btService.getPairedDevices();

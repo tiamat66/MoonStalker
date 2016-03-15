@@ -9,15 +9,12 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.UUID;
 
@@ -27,25 +24,13 @@ public class BlueToothService {
     // SDP UUID service
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final String NAME = "MOONSTALKER";
-
-    // MAC-address of Bluetooth module (you must edit this line)
-    private static String address = "00:15:FF:F2:19:00";
-    private static final int RECIEVE_MESSAGE = 1; // Status  for Handler
-
+    // Status  for Handler
+    private static final int RECIEVE_MESSAGE = 1;
     private BluetoothAdapter btAdapter = null;
-    private BluetoothSocket btSocket = null;
-    private OutputStream outStream = null;
     private MainActivity mainActivity;
-    private boolean isBtPresent = false;
-    private boolean isBtPOn = false;
-    private StringBuilder sb = new StringBuilder();
-    //private ConnectedThread mConnectedThread = null;
-    private Set<BluetoothDevice> pairedDevices;
     private AcceptThread acceptThread;
-
-
-    TextView txtArduino;
-    static Handler h;
+    private BtReadWrite btReadWrite;
+    Handler h;
     String rcvdMsg;
 
     public BlueToothService(MainActivity myMainActivity) {
@@ -54,26 +39,19 @@ public class BlueToothService {
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         acceptThread = new AcceptThread();
 
-        /*
         h = new Handler() {
             public void handleMessage(android.os.Message msg) {
                 switch (msg.what) {
-                    case RECIEVE_MESSAGE:                                                   // if receive massage
+                    case RECIEVE_MESSAGE:
                         byte[] readBuf = (byte[]) msg.obj;
-                        String strIncom = new String(readBuf, 0, msg.arg1);                 // create string from bytes array
-                        sb.append(strIncom);                                                // append string
-                        int endOfLineIndex = sb.indexOf("\r\n");                            // determine the end-of-line
-                        if (endOfLineIndex > 0) {                                            // if end-of-line,
-                            String sbprint = sb.substring(0, endOfLineIndex);               // extract string
-                            sb.delete(0, sb.length());                                      // and clear
-                            txtArduino.setText("Data from Arduino: " + sbprint);            // update TextView
-                            rcvdMsg = sbprint;
-                        }
-                        //Log.d(TAG, "...String:"+ sb.toString() +  "Byte:" + msg.arg1 + "...");
+                        rcvdMsg = new String(readBuf, 0, msg.arg1);
+                        Log.d(TAG, "Message received from Client:");
+                        Log.d(TAG, rcvdMsg);
                         break;
                 }
             };
-        };*/
+        };
+
         checkBTState();
     }
 
@@ -81,14 +59,10 @@ public class BlueToothService {
 
         // Check for Bluetooth support and then check to make sure it is turned on
         // Emulator doesn't support Bluetooth and will return null
-        Log.d(TAG, "...enter checkBTState...");
         if (btAdapter == null) {
-            isBtPresent = false;
             errorExit("Fatal Error", "Bluetooth not support");
         } else {
-            isBtPresent = true;
             if (btAdapter.isEnabled()) {
-                isBtPOn = true;
                 Log.d(TAG, "...Bluetooth ON...");
             } else {
                 //Prompt user to turn on Bluetooth
@@ -107,15 +81,12 @@ public class BlueToothService {
 
     public void getPairedDevices() {
 
-        Log.d(TAG, "...Enter getPairedDevices...");
-        pairedDevices = btAdapter.getBondedDevices();
+        Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
         // If there are paired devices
         if (pairedDevices.size() > 0) {
             // Loop through paired devices
             for (BluetoothDevice device : pairedDevices) {
-                // Add the name and address to an array adapter to show in a ListView
                 Log.d(TAG, device.getName() + "\n" + device.getAddress());
-                //mArrayAdapter.add(device.getName() + "\n" + device.getAddress());
             }
         }
     }
@@ -131,7 +102,7 @@ public class BlueToothService {
             try {
                 // MY_UUID is the app's UUID string, also used by the client code
                 tmp = btAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
-            } catch (IOException e) { }
+            } catch (IOException ignored) { }
             mmServerSocket = tmp;
         }
 
@@ -146,8 +117,8 @@ public class BlueToothService {
                 }
                 // If a connection was accepted
                 if (socket != null) {
-                    // Do work to manage the connection (in a separate thread)
-                    //manageConnectedSocket(socket);
+                    btReadWrite = new BtReadWrite(socket);
+                    btReadWrite.start();
                     Log.d(TAG, "...Connection was accepted...");
                     try {
                         mmServerSocket.close();
@@ -163,7 +134,66 @@ public class BlueToothService {
         public void cancel() {
             try {
                 mmServerSocket.close();
-            } catch (IOException e) { }
+            } catch (IOException ignored) { }
+        }
+    }
+
+    private class BtReadWrite extends Thread {
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+
+        public BtReadWrite(BluetoothSocket socket) {
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            // Get the input and output streams, using temp objects because
+            // member streams are final
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException ignored) { }
+
+            mmInStream = tmpIn;
+            if(mmInStream != null) {
+                Log.d(TAG, "...In Stream OK...");
+            }
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            byte[] buffer = new byte[256];  // buffer store for the stream
+            int bytes; // bytes returned from read()
+
+            // Keep listening to the InputStream until an exception occurs
+            while (true) {
+                try {
+                    // Read from the InputStream
+                    bytes = mmInStream.read(buffer);        // Get number of bytes and message in "buffer"
+                    Log.d(TAG, "...Readed" + bytes + " bytes...");
+                    h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();     // Send to message queue Handler
+                } catch (IOException e) {
+                    break;
+                }
+            }
+        }
+
+        /* Call this from the main activity to send data to the remote device */
+        public void write(String message) {
+            Log.d(TAG, "...Data to send: " + message + "...");
+            byte[] msgBuffer = message.getBytes();
+            try {
+                mmOutStream.write(msgBuffer);
+            } catch (IOException e) {
+                Log.d(TAG, "...Error data send: " + e.getMessage() + "...");
+            }
+        }
+    }
+
+    public void write(String msg) {
+
+        if(btReadWrite != null) {
+            btReadWrite.write(msg);
+            Log.d(TAG, "Message sent to Client: " + msg);
         }
     }
 
