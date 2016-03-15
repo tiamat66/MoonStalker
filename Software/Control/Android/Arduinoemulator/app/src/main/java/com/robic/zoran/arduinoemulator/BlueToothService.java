@@ -6,6 +6,7 @@ package com.robic.zoran.arduinoemulator;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Build;
@@ -17,15 +18,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.Set;
 import java.util.UUID;
 
 public class BlueToothService {
 
     private static final String TAG = "bluetooth1";
-    // SPP UUID service
+    // SDP UUID service
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private static final String NAME = "MOONSTALKER";
+
     // MAC-address of Bluetooth module (you must edit this line)
-    private static String address = "00:15:FF:F2:19:5F";
+    private static String address = "00:15:FF:F2:19:00";
     private static final int RECIEVE_MESSAGE = 1; // Status  for Handler
 
     private BluetoothAdapter btAdapter = null;
@@ -35,7 +39,10 @@ public class BlueToothService {
     private boolean isBtPresent = false;
     private boolean isBtPOn = false;
     private StringBuilder sb = new StringBuilder();
-    private ConnectedThread mConnectedThread = null;
+    //private ConnectedThread mConnectedThread = null;
+    private Set<BluetoothDevice> pairedDevices;
+    private AcceptThread acceptThread;
+
 
     TextView txtArduino;
     static Handler h;
@@ -45,7 +52,9 @@ public class BlueToothService {
 
         mainActivity = myMainActivity;
         btAdapter = BluetoothAdapter.getDefaultAdapter();
+        acceptThread = new AcceptThread();
 
+        /*
         h = new Handler() {
             public void handleMessage(android.os.Message msg) {
                 switch (msg.what) {
@@ -64,7 +73,7 @@ public class BlueToothService {
                         break;
                 }
             };
-        };
+        };*/
         checkBTState();
     }
 
@@ -86,19 +95,8 @@ public class BlueToothService {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 mainActivity.startActivityForResult(enableBtIntent, 1);
             }
-        }
-    }
 
-    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
-        if(Build.VERSION.SDK_INT >= 10){
-            try {
-                final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
-                return (BluetoothSocket) m.invoke(device, MY_UUID);
-            } catch (Exception e) {
-                Log.e(TAG, "Could not create Insecure RFComm Connection",e);
-            }
         }
-        return  device.createRfcommSocketToServiceRecord(MY_UUID);
     }
 
     private void errorExit(String title, String message) {
@@ -107,147 +105,71 @@ public class BlueToothService {
         mainActivity.finish();
     }
 
-    public void onResume() {
+    public void getPairedDevices() {
 
-        Log.d(TAG, "...onResume - try connect...");
-
-        // Set up a pointer to the remote node using it's address.
-        BluetoothDevice device = btAdapter.getRemoteDevice(address);
-
-        // Two things are needed to make a connection:
-        //   A MAC address, which we got above.
-        //   A Service ID or UUID.  In this case we are using the
-        //     UUID for SPP.
-
-        try {
-            btSocket = createBluetoothSocket(device);
-        } catch (IOException e1) {
-            errorExit("Fatal Error", "In onResume() and socket create failed: " + e1.getMessage() + ".");
-        }
-
-        // Discovery is resource intensive.  Make sure it isn't going on
-        // when you attempt to connect and pass your message.
-        btAdapter.cancelDiscovery();
-
-        // Establish the connection.  This will block until it connects.
-        Log.d(TAG, "...Connecting...");
-        try {
-            btSocket.connect();
-            Log.d(TAG, "...Connection ok...");
-        } catch (IOException e) {
-            try {
-                btSocket.close();
-            } catch (IOException e2) {
-                errorExit("Fatal Error", "In onResume() and unable to close socket during connection failure" + e2.getMessage() + ".");
+        Log.d(TAG, "...Enter getPairedDevices...");
+        pairedDevices = btAdapter.getBondedDevices();
+        // If there are paired devices
+        if (pairedDevices.size() > 0) {
+            // Loop through paired devices
+            for (BluetoothDevice device : pairedDevices) {
+                // Add the name and address to an array adapter to show in a ListView
+                Log.d(TAG, device.getName() + "\n" + device.getAddress());
+                //mArrayAdapter.add(device.getName() + "\n" + device.getAddress());
             }
         }
-
-        // Create a data stream so we can talk to server.
-        Log.d(TAG, "...Create Socket...");
-
-        mConnectedThread = new ConnectedThread(btSocket);
-        mConnectedThread.start();
     }
 
-    public void onPause() {
+    // This acts as Server
+    private class AcceptThread extends Thread {
+        private final BluetoothServerSocket mmServerSocket;
 
-        Log.d(TAG, "...In onPause()...");
-
-        if (outStream != null) {
+        public AcceptThread() {
+            // Use a temporary object that is later assigned to mmServerSocket,
+            // because mmServerSocket is final
+            BluetoothServerSocket tmp = null;
             try {
-                outStream.flush();
-            } catch (IOException e) {
-                errorExit("Fatal Error", "In onPause() and failed to flush output stream: " + e.getMessage() + ".");
-            }
-        }
-
-        try     {
-            btSocket.close();
-        } catch (IOException e2) {
-            errorExit("Fatal Error", "In onPause() and failed to close socket." + e2.getMessage() + ".");
-        }
-    }
-
-    public boolean isBtPOn() {
-        return isBtPOn;
-    }
-
-    public boolean isBtPresent() {
-        return isBtPresent;
-    }
-
-    public void sendMsg(String msg) {
-
-        if(mConnectedThread != null) {
-            Log.d(TAG, "...Sending message:" + msg + "...");
-            mConnectedThread.write(msg);
-        }
-    }
-
-    public void waitForMsg() {
-
-        if(mConnectedThread != null) {
-            mConnectedThread.run();
-        }
-    }
-
-    public String getRcvdMsg() {
-        return rcvdMsg;
-    }
-
-    private class ConnectedThread extends Thread {
-        private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
-
-        public ConnectedThread(BluetoothSocket socket) {
-            InputStream tmpIn = null;
-            OutputStream tmpOut = null;
-
-            // Get the input and output streams, using temp objects because
-            // member streams are final
-            try {
-                tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
+                // MY_UUID is the app's UUID string, also used by the client code
+                tmp = btAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
             } catch (IOException e) { }
-
-            mmInStream = tmpIn;
-            mmOutStream = tmpOut;
+            mmServerSocket = tmp;
         }
 
         public void run() {
-            byte[] buffer = new byte[256];  // buffer store for the stream
-            int bytes; // bytes returned from read()
-
-            // Keep listening to the InputStream until an exception occurs
+            BluetoothSocket socket = null;
+            // Keep listening until exception occurs or a socket is returned
             while (true) {
                 try {
-                    // Read from the InputStream
-                    bytes = mmInStream.read(buffer);        // Get number of bytes and message in "buffer"
-                    h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();     // Send to message queue Handler
+                    socket = mmServerSocket.accept();
                 } catch (IOException e) {
+                    break;
+                }
+                // If a connection was accepted
+                if (socket != null) {
+                    // Do work to manage the connection (in a separate thread)
+                    //manageConnectedSocket(socket);
+                    Log.d(TAG, "...Connection was accepted...");
+                    try {
+                        mmServerSocket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 }
             }
         }
 
-        /* Call this from the main activity to send data to the remote device */
-        public void write(String message) {
-            Log.d(TAG, "...Data to send: " + message + "...");
-
-            byte[] msgBuffer = message.getBytes();
+        /** Will cancel the listening socket, and cause the thread to finish */
+        public void cancel() {
             try {
-                mmOutStream.write(msgBuffer);
-            } catch (IOException e) {
-                {
-                    String msg = "In onResume() and an exception occurred during write: " + e.getMessage();
-                    if (address.equals("00:00:00:00:00:00"))
-                        msg = msg + ".\n\nUpdate your server address from 00:00:00:00:00:00 to the correct address on line 35 in the java code";
-                    msg = msg + ".\n\nCheck that the SPP UUID: " + MY_UUID.toString() + " exists on server.\n\n";
-
-                    errorExit("Fatal Error", msg);
-                }
-            }
+                mmServerSocket.close();
+            } catch (IOException e) { }
         }
     }
 
+    public void startBtServer() {
+
+        acceptThread.start();
+        Log.d(TAG, "...Bluetooth Server Started...");
+    }
 }

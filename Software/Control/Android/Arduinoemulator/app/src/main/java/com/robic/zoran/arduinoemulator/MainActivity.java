@@ -21,6 +21,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     BlueToothService btService;
     TextView mainTextView;
     Button sendButton;
+    Button devButton;
+    Button serButton;
     EditText mainEditText;
 
     @Override
@@ -63,14 +65,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onResume() {
         super.onResume();
 
-        btService.onResume();
+        //btService.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        btService.onPause();
+        //btService.onPause();
     }
 
 
@@ -79,14 +81,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         sendButton = (Button) findViewById(R.id.main_button);
         sendButton.setOnClickListener(this);
+
+        devButton = (Button) findViewById(R.id.button2);
+        devButton.setOnClickListener(this);
+
+        serButton = (Button) findViewById(R.id.button3);
+        serButton.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
 
-        mainTextView.setText("Sent message: " +
-                mainEditText.getText().toString());
+        switch (v.getId()) {
 
-        btService.sendMsg(mainEditText.getText().toString());
+            case R.id.main_button:
+                mainTextView.setText("Sent message: " +
+                        mainEditText.getText().toString());
+                //btService.sendMsg(mainEditText.getText().toString());
+                break;
+            case R.id.button2:
+                btService.getPairedDevices();
+                break;
+            case R.id.button3:
+                btService.startBtServer();
+                break;
+        }
     }
+
 }

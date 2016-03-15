@@ -45,7 +45,7 @@ public class Control {
         //TODO: Test the BlueTooth
         //BTservice.sendMsg(msg);
 
-        arduinoDebug.sendMsg(msg);
+        //arduinoDebug.sendMsg(msg);
     }
 
     private void waitForMsg(String msg) {

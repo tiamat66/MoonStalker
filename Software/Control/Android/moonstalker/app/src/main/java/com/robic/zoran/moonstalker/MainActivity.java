@@ -41,6 +41,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button updateButton;
     Button moveButton;
     Button mButton;
+    Button button6;
+    Button button7;
 
     ListView mainListView;
     ArrayAdapter mArrayAdapter;
@@ -93,14 +95,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onResume() {
         super.onResume();
 
-        btService.onResume();
+        //btService.onResume();
     }
 
     //@Override
     public void onPause() {
         super.onPause();
 
-        btService.onPause();
+        //btService.onPause();
     }
 
     @Override
@@ -168,6 +170,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mButton = (Button) findViewById(R.id.button);
         mButton.setOnClickListener(this);
+
+        button6 = (Button) findViewById(R.id.button6);
+        button6.setOnClickListener(this);
+
+        button7 = (Button) findViewById(R.id.button7);
+        button7.setOnClickListener(this);
+
 
         // 3. Access the EditText defined in layout XML
         mainEditText = (EditText) findViewById(R.id.main_edittext);
@@ -308,6 +317,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 double dec = Double.valueOf(sDec).doubleValue();
 
                 telescope.onMove(ra, dec);
+                break;
+
+            case R.id.button6:
+                btService.getPairedDevices();
+                break;
+
+            case R.id.button7:
+                btService.connect();
                 break;
 
             case R.id.button:

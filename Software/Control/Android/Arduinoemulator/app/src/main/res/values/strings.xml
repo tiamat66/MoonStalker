@@ -1,6 +1,9 @@
 <resources>
-    <string name="app_name">Arduino emulator</string>
+    <string name="app_name">Arduino emulator V.1.1</string>
     <string name="action_settings">Settings</string>
     <string name="button1">Send msg</string>
+    <string name="button2">Devices</string>
+    <string name="button3">Start BT server</string>
     <string name="edit1">Msg</string>
+
 </resources>
