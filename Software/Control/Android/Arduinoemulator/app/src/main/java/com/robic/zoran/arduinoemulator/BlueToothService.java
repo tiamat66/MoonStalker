@@ -33,7 +33,7 @@ public class BlueToothService {
     Handler h;
     String rcvdMsg;
 
-    public BlueToothService(MainActivity myMainActivity) {
+    public BlueToothService(final MainActivity myMainActivity) {
 
         mainActivity = myMainActivity;
         btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -47,6 +47,8 @@ public class BlueToothService {
                         rcvdMsg = new String(readBuf, 0, msg.arg1);
                         Log.d(TAG, "Message received from Client:");
                         Log.d(TAG, rcvdMsg);
+                        myMainActivity.print(rcvdMsg);
+                        handleMsg();
                         break;
                 }
             };
@@ -201,5 +203,10 @@ public class BlueToothService {
 
         acceptThread.start();
         Log.d(TAG, "...Bluetooth Server Started...");
+    }
+
+    private void handleMsg() {
+
+        write("<RDY>");
     }
 }

@@ -52,8 +52,8 @@ public class GPSService implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        latitude = location.getLatitude();
-        longitude = location.getLongitude();
+       // latitude = location.getLatitude();
+       // longitude = location.getLongitude();
 
         //I make a log to see the results
         Log.e("MY CURRENT LOCATION", myLocation);

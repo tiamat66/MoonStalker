@@ -36,7 +36,7 @@ public class BlueToothService {
     static Handler h;
     String rcvdMsg = "";
 
-    public BlueToothService(MainActivity myMainActivity) {
+    public BlueToothService(final MainActivity myMainActivity) {
 
         mainActivity = myMainActivity;
         btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -47,8 +47,10 @@ public class BlueToothService {
                     case RECIEVE_MESSAGE:
                         byte[] readBuf = (byte[]) msg.obj;
                         rcvdMsg = new String(readBuf, 0, msg.arg1);
+
                         Log.d(TAG, "Message received from Arduino:");
                         Log.d(TAG, rcvdMsg);
+                        myMainActivity.getTelescope().getControl().processMsg(rcvdMsg);
                         break;
                 }
             };
@@ -84,13 +86,11 @@ public class BlueToothService {
 
     private class ConnectThread extends Thread {
         private final BluetoothSocket mmSocket;
-        private final BluetoothDevice mmDevice;
 
         public ConnectThread(BluetoothDevice device) {
             // Use a temporary object that is later assigned to mmSocket,
             // because mmSocket is final
             BluetoothSocket tmp = null;
-            mmDevice = device;
 
             // Get a BluetoothSocket to connect with the given BluetoothDevice
             try {
@@ -119,8 +119,6 @@ public class BlueToothService {
             // Do work to manage the connection (in a separate thread)
             btReadWrite = new BtReadWrite(mmSocket);
             btReadWrite.start();
-
-            //manageConnectedSocket(mmSocket);
         }
 
         /** Will cancel an in-progress connection, and close the socket */
@@ -131,7 +129,7 @@ public class BlueToothService {
         }
     }
 
-    public void getPairedDevices() {
+    private void getPairedDevices() {
 
         Log.d(TAG, "...Enter getPairedDevices...");
         Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
@@ -144,6 +142,8 @@ public class BlueToothService {
     }
 
     public void connect() {
+
+        getPairedDevices();
 
         if(pairedDevice == null) {
             Log.d(TAG, "...No paired device...");
@@ -213,14 +213,7 @@ public class BlueToothService {
     }
 
     public boolean isBtPresent() {
+
         return isBtPresent;
-    }
-
-    public String getRcvdMsg() {
-
-        String msg = rcvdMsg;
-        rcvdMsg = "";
-
-        return(msg);
     }
 }

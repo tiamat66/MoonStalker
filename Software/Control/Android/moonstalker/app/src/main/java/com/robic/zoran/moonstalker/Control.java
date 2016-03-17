@@ -11,23 +11,13 @@ public class Control {
     private static final String TAG = "control";
     private static final String RDY = "<RDY>";
     BlueToothService BTservice;
-    private String inMessage;
     private String outMessage;
-    Thread thread;
     Telescope telescope;
 
     public Control(BlueToothService myBTservice, Telescope myTelescope) {
 
         BTservice = myBTservice;
         telescope = myTelescope;
-        thread = new Thread(new Runnable() {
-            public void run(){
-
-                waitForMsg();
-            }
-        });
-        thread.start();
-
         Log.d(TAG, "...Control created...");
     }
 
@@ -36,31 +26,20 @@ public class Control {
         // send <MV H,V>
         outMessage = "<MV " + h + "," + v + ">";
         Log.d(TAG, outMessage);
-        sendMessage(outMessage);
+        BTservice.write(outMessage);
     }
 
-    private void sendMessage(String msg) {
+    public void processMsg(String msg) {
 
-        BTservice.write(msg);
-    }
+        Log.d(TAG, "...process message: " + msg + RDY + "...");
+        if(msg.equals(RDY)) {
 
-    private void waitForMsg() {
+            Log.d(TAG, "Process RDY message from Arduino)");
 
-        while (true) {
+            telescope.setReady();
+        } else {
 
-            try {
-                inMessage = BTservice.getRcvdMsg();
-
-                // TODO: Do different actions for different messages
-                if(inMessage == RDY) {
-                    telescope.setReady();
-                }
-
-                thread.sleep(1000);
-            } catch (InterruptedException e) {
-
-                break;
-            }
+            Log.d(TAG, "Unknown message received from Arduino");
         }
     }
 }

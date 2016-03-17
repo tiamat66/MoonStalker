@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setSupportActionBar(toolbar);
 
         btService = new  BlueToothService(this);
-        mainTextView = (TextView) findViewById(R.id.main_textview);
         mainEditText = (EditText) findViewById(R.id.edittext_msg);
 
         main();
@@ -65,14 +64,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onResume() {
         super.onResume();
 
-        //btService.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        //btService.onPause();
     }
 
 
@@ -80,13 +77,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void main() {
 
         sendButton = (Button) findViewById(R.id.main_button);
+        assert sendButton != null;
         sendButton.setOnClickListener(this);
 
         devButton = (Button) findViewById(R.id.button2);
+        assert devButton != null;
         devButton.setOnClickListener(this);
 
         serButton = (Button) findViewById(R.id.button3);
+        assert serButton != null;
         serButton.setOnClickListener(this);
+
+        print("Ti boga ždevca mladi moš!!!!");
     }
 
     @Override
@@ -106,6 +108,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 btService.startBtServer();
                 break;
         }
+    }
+
+    public void print(String msg) {
+
+        mainTextView = (TextView) findViewById(R.id.main_textview);
+        assert mainTextView == null;
+
+        mainTextView.setText(msg);
     }
 
 }

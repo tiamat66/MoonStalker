@@ -6,9 +6,9 @@
     <string name="button3">Update</string>
     <string name="button4">Click Me</string>
     <string name="button5">Move Telescope</string>
-    <string name="button6">Get paired device</string>
+    <!-- <string name="button6">Get paired device</string> -->
     <string name="button7">BT connect</string>
-    <string name="hint">A Name</string>
+    <!-- <string name="hint">A Name</string> -->
     <string name="editRA">RA     </string>
     <string name="editDEC">DEC    </string>
 </resources>

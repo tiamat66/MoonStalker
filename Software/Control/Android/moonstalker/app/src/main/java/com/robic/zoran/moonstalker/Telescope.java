@@ -97,6 +97,7 @@ public class Telescope {
                 hSteps -= cur_h_steps;
                 vSteps -= cur_v_steps;
                 control.move(cur_h_steps, cur_v_steps);
+
                 clearReady();
             } else {
                 Log.d(TAG, "Telescope is busy");
@@ -139,4 +140,9 @@ public class Telescope {
         isReady = false;
     }
 
+    public Control getControl() {
+
+        assert control == null;
+        return control;
+    }
 }
