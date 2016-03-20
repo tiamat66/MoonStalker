@@ -13,7 +13,7 @@ public class Position {
     private static final int VTSK_YEAR = 31536000;
     private static final int RA_OFFSET= 9 * 15;
     //Vernal equinox time
-    private static final int VEQ_YEAR = 2015;
+    private static final int VEQ_YEAR = 2016;
     private static final int VEQ_MONTH = 2;
     private static final int VEQ_DAY = 20;
     private static final int VEQ_HOUR = 5;

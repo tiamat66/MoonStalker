@@ -257,14 +257,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private String showPosition()
     {
-        long time = telescope.getPosition().getTime() / 1000 / 86400;
+
+        long timeH = telescope.getPosition().getTime() / 1000 / 3600;
+        long timeS = telescope.getPosition().getTime() / 1000;
+
 
         String output = "Height=" +
                 telescope.getPosition().getHeight() +
                 "\nAzimuth=" +
                 telescope.getPosition().getAzimuth() +
                 "\nTimeFromVernalEquinox=" +
-                time +
+                timeS + " s, " + timeH + " hours" +
                 "\nRA=" +
                 telescope.getPosition().getRa() +
                 "\nDEC=" +
@@ -338,7 +341,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // and you need to update
                 setShareIntent();
                 */
-                btService.write("Zoran+Maruša");
+                //btService.write("Zoran+Maruša");
+                telescope.getControl().btry();
 
             default:
                 break;

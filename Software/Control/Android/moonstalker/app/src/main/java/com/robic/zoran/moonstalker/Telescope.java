@@ -26,6 +26,7 @@ public class Telescope {
     boolean isTracing = false;
     double hSteps;
     double vSteps;
+    double btryVoltage;
     Thread traceThread;
 
 
@@ -67,6 +68,14 @@ public class Telescope {
         position.setRa(ra);
         position.setDec(dec);
         move();
+    }
+
+    public double getBtryVoltage() {
+        return btryVoltage;
+    }
+
+    public void setBtryVoltage(double btryVoltage) {
+        this.btryVoltage = btryVoltage;
     }
 
     private void move()
@@ -145,4 +154,6 @@ public class Telescope {
         assert control == null;
         return control;
     }
+
+
 }

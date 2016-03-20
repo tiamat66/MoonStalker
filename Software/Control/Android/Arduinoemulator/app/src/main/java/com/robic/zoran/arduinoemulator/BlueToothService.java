@@ -21,6 +21,23 @@ import java.util.UUID;
 public class BlueToothService {
 
     private static final String TAG = "bluetooth1";
+
+    // Delimiters
+    private static final String SM = "<";
+    private static final String EM = ">";
+
+    //Messages
+    //IN
+    private static final String MOVE = "MV";
+    private static final String ST = "ST?";
+    private static final String BTRY = "BTRY?";
+
+    //OUT
+    private static final String RDY = "RDY";
+    private static final String NOT_RDY = "NOT_RDY";
+    private static final String BTRY_RES = "BTRY";
+
+
     // SDP UUID service
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final String NAME = "MOONSTALKER";
@@ -32,6 +49,7 @@ public class BlueToothService {
     private BtReadWrite btReadWrite;
     Handler h;
     String rcvdMsg;
+    String outMessage;
 
     public BlueToothService(final MainActivity myMainActivity) {
 
@@ -48,7 +66,7 @@ public class BlueToothService {
                         Log.d(TAG, "Message received from Client:");
                         Log.d(TAG, rcvdMsg);
                         myMainActivity.print(rcvdMsg);
-                        handleMsg();
+                        processMsg(rcvdMsg);
                         break;
                 }
             };
@@ -205,8 +223,68 @@ public class BlueToothService {
         Log.d(TAG, "...Bluetooth Server Started...");
     }
 
-    private void handleMsg() {
+    private void processMsg(String msg) {
 
-        write("<RDY>");
+        //MV
+        if(chkMsg(msg, MOVE)) {
+
+            Log.d(TAG, "Process MV message from Client)");
+            rdy();
+            return;
+        }
+
+        //ST
+        if(chkMsg(msg, ST)) {
+
+            Log.d(TAG, "Process STATUS message from Client)");
+            notRdy();
+            return;
+        }
+
+        if(chkMsg(msg, BTRY)) {
+
+            Log.d(TAG, "Process STATUS message from Client)");
+            btryRes();
+            return;
+        }
+
+        Log.d(TAG, "Unknown message received from Arduino");
+    }
+
+    private boolean chkMsg(String recMsg, String expMsg)
+    {
+
+        recMsg = recMsg.substring(1, 1+expMsg.length());
+        return(recMsg.equals(expMsg));
+    }
+
+    private void rdy() {
+
+        // send <RDY>
+        outMessage = SM +
+                RDY +
+                EM;
+        Log.d(TAG, outMessage);
+        write(outMessage);
+    }
+
+    private void notRdy() {
+
+        // send <NOT_RDY>
+        outMessage = SM +
+                NOT_RDY +
+                EM;
+        Log.d(TAG, outMessage);
+        write(outMessage);
+    }
+
+    private void btryRes() {
+
+        // send <BTRY>
+        outMessage = SM +
+                BTRY_RES + " 11.4V" +
+                EM;
+        Log.d(TAG, outMessage);
+        write(outMessage);
     }
 }
