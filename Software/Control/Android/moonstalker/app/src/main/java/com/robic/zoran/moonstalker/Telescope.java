@@ -70,12 +70,12 @@ public class Telescope {
         move();
     }
 
-    public double getBtryVoltage() {
-        return btryVoltage;
-    }
-
     public void setBtryVoltage(double btryVoltage) {
         this.btryVoltage = btryVoltage;
+    }
+
+    public double getBtryVoltage() {
+        return btryVoltage;
     }
 
     private void move()

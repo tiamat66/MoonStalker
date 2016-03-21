@@ -28,6 +28,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
         AdapterView.OnItemClickListener {
 
+    private static final String TAG = "main";
     private static final String PREFS = "prefs";
     private static final String PREF_NAME = "Zoran";
     SharedPreferences mSharedPreferences;
@@ -343,6 +344,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 */
                 //btService.write("Zoran+Maruša");
                 telescope.getControl().btry();
+                double tmp1 = telescope.getBtryVoltage();
+                Log.d(TAG, "BATTERY=" + tmp1);
 
             default:
                 break;

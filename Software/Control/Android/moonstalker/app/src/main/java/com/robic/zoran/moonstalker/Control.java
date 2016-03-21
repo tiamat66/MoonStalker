@@ -15,16 +15,16 @@ public class Control {
 
     //Messages
     //IN
-    private static final String RDY = "RDY";
-    private static final String NOT_RDY = "NOT_RDY";
-    private static final String BTRY_LOW = "BTRY_LOW";
-    private static final String FATAL_ERROR = "FATAL_ERROR";
-    private static final String BTRY_RESULT = "BTRY";
+    private static final String RDY =           "RDY";
+    private static final String NOT_RDY =       "NOT_RDY";
+    private static final String BTRY_LOW =      "BTRY_LOW";
+    private static final String FATAL_ERROR =   "FATAL_ERROR";
+    private static final String BTRY_RESULT =   "BTRY";
 
     //OUT
-    private static final String MOVE = "MV";
-    private static final String ST = "ST?";
-    private static final String BTRY = "BTRY?";
+    private static final String MOVE =  "MV";
+    private static final String ST =    "ST?";
+    private static final String BTRY =  "BTRY?";
 
 
     BlueToothService BTservice;
@@ -92,7 +92,7 @@ public class Control {
         if(chkMsg(msg, BTRY_RESULT)) {
 
             Log.d(TAG, "Process BTRY_RESULT message from Arduino");
-
+            btryVoltage(msg, BTRY_RESULT);
             return;
         }
 
@@ -118,6 +118,13 @@ public class Control {
 
         recMsg = recMsg.substring(1, 1+expMsg.length());
         return(recMsg.equals(expMsg));
+    }
+
+    private void btryVoltage(String recMsg, String expMsg) {
+
+        String btryVoltage;
+        btryVoltage = recMsg.substring(2+expMsg.length(), recMsg.length() -2);
+        telescope.setBtryVoltage(Double.valueOf(btryVoltage));
     }
 }
 
