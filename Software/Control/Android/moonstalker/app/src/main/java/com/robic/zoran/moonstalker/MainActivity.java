@@ -285,6 +285,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 "\nLongitude=" +
                 gpsService.getLongitude() + "\n";
 
+        if(gpsService.isGotLocation()) output += "GPS satelites FOUND\n";
+        else output += "GPS satelites NOT FOUND\n";
+
         return(output);
     }
 
@@ -364,4 +367,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return telescope;
     }
 
+    private class AstroObject {
+
+        private String sName = "";
+        private String sType = "";
+        private double dRa = 0.0;
+        private double dDec = 0.0;
+
+        AstroObject(String name, String type, double ra, double dec) {
+
+            sName = name;
+            sType = type;
+            dRa = ra;
+            dDec = dec;
+        }
+    }
 }
