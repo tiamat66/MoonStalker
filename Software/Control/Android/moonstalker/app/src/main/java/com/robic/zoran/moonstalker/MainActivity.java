@@ -29,11 +29,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         AdapterView.OnItemClickListener {
 
     private static final String TAG = "main";
-    private static final String PREFS = "prefs";
-    private static final String PREF_NAME = "Zoran";
-    SharedPreferences mSharedPreferences;
 
-    TextView mainTextView;
+    TextView objTextView;
+    TextView posTextView;
+    TextView locTextView;
 
     EditText raEditText;
     EditText decEditText;
@@ -41,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button traceButton;
     Button moveButton;
     Button connectButton;
+    Button updateButton;
+    Button traceOffButton;
 
     ListView mainListView;
     ArrayAdapter mArrayAdapter;
@@ -68,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             myThread = new Thread(new Runnable() {
                 public void run(){
-                    myTest();
+                    moonstalkerMain();
                 }
             });
 
@@ -118,33 +119,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareItem);
         }
 
-        // Create an Intent to share your content
-        setShareIntent();
-
         return true;
     }
 
-    private void setShareIntent() {
+    private void moonstalkerMain() {
 
-        if (mShareActionProvider != null) {
-
-            // create an Intent with the contents of the TextView
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("text/plain");
-            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Android Development");
-            shareIntent.putExtra(Intent.EXTRA_TEXT, mainTextView.getText());
-
-            // Make sure the provider knows
-            // it should work with that Intent
-            mShareActionProvider.setShareIntent(shareIntent);
-        }
-    }
-
-    private void myTest() {
-
-        String output;
-
-        mainTextView = (TextView) findViewById(R.id.main_textview);
+        objTextView = (TextView) findViewById(R.id.obj_textview);
+        posTextView = (TextView) findViewById(R.id.pos_textview);
+        locTextView = (TextView) findViewById(R.id.loc_textview);
 
         //Calibrate the telescope
         telescope.position.setLongitude(gpsService.getLongitude());
@@ -160,6 +142,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         connectButton = (Button) findViewById(R.id.connect_button);
         connectButton.setOnClickListener(this);
 
+        updateButton = (Button) findViewById(R.id.update_button);
+        updateButton.setOnClickListener(this);
+
+        traceOffButton = (Button) findViewById(R.id.trace_off_button);
+        traceOffButton.setOnClickListener(this);
+
         raEditText = (EditText) findViewById(R.id.ra_edittext);
         decEditText = (EditText) findViewById(R.id.dec_edittext);
 
@@ -174,115 +162,56 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Set this activity to react to list items being pressed
         mainListView.setOnItemClickListener(this);
 
-        // 7. Greet the user, or ask for their name if new
-        //displayWelcome();
-
         updateView();
-    }
-
-    private void displayWelcome() {
-
-        // Access the device's key-value storage
-        mSharedPreferences = getSharedPreferences(PREFS, MODE_PRIVATE);
-
-        // Read the user's name,
-        // or an empty string if nothing found
-        String name = mSharedPreferences.getString(PREF_NAME, "");
-
-        if (name.length() > 0) {
-
-            // If the name is valid, display a Toast welcoming them
-            Toast.makeText(this, "Welcome back, " + name + "!", Toast.LENGTH_LONG).show();
-        } else {
-
-            // otherwise, show a dialog to ask for their name
-            AlertDialog.Builder alert = new AlertDialog.Builder(this);
-            alert.setTitle("Hello!");
-            alert.setMessage("What is your name?");
-
-            // Create EditText for entry
-            final EditText input = new EditText(this);
-            alert.setView(input);
-
-            // Make an "OK" button to save the name
-            alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-
-            public void onClick(DialogInterface dialog, int whichButton) {
-
-                // Grab the EditText's input
-                String inputName = input.getText().toString();
-
-                // Put it into memory (don't forget to commit!)
-                SharedPreferences.Editor e = mSharedPreferences.edit();
-                e.putString(PREF_NAME, inputName);
-                e.commit();
-
-                // Welcome the new user
-                Toast.makeText(getApplicationContext(), "Welcome, " + inputName + "!", Toast.LENGTH_LONG).show();
-                }
-            });
-
-            // Make a "Cancel" button
-            // that simply dismisses the alert
-            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-
-                public void onClick(DialogInterface dialog, int whichButton) {}
-            });
-
-            alert.show();
-        }
     }
 
     private void addAstroObjects() {
 
-        mNameList.add("Zoran+Maruša");
-        mArrayAdapter.notifyDataSetChanged();
+        AstroObject obj;
 
-        mNameList.add("Sirius Star 15.0 -20.0");
+        obj = new AstroObject("Sirius", "star", 6.75, -16.72);
+        mNameList.add(obj.print());
         mArrayAdapter.notifyDataSetChanged();
-
     }
 
-    private String showPosition()
+    private void showPosition()
     {
+        String output;
 
-        long timeD = telescope.getPosition().getTime() / 1000 / 86400;
-        long timeS = telescope.getPosition().getTime() / 1000;
-
-
-        String output = "Height=" +
-                telescope.getPosition().getHeight() +
-                "\nAzimuth=" +
-                telescope.getPosition().getAzimuth() +
-                "\n" +
-                timeS + " s, " + timeD + " d" +
-                "\nRA=" +
-                telescope.getPosition().getRa() +
-                "\nDEC=" +
+        output =
+                "RA= " +
+                telescope.getPosition().getRa() + "\n" +
+                "DEC=" +
                 telescope.getPosition().getDec() + "\n";
+        objTextView.setText(output);
 
-        return(output);
+        output =
+                "Height= " +
+                telescope.getPosition().getHeight() + "\n" +
+                "Azimuth=" +
+                telescope.getPosition().getAzimuth() + "\n";
+        posTextView.setText(output);
     }
 
-    private String showLocation()
+    private void showLocation()
     {
         String output = "LAT=" +
-                gpsService.getLatitude() +
-                "\nLON=" +
+                gpsService.getLatitude() + "\n" +
+                "LON=" +
                 gpsService.getLongitude() + "\n";
 
-        if(gpsService.isGotLocation()) output += "GPS: locked\n";
-        else output += "GPS: not locked\n";
+        if(gpsService.isGotLocation())
+            output += "GPS: locked\n";
+        else
+            output += "GPS: not locked\n";
 
-        return(output);
+        locTextView.setText(output);
     }
 
-    private void updateView()
-    {
+    public void updateView() {
 
-        String output = showLocation() + showPosition();
-        mainTextView.setText(output);
-
+        showPosition();
+        showLocation();
         addAstroObjects();
     }
 
@@ -295,33 +224,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.trace_button:
-                mainTextView.setText("Trace on");
                 telescope.onTrace();
                 break;
 
             case R.id.move_button:
                 String sRa = raEditText.getText().toString();
                 String sDec = decEditText.getText().toString();
-                double ra = Double.valueOf(sRa).doubleValue();
-                double dec = Double.valueOf(sDec).doubleValue();
+                double ra = Double.valueOf(sRa);
+                double dec = Double.valueOf(sDec);
                 telescope.onMove(ra, dec);
                 break;
 
-            /*
+            case R.id.update_button:
+                updateView();
+                break;
 
-                // Also add that value to the list shown in the ListView
-//                mNameList.add(mainEditText.getText().toString());
-//                mArrayAdapter.notifyDataSetChanged();
+            case R.id.trace_off_button:
+                telescope.offTrace();
 
-                // 6. The text you'd like to share has changed,
-                // and you need to update
-                setShareIntent();
-
-                //btService.write("Zoran+Maruša");
-                telescope.getControl().btry();
-                double tmp1 = telescope.getBtryVoltage();
-                Log.d(TAG, "BATTERY=" + tmp1);
-*/
             default:
                 break;
         }
@@ -352,6 +272,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             sType = type;
             dRa = ra;
             dDec = dec;
+        }
+
+        public String print() {
+
+            String output =
+                    sName + "  " + dRa + "  " + dDec;
+            return output;
         }
     }
 

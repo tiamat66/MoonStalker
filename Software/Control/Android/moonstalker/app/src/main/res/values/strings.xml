@@ -6,4 +6,6 @@
     <string name="connect_button">Connect</string>
     <string name="edit_RA">RA</string>
     <string name="edit_DEC">DEC</string>
+    <string name="update_button">Update</string>
+    <string name="trace_off_button">Trace OFF</string>
 </resources>

@@ -29,7 +29,6 @@ public class Telescope {
     double btryVoltage;
     Thread traceThread;
 
-
     public Telescope(BlueToothService myBtService) {
         control = new Control(myBtService, this);
         position = new Position();
