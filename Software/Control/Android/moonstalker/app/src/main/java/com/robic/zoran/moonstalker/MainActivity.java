@@ -34,16 +34,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     SharedPreferences mSharedPreferences;
 
     TextView mainTextView;
+
     EditText raEditText;
     EditText decEditText;
-    //EditText mainEditText;
+
     Button traceButton;
-    Button traceOffButton;
-    Button updateButton;
     Button moveButton;
-    Button mButton;
-    //Button button6;
-    Button button7;
+    Button connectButton;
 
     ListView mainListView;
     ArrayAdapter mArrayAdapter;
@@ -154,47 +151,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         telescope.position.setLatitude(gpsService.getLatitude());
         telescope.calibration();
 
-        // 2. Access the Button defined in layout XML
-        // and listen for it here
         traceButton = (Button) findViewById(R.id.trace_button);
         traceButton.setOnClickListener(this);
-
-        traceOffButton = (Button) findViewById(R.id.trace_off_button);
-        traceOffButton.setOnClickListener(this);
-
-        updateButton = (Button) findViewById(R.id.update_button);
-        updateButton.setOnClickListener(this);
 
         moveButton = (Button) findViewById(R.id.move_button);
         moveButton.setOnClickListener(this);
 
-        mButton = (Button) findViewById(R.id.button);
-        mButton.setOnClickListener(this);
+        connectButton = (Button) findViewById(R.id.connect_button);
+        connectButton.setOnClickListener(this);
 
-        /*button6 = (Button) findViewById(R.id.button6);
-        button6.setOnClickListener(this); */
-
-        button7 = (Button) findViewById(R.id.button7);
-        button7.setOnClickListener(this);
-
-
-        // 3. Access the EditText defined in layout XML
-        //mainEditText = (EditText) findViewById(R.id.main_edittext);
         raEditText = (EditText) findViewById(R.id.ra_edittext);
         decEditText = (EditText) findViewById(R.id.dec_edittext);
 
-        // 4. Access the ListView
+        // Access the ListView
         mainListView = (ListView) findViewById(R.id.main_listview);
-
         // Create an ArrayAdapter for the ListView
         mArrayAdapter = new ArrayAdapter(this,
                 android.R.layout.simple_list_item_1,
                 mNameList);
-
         // Set the ListView to use the ArrayAdapter
         mainListView.setAdapter(mArrayAdapter);
-
-        // 5. Set this activity to react to list items being pressed
+        // Set this activity to react to list items being pressed
         mainListView.setOnItemClickListener(this);
 
         // 7. Greet the user, or ask for their name if new
@@ -203,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         updateView();
     }
 
-    public void displayWelcome() {
+    private void displayWelcome() {
 
         // Access the device's key-value storage
         mSharedPreferences = getSharedPreferences(PREFS, MODE_PRIVATE);
@@ -256,10 +233,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void addAstroObjects() {
+
+        mNameList.add("Zoran+Maruša");
+        mArrayAdapter.notifyDataSetChanged();
+
+        mNameList.add("Sirius Star 15.0 -20.0");
+        mArrayAdapter.notifyDataSetChanged();
+
+    }
+
     private String showPosition()
     {
 
-        long timeH = telescope.getPosition().getTime() / 1000 / 3600;
+        long timeD = telescope.getPosition().getTime() / 1000 / 86400;
         long timeS = telescope.getPosition().getTime() / 1000;
 
 
@@ -267,26 +254,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 telescope.getPosition().getHeight() +
                 "\nAzimuth=" +
                 telescope.getPosition().getAzimuth() +
-                "\nTimeFromVernalEquinox=" +
-                timeS + " s, " + timeH + " hours" +
+                "\n" +
+                timeS + " s, " + timeD + " d" +
                 "\nRA=" +
                 telescope.getPosition().getRa() +
                 "\nDEC=" +
                 telescope.getPosition().getDec() + "\n";
-
 
         return(output);
     }
 
     private String showLocation()
     {
-        String output = "Latitude=" +
+        String output = "LAT=" +
                 gpsService.getLatitude() +
-                "\nLongitude=" +
+                "\nLON=" +
                 gpsService.getLongitude() + "\n";
 
-        if(gpsService.isGotLocation()) output += "GPS satelites FOUND\n";
-        else output += "GPS satelites NOT FOUND\n";
+        if(gpsService.isGotLocation()) output += "GPS: locked\n";
+        else output += "GPS: not locked\n";
 
         return(output);
     }
@@ -296,24 +282,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         String output = showLocation() + showPosition();
         mainTextView.setText(output);
+
+        addAstroObjects();
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
 
+            case R.id.connect_button:
+                btService.connect();
+                break;
+
             case R.id.trace_button:
                 mainTextView.setText("Trace on");
                 telescope.onTrace();
-                break;
-
-            case R.id.trace_off_button:
-                mainTextView.setText("Trace Off");
-                telescope.offTrace();
-                break;
-
-            case R.id.update_button:
-                updateView();
                 break;
 
             case R.id.move_button:
@@ -321,35 +304,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String sDec = decEditText.getText().toString();
                 double ra = Double.valueOf(sRa).doubleValue();
                 double dec = Double.valueOf(sDec).doubleValue();
-
                 telescope.onMove(ra, dec);
                 break;
 
-            /* case R.id.button6:
-                btService.getPairedDevices();
-                break; */
+            /*
 
-            case R.id.button7:
-                btService.connect();
-                break;
-
-            case R.id.button:
-                /*
-                mainTextView.setText(mainEditText.getText().toString()
-                        + " is learning Android development!");
                 // Also add that value to the list shown in the ListView
-                mNameList.add(mainEditText.getText().toString());
-                mArrayAdapter.notifyDataSetChanged();
+//                mNameList.add(mainEditText.getText().toString());
+//                mArrayAdapter.notifyDataSetChanged();
 
                 // 6. The text you'd like to share has changed,
                 // and you need to update
                 setShareIntent();
-                */
+
                 //btService.write("Zoran+Maruša");
                 telescope.getControl().btry();
                 double tmp1 = telescope.getBtryVoltage();
                 Log.d(TAG, "BATTERY=" + tmp1);
-
+*/
             default:
                 break;
         }
@@ -382,4 +354,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             dDec = dec;
         }
     }
+
 }

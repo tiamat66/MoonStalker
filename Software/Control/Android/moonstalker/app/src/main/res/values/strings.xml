@@ -1,14 +1,9 @@
 <resources>
     <string name="app_name">MoonStalker by Zoran Robič</string>
     <string name="action_settings">Settings</string>
-    <string name="button1">Trace</string>
-    <string name="button2">Trace Off</string>
-    <string name="button3">Update</string>
-    <string name="button4">Click Me</string>
-    <string name="button5">Move Telescope</string>
-    <!-- <string name="button6">Get paired device</string> -->
-    <string name="button7">BT connect</string>
-    <!-- <string name="hint">A Name</string> -->
-    <string name="editRA">RA     </string>
-    <string name="editDEC">DEC    </string>
+    <string name="trace_button">Trace</string>
+    <string name="move_button">Move</string>
+    <string name="connect_button">Connect</string>
+    <string name="edit_RA">RA</string>
+    <string name="edit_DEC">DEC</string>
 </resources>
