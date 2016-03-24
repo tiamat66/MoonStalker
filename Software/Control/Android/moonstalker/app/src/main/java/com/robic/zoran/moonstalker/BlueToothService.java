@@ -25,6 +25,8 @@ public class BlueToothService {
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     // Status  for Handler
     private static final int RECIEVE_MESSAGE = 1;
+    private static final int CONNECTION_ACCEPTED_MESSAGE = 2;
+    private static final int CONNECTION_CANCELED_MESSAGE = 3;
 
     private BluetoothAdapter btAdapter = null;
     private MainActivity mainActivity;
@@ -32,8 +34,10 @@ public class BlueToothService {
     private boolean isBtPOn = false;
     private BtReadWrite btReadWrite;
     private BluetoothDevice pairedDevice;
+    private boolean isConnected = false;
 
-    static Handler h;
+    private Handler h;
+
     String rcvdMsg = "";
 
     public BlueToothService(final MainActivity myMainActivity) {
@@ -52,8 +56,17 @@ public class BlueToothService {
                         Log.d(TAG, rcvdMsg);
                         myMainActivity.getTelescope().getControl().processMsg(rcvdMsg);
                         break;
+                    case CONNECTION_ACCEPTED_MESSAGE:
+                        isConnected = true;
+                        mainActivity.showStatus();
+                        Log.d(TAG, "BlueTooth connection accepted");
+                        break;
+                    case CONNECTION_CANCELED_MESSAGE:
+                        isConnected = false;
+                        mainActivity.showStatus();
+                        Log.d(TAG, "...BT connection canceled...");
                 }
-            };
+            }
         };
 
         checkBTState();
@@ -117,6 +130,8 @@ public class BlueToothService {
             }
 
             // Do work to manage the connection (in a separate thread)
+            // Send to message queue Handler
+            h.obtainMessage(CONNECTION_ACCEPTED_MESSAGE).sendToTarget();
             btReadWrite = new BtReadWrite(mmSocket);
             btReadWrite.start();
         }
@@ -180,9 +195,11 @@ public class BlueToothService {
             while (true) {
                 try {
                     // Read from the InputStream
-                    bytes = mmInStream.read(buffer);        // Get number of bytes and message in "buffer"
-                    h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();     // Send to message queue Handler
+                    bytes = mmInStream.read(buffer);
+                    h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();
                 } catch (IOException e) {
+                    h.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
+                    Log.d(TAG, "...Error data receive: " + e.getMessage() + "...");
                     break;
                 }
             }
@@ -195,6 +212,7 @@ public class BlueToothService {
             try {
                 mmOutStream.write(msgBuffer);
             } catch (IOException e) {
+                h.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
                 Log.d(TAG, "...Error data send: " + e.getMessage() + "...");
             }
         }
@@ -213,7 +231,10 @@ public class BlueToothService {
     }
 
     public boolean isBtPresent() {
-
         return isBtPresent;
+    }
+
+    public boolean isConnected() {
+        return isConnected;
     }
 }

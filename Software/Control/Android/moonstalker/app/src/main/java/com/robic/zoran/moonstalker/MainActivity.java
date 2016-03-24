@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView objTextView;
     TextView posTextView;
     TextView locTextView;
+    TextView statusTextView;
 
     EditText raEditText;
     EditText decEditText;
@@ -40,7 +41,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button traceButton;
     Button moveButton;
     Button connectButton;
-    Button updateButton;
     Button traceOffButton;
 
     ListView mainListView;
@@ -60,21 +60,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         btService = new  BlueToothService(this);
         gpsService = new GPSService(this);
-        telescope = new  Telescope(btService);
-        Thread myThread;
-
-        if(telescope != null &&
-                btService != null &&
-                gpsService != null) {
-
-            myThread = new Thread(new Runnable() {
-                public void run(){
-                    moonstalkerMain();
-                }
-            });
-
-            myThread.start();
-        }
+        telescope = new  Telescope(btService, this);
+        moonstalkerMain();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -93,14 +80,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onResume() {
         super.onResume();
 
-        //btService.onResume();
     }
 
     //@Override
     public void onPause() {
         super.onPause();
 
-        //btService.onPause();
     }
 
     @Override
@@ -127,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         objTextView = (TextView) findViewById(R.id.obj_textview);
         posTextView = (TextView) findViewById(R.id.pos_textview);
         locTextView = (TextView) findViewById(R.id.loc_textview);
+        statusTextView = (TextView) findViewById(R.id.status_textview);
 
         //Calibrate the telescope
         telescope.position.setLongitude(gpsService.getLongitude());
@@ -141,9 +127,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         connectButton = (Button) findViewById(R.id.connect_button);
         connectButton.setOnClickListener(this);
-
-        updateButton = (Button) findViewById(R.id.update_button);
-        updateButton.setOnClickListener(this);
 
         traceOffButton = (Button) findViewById(R.id.trace_off_button);
         traceOffButton.setOnClickListener(this);
@@ -162,7 +145,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Set this activity to react to list items being pressed
         mainListView.setOnItemClickListener(this);
 
-        updateView();
+        showPosition();
+        showLocation();
+        showStatus();
     }
 
     private void addAstroObjects() {
@@ -174,45 +159,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mArrayAdapter.notifyDataSetChanged();
     }
 
-    private void showPosition()
+    public void showPosition()
     {
         String output;
 
-        output =
-                "RA= " +
-                telescope.getPosition().getRa() + "\n" +
-                "DEC=" +
-                telescope.getPosition().getDec() + "\n";
+        output = String.format("RA = %.2f\n", telescope.getPosition().getRa()) +
+                 String.format("DEC= %.2f\n", telescope.getPosition().getDec());
         objTextView.setText(output);
 
-        output =
-                "Height= " +
-                telescope.getPosition().getHeight() + "\n" +
-                "Azimuth=" +
-                telescope.getPosition().getAzimuth() + "\n";
+        output +=
+                String.format("Height:  %.2f\n", telescope.getPosition().getHeight()) +
+                String.format("Azimuth: %.2f\n", telescope.getPosition().getAzimuth());
         posTextView.setText(output);
     }
 
-    private void showLocation()
+    public void showLocation()
     {
-        String output = "LAT=" +
-                gpsService.getLatitude() + "\n" +
-                "LON=" +
-                gpsService.getLongitude() + "\n";
+
+        String output;
+
+        output = String.format("LAT=%.2f\n", gpsService.getLatitude()) +
+                 String.format("LON=%.2f\n", gpsService.getLongitude());
+        locTextView.setText(output);
+    }
+
+    public void showStatus() {
+
+        String output="";
 
         if(gpsService.isGotLocation())
             output += "GPS: locked\n";
         else
             output += "GPS: not locked\n";
 
-        locTextView.setText(output);
-    }
+        if(btService.isConnected())
+            output += "BT: connected\n";
+        else
+            output += "BT: not connected\n";
 
-    public void updateView() {
+        if(telescope.isTracing())
+            output += "Tracing: on\n";
+        else
+            output += "Tracing: off\n";
 
-        showPosition();
-        showLocation();
-        addAstroObjects();
+        if (telescope.isReady())
+            output += "Telescope: ready\n";
+        else
+            output += "Telescope: busy\n";
+
+        statusTextView.setText(output);
     }
 
     @Override
@@ -221,10 +216,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.connect_button:
                 btService.connect();
+                showStatus();
                 break;
 
             case R.id.trace_button:
                 telescope.onTrace();
+                showPosition();
+                showStatus();
                 break;
 
             case R.id.move_button:
@@ -235,12 +233,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 telescope.onMove(ra, dec);
                 break;
 
-            case R.id.update_button:
-                updateView();
-                break;
-
             case R.id.trace_off_button:
                 telescope.offTrace();
+                showPosition();
+                showStatus();
 
             default:
                 break;

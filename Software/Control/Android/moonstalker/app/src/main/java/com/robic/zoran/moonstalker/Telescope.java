@@ -1,5 +1,6 @@
 package com.robic.zoran.moonstalker;
 
+import android.os.Handler;
 import android.util.Log;
 
 /**
@@ -8,8 +9,11 @@ import android.util.Log;
 public class Telescope {
     Position position;
     Control  control;
+    MainActivity mainActivity = null;
+    private static final int UPDATE_MESSAGE = 1;
+    private static final int BUSY_MESSAGE = 2;
 
-    private static final String TAG="control1";
+    private static final String TAG="control";
     private static final double POLARIS_RA =  0;
     private static final double POLARIS_DEC = 90;
     private static final double PRECISION = 2.0;
@@ -21,20 +25,35 @@ public class Telescope {
             REDUCTOR_TRANSMITION *
             BELT_TRANSMITION;
 
-    boolean isCalibrated;
-    boolean isReady = true;
-    boolean isTracing = false;
+    boolean isCalibrated =  false;
+    boolean isReady =       true;
+    boolean isTracing =     false;
+
     double hSteps;
     double vSteps;
     double btryVoltage;
     Thread traceThread;
+    Handler h;
 
-    public Telescope(BlueToothService myBtService) {
+    public Telescope(BlueToothService myBtService, MainActivity myMainActivity) {
         control = new Control(myBtService, this);
         position = new Position();
         isCalibrated = false;
+        mainActivity = myMainActivity;
         hSteps = 0;
         vSteps = 0;
+
+        h = new Handler() {
+            public void handleMessage(android.os.Message msg) {
+                switch (msg.what) {
+                    case UPDATE_MESSAGE:
+                        mainActivity.showPosition();
+                        break;
+                    case BUSY_MESSAGE:
+                        mainActivity.showStatus();
+                }
+            }
+        };
 
         traceThread = new Thread(new Runnable() {
             public void run(){
@@ -107,14 +126,19 @@ public class Telescope {
                 control.move(cur_h_steps, cur_v_steps);
 
                 clearReady();
+                h.obtainMessage(UPDATE_MESSAGE).sendToTarget();
+                if(!isTracing) {
+
+                    mainActivity.showPosition();
+                }
             } else {
-                Log.d(TAG, "Telescope is busy");
+                h.obtainMessage(BUSY_MESSAGE).sendToTarget();
             }
         }
     }
 
     private void trace() {
-        while (true) {
+         while (true) {
 
             try {
                 if(isTracing) {
@@ -154,5 +178,11 @@ public class Telescope {
         return control;
     }
 
+    public boolean isTracing() {
+        return isTracing;
+    }
 
+    public boolean isReady() {
+        return isReady;
+    }
 }
