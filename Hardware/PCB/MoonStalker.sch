@@ -729,12 +729,6 @@ Wire Wire Line
 	2950 3250 2950 3350
 Connection ~ 2950 3350
 NoConn ~ 6450 3300
-Text Notes 5200 5900 2    79   ~ 0
-TODO:
-Text Notes 7450 6050 2    79   ~ 0
-Add DC-DC input and output filtering caps\n
-Text Notes 6950 6200 2    79   ~ 0
-Fix DC-DC power output ERC error
 $Comp
 L GND #PWR022
 U 1 1 5692E8AB
