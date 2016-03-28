@@ -137,6 +137,7 @@ public class BlueToothService {
                 }
                 // If a connection was accepted
                 if (socket != null) {
+                    rdy();
                     btReadWrite = new BtReadWrite(socket);
                     btReadWrite.start();
                     Log.d(TAG, "...Connection was accepted...");

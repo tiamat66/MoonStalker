@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    android:background="#FF00FF"
+app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.robic.zoran.moonstalker.MainActivity"
     tools:showIn="@layout/activity_main">
 
@@ -18,14 +19,6 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:context="com.robic.zoran.moonstalker.MainActivity"
         tools:showIn="@layout/activity_main">
-
-        <TextView
-            android:id="@+id/obj_textview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="20dp"
-            android:text="Object" />
 
         <TextView
             android:id="@+id/pos_textview"
@@ -86,49 +79,24 @@
             android:layout_marginLeft="20dp"
             android:layout_marginTop="5dp"
             android:text="@string/connect_button" />
-
-        <Button
-            android:id="@+id/trace_off_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="5dp"
-            android:text="@string/trace_off_button" />
-
-        <EditText
-            android:id="@+id/ra_edittext"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="5dp"
-            android:hint="@string/edit_RA" />
-
-        <EditText
-            android:id="@+id/dec_edittext"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="5dp"
-            android:hint="@string/edit_DEC" />
-
     </LinearLayout>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:context="com.robic.zoran.moonstalker.MainActivity"
         tools:showIn="@layout/activity_main">
 
-        <ListView
-            android:id="@+id/main_listview"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginTop="0dp"
-            android:layout_weight="1" />
+        <Spinner
+            android:id="@+id/spinner1"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:background="@android:drawable/btn_dropdown"
+            android:spinnerMode="dropdown" />
 
     </LinearLayout>
 </LinearLayout>

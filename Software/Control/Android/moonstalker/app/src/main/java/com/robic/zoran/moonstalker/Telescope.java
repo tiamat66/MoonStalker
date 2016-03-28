@@ -51,6 +51,7 @@ public class Telescope {
                         break;
                     case BUSY_MESSAGE:
                         mainActivity.showStatus();
+                        break;
                 }
             }
         };

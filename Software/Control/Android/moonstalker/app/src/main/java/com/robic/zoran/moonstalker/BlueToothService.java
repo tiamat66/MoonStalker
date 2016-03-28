@@ -146,6 +146,8 @@ public class BlueToothService {
 
     private void getPairedDevices() {
 
+        int i = 0;
+
         Log.d(TAG, "...Enter getPairedDevices...");
         Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
         // If there are paired devices

@@ -54,7 +54,8 @@ public class GPSService implements LocationListener {
 
         latitude = location.getLatitude();
         longitude = location.getLongitude();
-
+        mainActivity.showLocation();
+        mainActivity.showStatus();
         gotLocation = true;
     }
 

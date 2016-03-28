@@ -1,79 +1,53 @@
 package com.robic.zoran.moonstalker;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.ShareActionProvider;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.util.ArrayList;
+import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
-        AdapterView.OnItemClickListener {
+        AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "main";
 
-    TextView objTextView;
     TextView posTextView;
     TextView locTextView;
     TextView statusTextView;
-
-    EditText raEditText;
-    EditText decEditText;
+//    boolean  isMoved = false;
 
     Button traceButton;
     Button moveButton;
     Button connectButton;
-    Button traceOffButton;
 
-    ListView mainListView;
-    ArrayAdapter mArrayAdapter;
-    ArrayList mNameList = new ArrayList();
-
-    ShareActionProvider mShareActionProvider;
+    Spinner mStarDropDown;
+    ArrayAdapter<CharSequence> mStarAdapter;
 
     Telescope telescope;
     BlueToothService btService;
     GPSService gpsService;
+    AstroObject curAstroObject = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //setContentView(new MyView(this));
 
         btService = new  BlueToothService(this);
         gpsService = new GPSService(this);
         telescope = new  Telescope(btService, this);
         moonstalkerMain();
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
     }
 
     @Override
@@ -82,34 +56,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    //@Override
+    @Override
     public void onPause() {
         super.onPause();
 
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    private void disableButton(Button button) {
 
-        // Inflate the menu.
-        // Adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        button.setAlpha(0.5f);
+        button.setClickable(false);
+    }
 
-        // Access the Share Item defined in menu XML
-        MenuItem shareItem = menu.findItem(R.id.menu_item_share);
+    private void enableButton(Button button) {
 
-        // Access the object responsible for
-        // putting together the sharing submenu
-        if (shareItem != null) {
-            mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareItem);
-        }
-
-        return true;
+        button.setAlpha(1.0f);
+        button.setClickable(true);
     }
 
     private void moonstalkerMain() {
 
-        objTextView = (TextView) findViewById(R.id.obj_textview);
         posTextView = (TextView) findViewById(R.id.pos_textview);
         locTextView = (TextView) findViewById(R.id.loc_textview);
         statusTextView = (TextView) findViewById(R.id.status_textview);
@@ -121,51 +87,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         traceButton = (Button) findViewById(R.id.trace_button);
         traceButton.setOnClickListener(this);
+        disableButton(traceButton);
 
         moveButton = (Button) findViewById(R.id.move_button);
         moveButton.setOnClickListener(this);
+        disableButton(moveButton);
 
         connectButton = (Button) findViewById(R.id.connect_button);
         connectButton.setOnClickListener(this);
 
-        traceOffButton = (Button) findViewById(R.id.trace_off_button);
-        traceOffButton.setOnClickListener(this);
+        mStarDropDown = (Spinner) findViewById(R.id.spinner1);
+        mStarAdapter = ArrayAdapter
+                .createFromResource(this, R.array.stars,
+                        android.R.layout.simple_spinner_item);
 
-        raEditText = (EditText) findViewById(R.id.ra_edittext);
-        decEditText = (EditText) findViewById(R.id.dec_edittext);
-
-        // Access the ListView
-        mainListView = (ListView) findViewById(R.id.main_listview);
-        // Create an ArrayAdapter for the ListView
-        mArrayAdapter = new ArrayAdapter(this,
-                android.R.layout.simple_list_item_1,
-                mNameList);
-        // Set the ListView to use the ArrayAdapter
-        mainListView.setAdapter(mArrayAdapter);
-        // Set this activity to react to list items being pressed
-        mainListView.setOnItemClickListener(this);
+        mStarDropDown.setAdapter(mStarAdapter);
+        mStarDropDown.setOnItemSelectedListener(this);
 
         showPosition();
         showLocation();
         showStatus();
     }
 
-    private void addAstroObjects() {
-
-        AstroObject obj;
-
-        obj = new AstroObject("Sirius", "star", 6.75, -16.72);
-        mNameList.add(obj.print());
-        mArrayAdapter.notifyDataSetChanged();
-    }
-
     public void showPosition()
     {
-        String output;
+        String output = "";
 
-        output = String.format("RA = %.2f\n", telescope.getPosition().getRa()) +
+        output += String.format("RA = %.2f\n", telescope.getPosition().getRa()) +
                  String.format("DEC= %.2f\n", telescope.getPosition().getDec());
-        objTextView.setText(output);
 
         output +=
                 String.format("Height:  %.2f\n", telescope.getPosition().getHeight()) +
@@ -179,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String output;
 
         output = String.format("LAT=%.2f\n", gpsService.getLatitude()) +
-                 String.format("LON=%.2f\n", gpsService.getLongitude());
+                String.format("LON=%.2f\n", gpsService.getLongitude());
         locTextView.setText(output);
     }
 
@@ -192,11 +141,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else
             output += "GPS: not locked\n";
 
-        if(btService.isConnected())
-            output += "BT: connected\n";
-        else
-            output += "BT: not connected\n";
-
         if(telescope.isTracing())
             output += "Tracing: on\n";
         else
@@ -207,7 +151,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else
             output += "Telescope: busy\n";
 
+        if(curAstroObject != null)
+            output += "Object: " + curAstroObject.print() + "\n";
+        else
+            output += "Object: Not selected";
+
         statusTextView.setText(output);
+        updateStatus();
+    }
+
+    private void updateStatus() {
+
+        if(!btService.isConnected() ||
+                !telescope.isReady ||
+                curAstroObject == null) {
+
+            disableButton(traceButton);
+            disableButton(moveButton);
+
+        } else {
+            enableButton(traceButton);
+            enableButton(moveButton);
+        }
+
+        if(btService.isConnected()) {
+
+            disableButton(connectButton);
+            connectButton.setText("CONNECTED");
+        }
     }
 
     @Override
@@ -220,62 +191,125 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.trace_button:
-                telescope.onTrace();
+                if(!telescope.isTracing) {
+
+                    traceButton.setText("Trace OFF");
+                    telescope.onTrace();
+                } else {
+
+                    traceButton.setText("Trace");
+                    telescope.offTrace();
+                }
                 showPosition();
                 showStatus();
                 break;
 
             case R.id.move_button:
-                String sRa = raEditText.getText().toString();
-                String sDec = decEditText.getText().toString();
-                double ra = Double.valueOf(sRa);
-                double dec = Double.valueOf(sDec);
-                telescope.onMove(ra, dec);
-                break;
+                if(curAstroObject != null) {
 
-            case R.id.trace_off_button:
-                telescope.offTrace();
-                showPosition();
-                showStatus();
+                    double ra = Double.valueOf(curAstroObject.getmRa());
+                    double dec = Double.valueOf(curAstroObject.getmDec());
+                    //isMoved = true;
+                    telescope.onMove(ra, dec);
+                    //showStatus();
+                }
+                break;
 
             default:
                 break;
         }
     }
 
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+    private void scanAstroLine(int position, AstroObject obj) {
 
-        // Log the item's position and contents
-        // to the console in Debug
-        Log.d("moonstalker", position + ": " + mNameList.get(position));
+        Scanner sc;
+        String name;
+        String ra;
+        String dec;
+        String buf = mStarDropDown.getItemAtPosition(position).toString();
+        Log.d(TAG, position + ": " + buf);
+
+        sc = new Scanner(buf);
+        name = sc.next();
+        ra = sc.next();
+        dec = sc.next();
+        obj.setAll(name, ra, dec);
+        showStatus();
     }
 
     public Telescope getTelescope() {
         return telescope;
     }
 
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+        if(curAstroObject == null) {
+
+            curAstroObject = new AstroObject();
+        }
+        scanAstroLine(position, curAstroObject);
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
+    }
+
     private class AstroObject {
 
-        private String sName = "";
-        private String sType = "";
-        private double dRa = 0.0;
-        private double dDec = 0.0;
+        private String mName;
+        private String mType;
+        private String mRa;
+        private String mDec;
+        private String mDescription;
 
-        AstroObject(String name, String type, double ra, double dec) {
 
-            sName = name;
-            sType = type;
-            dRa = ra;
-            dDec = dec;
+        public void setAll(String name, String ra, String dec) {
+
+            mName = name;
+            mRa = ra;
+            mDec = dec;
         }
 
         public String print() {
 
             String output =
-                    sName + "  " + dRa + "  " + dDec;
+                    mName + "  " + mRa + "  " + mDec;
             return output;
+        }
+
+        public String getmRa() {
+            return mRa;
+        }
+
+        public String getmDec() {
+            return mDec;
         }
     }
 
+    //TODO
+    public class MyView extends View {
+        public MyView(Context context) {
+            super(context);
+            // TODO Auto-generated constructor stub
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            // TODO Auto-generated method stub
+            super.onDraw(canvas);
+            int x = getWidth();
+            int y = getHeight();
+            int radius;
+            radius = 100;
+            Paint paint = new Paint();
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.WHITE);
+            canvas.drawPaint(paint);
+            // Use Color.parseColor to define HTML colors
+            paint.setColor(Color.parseColor("#CD5C5C"));
+            canvas.drawCircle(x / 2, y / 2, radius, paint);
+        }
+    }
 }
