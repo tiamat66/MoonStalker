@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -24,7 +25,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView posTextView;
     TextView locTextView;
     TextView statusTextView;
-//    boolean  isMoved = false;
 
     Button traceButton;
     Button moveButton;
@@ -37,16 +37,61 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     BlueToothService btService;
     GPSService gpsService;
     AstroObject curAstroObject = null;
+    MyView myView = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        //setContentView(new MyView(this));
 
-        btService = new  BlueToothService(this);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+
+        LinearLayout L1 = new LinearLayout(this);
+        L1.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout L2 = new LinearLayout(this);
+        L2.setOrientation(LinearLayout.HORIZONTAL);
+
+        //Text Views
+        posTextView = new TextView(this);
+        L2.addView(posTextView);
+
+        locTextView = new TextView(this);
+        L2.addView(locTextView);
+
+        statusTextView = new TextView(this);
+        L2.addView(statusTextView);
+
+        //Buttons
+        traceButton = new Button(this);
+        traceButton.setText("TRACE");
+        traceButton.setId(R.id.trace_button);
+        L1.addView(traceButton);
+
+        moveButton = new Button(this);
+        moveButton.setId(R.id.move_button);
+        moveButton.setText("MOVE");
+        L1.addView(moveButton);
+
+        connectButton = new Button(this);
+        connectButton.setText("CONNECT");
+        connectButton.setId(R.id.connect_button);
+        L1.addView(connectButton);
+
+        //DropDown
+        mStarDropDown = new Spinner(this);
+        L1.addView(mStarDropDown);
+
+        root.addView(L1);
+        root.addView(L2);
+
+        myView = new MyView(this);
+        root.addView(myView);
+
+        setContentView(root);
+
+        btService = new BlueToothService(this);
         gpsService = new GPSService(this);
-        telescope = new  Telescope(btService, this);
+        telescope = new Telescope(btService, this);
         moonstalkerMain();
     }
 
@@ -76,27 +121,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void moonstalkerMain() {
 
-        posTextView = (TextView) findViewById(R.id.pos_textview);
-        locTextView = (TextView) findViewById(R.id.loc_textview);
-        statusTextView = (TextView) findViewById(R.id.status_textview);
 
         //Calibrate the telescope
         telescope.position.setLongitude(gpsService.getLongitude());
         telescope.position.setLatitude(gpsService.getLatitude());
         telescope.calibration();
 
-        traceButton = (Button) findViewById(R.id.trace_button);
         traceButton.setOnClickListener(this);
         disableButton(traceButton);
 
-        moveButton = (Button) findViewById(R.id.move_button);
         moveButton.setOnClickListener(this);
         disableButton(moveButton);
 
-        connectButton = (Button) findViewById(R.id.connect_button);
         connectButton.setOnClickListener(this);
 
-        mStarDropDown = (Spinner) findViewById(R.id.spinner1);
         mStarAdapter = ArrayAdapter
                 .createFromResource(this, R.array.stars,
                         android.R.layout.simple_spinner_item);
@@ -109,39 +147,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         showStatus();
     }
 
-    public void showPosition()
-    {
+    public void showPosition() {
+
         String output = "";
 
         output += String.format("RA = %.2f\n", telescope.getPosition().getRa()) +
-                 String.format("DEC= %.2f\n", telescope.getPosition().getDec());
+                String.format("DEC= %.2f\n", telescope.getPosition().getDec());
 
         output +=
                 String.format("Height:  %.2f\n", telescope.getPosition().getHeight()) +
-                String.format("Azimuth: %.2f\n", telescope.getPosition().getAzimuth());
+                        String.format("Azimuth: %.2f\n", telescope.getPosition().getAzimuth());
         posTextView.setText(output);
+        myView.invalidate();
     }
 
-    public void showLocation()
-    {
+    public void showLocation() {
 
         String output;
 
         output = String.format("LAT=%.2f\n", gpsService.getLatitude()) +
                 String.format("LON=%.2f\n", gpsService.getLongitude());
         locTextView.setText(output);
+        myView.invalidate();
     }
 
     public void showStatus() {
 
-        String output="";
+        String output = "";
 
-        if(gpsService.isGotLocation())
+        if (gpsService.isGotLocation())
             output += "GPS: locked\n";
         else
             output += "GPS: not locked\n";
 
-        if(telescope.isTracing())
+        if (telescope.isTracing())
             output += "Tracing: on\n";
         else
             output += "Tracing: off\n";
@@ -151,18 +190,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else
             output += "Telescope: busy\n";
 
-        if(curAstroObject != null)
-            output += "Object: " + curAstroObject.print() + "\n";
-        else
-            output += "Object: Not selected";
-
         statusTextView.setText(output);
         updateStatus();
+        myView.invalidate();
     }
 
     private void updateStatus() {
 
-        if(!btService.isConnected() ||
+        if (!btService.isConnected() ||
                 !telescope.isReady ||
                 curAstroObject == null) {
 
@@ -174,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             enableButton(moveButton);
         }
 
-        if(btService.isConnected()) {
+        if (btService.isConnected()) {
 
             disableButton(connectButton);
             connectButton.setText("CONNECTED");
@@ -191,13 +226,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.trace_button:
-                if(!telescope.isTracing) {
+                if (!telescope.isTracing) {
 
                     traceButton.setText("Trace OFF");
+                    disableButton(moveButton);
                     telescope.onTrace();
                 } else {
 
                     traceButton.setText("Trace");
+                    enableButton(moveButton);
                     telescope.offTrace();
                 }
                 showPosition();
@@ -205,13 +242,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.move_button:
-                if(curAstroObject != null) {
+                if (curAstroObject != null) {
 
                     double ra = Double.valueOf(curAstroObject.getmRa());
                     double dec = Double.valueOf(curAstroObject.getmDec());
-                    //isMoved = true;
                     telescope.onMove(ra, dec);
-                    //showStatus();
                 }
                 break;
 
@@ -244,7 +279,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-        if(curAstroObject == null) {
+        if (curAstroObject == null) {
 
             curAstroObject = new AstroObject();
         }
@@ -288,28 +323,91 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    //TODO
     public class MyView extends View {
+
+        private static final int D = 300;
+        private static final int O = 10;
+
         public MyView(Context context) {
             super(context);
-            // TODO Auto-generated constructor stub
+
+        }
+
+        protected void drawHeight(int X, int Y, double x, double y, Canvas canvas) {
+
+            Paint paint = new Paint();
+
+            paint.setColor(Color.GREEN);
+            canvas.drawCircle(X + (D / 2) + (float) x, Y + (D / 2) - (float) y, O, paint);
+
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setColor(Color.parseColor("#CD5C5C"));
+            // Height
+            canvas.drawLine(X, Y + (D / 2), X + D, Y + (D / 2), paint);
+            canvas.drawLine(X + (D / 2), Y, X + (D / 2), Y + D, paint);
+            canvas.drawLine(X + (D / 2), Y + (D / 2), X + (D / 2) + (float) x, Y + (D / 2) - (float) y, paint);
+            canvas.drawCircle(X + (D / 2), Y + (D / 2), D / 2, paint);
+            canvas.drawRect(X, Y, X + D, Y + D, paint);
+
+            paint.setColor(Color.BLACK);
+            canvas.drawText("HEIGHT", X, Y - O, paint);
+            canvas.drawText("+90", X + (D / 2), Y - O, paint);
+            canvas.drawText("-90", X + (D / 2), Y + D + O, paint);
+            canvas.drawText("0", X - O, Y + (D / 2), paint);
+            canvas.drawText("0", X + D + O, Y + (D / 2), paint);
+        }
+
+        protected void drawAzimuth(int X, int Y, double x, double y, Canvas canvas) {
+
+            Paint paint = new Paint();
+
+            paint.setColor(Color.GREEN);
+            canvas.drawCircle(X + (D / 2) + (float) x, Y + (D / 2) - (float) y, O, paint);
+
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setColor(Color.parseColor("#CD5C5C"));
+            // Height
+            canvas.drawLine(X, Y + (D / 2), X + D, Y + (D / 2), paint);
+            canvas.drawLine(X + (D / 2), Y, X + (D / 2), Y + D, paint);
+            canvas.drawLine(X + (D / 2), Y + (D / 2), X + (D / 2) + (float) x, Y + (D / 2) - (float) y, paint);
+            canvas.drawCircle(X + (D / 2), Y + (D / 2), D / 2, paint);
+            canvas.drawRect(X, Y, X + D, Y + D, paint);
+
+            paint.setColor(Color.BLACK);
+            canvas.drawText("AZIMUTH", X, Y - O, paint);
+            canvas.drawText("0", X + (D / 2), Y - O, paint);
+            canvas.drawText("180", X + (D / 2), Y + D + O, paint);
+            canvas.drawText("270", X - O, Y + (D / 2), paint);
+            canvas.drawText("90", X + D + O, Y + (D / 2), paint);
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
-            // TODO Auto-generated method stub
             super.onDraw(canvas);
-            int x = getWidth();
-            int y = getHeight();
-            int radius;
-            radius = 100;
+
+            double x, y, h, az;
+
+            az = telescope.getPosition().getAzimuth();
+            h = telescope.getPosition().getHeight();
+
+            if ((az > 180) && (az < 360))
+                h = Math.toRadians(270 - (h - 270));
+            else
+                h = Math.toRadians(h);
+
+            az = Math.toRadians((360 - az) + 90);
+
             Paint paint = new Paint();
-            paint.setStyle(Paint.Style.FILL);
-            paint.setColor(Color.WHITE);
+            paint.setColor(Color.CYAN);
             canvas.drawPaint(paint);
-            // Use Color.parseColor to define HTML colors
-            paint.setColor(Color.parseColor("#CD5C5C"));
-            canvas.drawCircle(x / 2, y / 2, radius, paint);
+
+            x = (D / 2) * Math.cos(h);
+            y = (D / 2) * Math.sin(h);
+            drawHeight(100, 100, x, y, canvas);
+
+            x = (D / 2) * Math.cos(az);
+            y = (D / 2) * Math.sin(az);
+            drawAzimuth(500, 100, x, y, canvas);
         }
     }
 }
