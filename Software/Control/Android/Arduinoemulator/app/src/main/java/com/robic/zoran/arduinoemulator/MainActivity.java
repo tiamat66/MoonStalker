@@ -89,6 +89,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         serButton.setOnClickListener(this);
 
         print("Ti boga ždevca mladi moš!!!!");
+
+        btService.startBtServer();
     }
 
     @Override

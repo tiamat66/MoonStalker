@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * Created by zoran on 9.3.2016.
- *
+ * <p/>
  * Class contains functionality for BlueTooth Service
  */
 public class BlueToothService {
@@ -35,6 +35,7 @@ public class BlueToothService {
     private BtReadWrite btReadWrite;
     private BluetoothDevice pairedDevice;
     private boolean isConnected = false;
+    private boolean connecting = false;
 
     private Handler h;
 
@@ -58,13 +59,15 @@ public class BlueToothService {
                         break;
                     case CONNECTION_ACCEPTED_MESSAGE:
                         isConnected = true;
-                        mainActivity.showStatus();
+                        mainActivity.updateStatus();
                         Log.d(TAG, "BlueTooth connection accepted");
                         break;
                     case CONNECTION_CANCELED_MESSAGE:
-                        isConnected = false;
-                        mainActivity.showStatus();
                         Log.d(TAG, "...BT connection canceled...");
+                        isConnected = false;
+                        connecting = false;
+                        mainActivity.telescope.clearReady();
+                        mainActivity.updateStatus();
                 }
             }
         };
@@ -109,7 +112,8 @@ public class BlueToothService {
             try {
                 // MY_UUID is the app's UUID string, also used by the server code
                 tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
-            } catch (IOException ignored) { }
+            } catch (IOException ignored) {
+            }
             mmSocket = tmp;
         }
 
@@ -125,7 +129,8 @@ public class BlueToothService {
                 // Unable to connect; close the socket and get out
                 try {
                     mmSocket.close();
-                } catch (IOException ignored) { }
+                } catch (IOException ignored) {
+                }
                 return;
             }
 
@@ -136,11 +141,14 @@ public class BlueToothService {
             btReadWrite.start();
         }
 
-        /** Will cancel an in-progress connection, and close the socket */
+        /**
+         * Will cancel an in-progress connection, and close the socket
+         */
         public void cancel() {
             try {
                 mmSocket.close();
-            } catch (IOException ignored) { }
+            } catch (IOException ignored) {
+            }
         }
     }
 
@@ -162,9 +170,10 @@ public class BlueToothService {
 
         getPairedDevices();
 
-        if(pairedDevice == null) {
+        if (pairedDevice == null) {
             Log.d(TAG, "...No paired device...");
         } else {
+            connecting = true;
             ConnectThread connectThread = new ConnectThread(pairedDevice);
             connectThread.start();
         }
@@ -183,7 +192,8 @@ public class BlueToothService {
             try {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
-            } catch (IOException ignored) { }
+            } catch (IOException ignored) {
+            }
 
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
@@ -222,7 +232,7 @@ public class BlueToothService {
 
     public void write(String msg) {
 
-        if(btReadWrite != null) {
+        if (btReadWrite != null) {
             btReadWrite.write(msg);
             Log.d(TAG, "Message sent to Arduino: " + msg);
         }
@@ -238,5 +248,9 @@ public class BlueToothService {
 
     public boolean isConnected() {
         return isConnected;
+    }
+
+    public boolean isConnecting() {
+        return connecting;
     }
 }

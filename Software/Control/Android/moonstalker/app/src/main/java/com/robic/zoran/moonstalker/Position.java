@@ -11,17 +11,13 @@ public class Position {
     private static final int VTSK_HOUR = 3600;
     private static final int VTSK_DAY = 86400;
     private static final int VTSK_YEAR = 31536000;
-    private static final int RA_OFFSET= 9 * 15;
+    private static final int RA_OFFSET = 9 * 15;
     //Vernal equinox time
     private static final int VEQ_YEAR = 2016;
     private static final int VEQ_MONTH = 2;
     private static final int VEQ_DAY = 20;
     private static final int VEQ_HOUR = 5;
     private static final int VEQ_MIN = 30;
-
-    //Globe coordinates
-    double latitude;
-    double longitude;
 
     //Equatorial coordinates
     double ra;
@@ -36,16 +32,12 @@ public class Position {
     double azimuth; //[deg]
     double height;  //[deg]
 
-    public Position() {
-        calendar = new GregorianCalendar(VEQ_YEAR,VEQ_MONTH, VEQ_DAY, VEQ_HOUR, VEQ_MIN);
-    }
+    private GPSService gpsService;
 
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
+    public Position(GPSService myGpsService) {
 
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
+        gpsService = myGpsService;
+        calendar = new GregorianCalendar(VEQ_YEAR, VEQ_MONTH, VEQ_DAY, VEQ_HOUR, VEQ_MIN);
     }
 
     public void setDec(double dec) {
@@ -64,17 +56,8 @@ public class Position {
         return height;
     }
 
-    public double getRa() {
-        return ra;
-    }
-
-    public double getDec() {
-        return dec;
-    }
-
-    private void equatorialToSferical()
-    {
-        double ra_tmp =  ra;
+    private void equatorialToSferical() {
+        double ra_tmp = ra;
 
         long seconds;
         double day_modulo_offset;  //The Earth is turning around its own axis
@@ -88,36 +71,35 @@ public class Position {
         //fi
         seconds = getTime() / 1000;
         seconds %= VTSK_DAY;
-        day_modulo_offset = (double)seconds / (double)VTSK_HOUR;
+        day_modulo_offset = (double) seconds / (double) VTSK_HOUR;
         seconds = getTime() / 1000;
         seconds %= VTSK_YEAR;
-        year_modulo_offset = ((double)seconds*24.0) / (double)VTSK_YEAR;
+        year_modulo_offset = ((double) seconds * 24.0) / (double) VTSK_YEAR;
         ra_tmp -= day_modulo_offset;
-        if(ra_tmp < 0.0) ra_tmp += 24.0;
+        if (ra_tmp < 0.0) ra_tmp += 24.0;
         ra_tmp -= year_modulo_offset;
-        if(ra_tmp < 0.0) ra_tmp += 24.0;
+        if (ra_tmp < 0.0) ra_tmp += 24.0;
         tmp1 = (ra_tmp * 15.0) + RA_OFFSET;
-        if(tmp1 > 360.0) tmp1 -= 360.0;
+        if (tmp1 > 360.0) tmp1 -= 360.0;
         tmp1 = 360.0 - tmp1;
         fi = Math.toRadians(tmp1);
 
         //theta
-        t = Math.toRadians(latitude);
+        t = Math.toRadians(gpsService.getLatitude());
     }
 
-    private void alphaToAzimuth(double alpha, double Y)
-    {
+    private void alphaToAzimuth(double alpha, double Y) {
         azimuth = Math.toDegrees(alpha);
 
-        if(Y < 0.0) {
+        if (Y < 0.0) {
             azimuth += 180.0;
         }
 
-        if(Y >= 0.0) {
+        if (Y >= 0.0) {
             azimuth += 360.0;
         }
 
-        if(azimuth >= 360.0) {
+        if (azimuth >= 360.0) {
             azimuth -= 360.0;
         }
     }
@@ -136,7 +118,7 @@ public class Position {
         alpha = Math.atan(tmp1 / tmp4);
         X = tmp1;
         Y = tmp4;
-        alphaToAzimuth(alpha,Y);
+        alphaToAzimuth(alpha, Y);
 
         // omega -> heigh
         tmp1 = Math.sin(t) * Math.cos(d);
@@ -147,14 +129,14 @@ public class Position {
     }
 
     private long getCurrentTime() {
-        return(System.currentTimeMillis());
+        return (System.currentTimeMillis());
     }
 
     private long getVernalEquinoxTime() {
-        return(calendar.getTimeInMillis());
+        return (calendar.getTimeInMillis());
     }
 
     public long getTime() {
-        return(getCurrentTime() - getVernalEquinoxTime());
+        return (getCurrentTime() - getVernalEquinoxTime());
     }
 }

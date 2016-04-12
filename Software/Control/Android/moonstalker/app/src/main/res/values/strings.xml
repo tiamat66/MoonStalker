@@ -7,7 +7,9 @@
     <string name="edit_RA">RA</string>
     <string name="edit_DEC">DEC</string>
     <string name="update_button">Update</string>
+    <string name="calibrate_button">Calibrate</string>
     <string-array name="stars" >
+        <item>Sirius 6.75 16.7</item>
         <item>Altair 19.85 8.87</item>
         <item>Arcturus 14.27 19.2</item>
         <item>Vega 18.62 38.8</item>
@@ -15,5 +17,8 @@
         <item>Rigel 5.25 -8.2</item>
         <item>Procyon 7.65 5.2</item>
         <item>Betelgeuse 5.92 7.4</item>
+        <item>Deneb 20.68 45.3</item>
+        <item>Aldebaran 4.6 16.5</item>
+        <item>Test 12 46.49</item>
     </string-array>
 </resources>

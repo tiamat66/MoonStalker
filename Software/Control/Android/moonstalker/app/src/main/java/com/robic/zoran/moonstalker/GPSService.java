@@ -12,8 +12,8 @@ import android.util.Log;
 public class GPSService implements LocationListener {
 
     private static final String TAG = "gps1";
-    private static final double DEF_LONGITUDE = 42.0;
-    private static final double DEF_LATITUDE =  42.0;
+    private static final double DEF_LONGITUDE = 13.83;
+    private static final double DEF_LATITUDE =  46.49;
     private static final int    MINIMUM_TIME = 10000;  // 10s
     private static final int    MINIMUM_DISTANCE = 50; // 50m
 
@@ -54,9 +54,9 @@ public class GPSService implements LocationListener {
 
         latitude = location.getLatitude();
         longitude = location.getLongitude();
-        mainActivity.showLocation();
-        mainActivity.showStatus();
         gotLocation = true;
+        mainActivity.showLocation();
+        mainActivity.updateStatus();
     }
 
     @Override
@@ -75,6 +75,7 @@ public class GPSService implements LocationListener {
     }
 
     public double getLatitude() {
+
         return latitude;
     }
 

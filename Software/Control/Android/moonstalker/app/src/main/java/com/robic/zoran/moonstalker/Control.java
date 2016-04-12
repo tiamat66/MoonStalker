@@ -78,6 +78,7 @@ public class Control {
             Log.d(TAG, "Process RDY message from Arduino");
 
             telescope.setReady();
+
             return;
         }
 
@@ -115,7 +116,6 @@ public class Control {
 
     private boolean chkMsg(String recMsg, String expMsg)
     {
-
         recMsg = recMsg.substring(1, 1+expMsg.length());
         return(recMsg.equals(expMsg));
     }
@@ -125,6 +125,7 @@ public class Control {
         String btryVoltage;
         btryVoltage = recMsg.substring(2+expMsg.length(), recMsg.length() -2);
         telescope.setBtryVoltage(Double.valueOf(btryVoltage));
+        telescope.mainActivity.updateStatus();
     }
 }
 

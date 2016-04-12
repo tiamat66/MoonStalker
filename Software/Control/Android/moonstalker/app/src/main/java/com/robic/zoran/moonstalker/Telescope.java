@@ -8,13 +8,13 @@ import android.util.Log;
  */
 public class Telescope {
     Position position;
-    Control  control;
+    Control control;
     MainActivity mainActivity = null;
     private static final int UPDATE_MESSAGE = 1;
     private static final int BUSY_MESSAGE = 2;
 
-    private static final String TAG="control";
-    private static final double POLARIS_RA =  0;
+    private static final String TAG = "control";
+    private static final double POLARIS_RA = 0;
     private static final double POLARIS_DEC = 90;
     private static final double PRECISION = 2.0;
     // Mechanical characteristics
@@ -25,9 +25,13 @@ public class Telescope {
             REDUCTOR_TRANSMITION *
             BELT_TRANSMITION;
 
-    boolean isCalibrated =  false;
-    boolean isReady =       true;
-    boolean isTracing =     false;
+    private static final int H_NEGATIVE = 30;
+    private static final double TRSHLD_BTRY = 12.0;
+
+    boolean isCalibrated = false;
+    boolean isReady = false;
+    boolean isTracing = false;
+    boolean batteryOk = false;
 
     double hSteps;
     double vSteps;
@@ -35,9 +39,9 @@ public class Telescope {
     Thread traceThread;
     Handler h;
 
-    public Telescope(BlueToothService myBtService, MainActivity myMainActivity) {
+    public Telescope(BlueToothService myBtService, GPSService myGpsService, MainActivity myMainActivity) {
         control = new Control(myBtService, this);
-        position = new Position();
+        position = new Position(myGpsService);
         isCalibrated = false;
         mainActivity = myMainActivity;
         hSteps = 0;
@@ -47,36 +51,31 @@ public class Telescope {
             public void handleMessage(android.os.Message msg) {
                 switch (msg.what) {
                     case UPDATE_MESSAGE:
-                        mainActivity.showPosition();
+                        mainActivity.updateStatus();
                         break;
                     case BUSY_MESSAGE:
-                        mainActivity.showStatus();
+                        mainActivity.updateStatus();
                         break;
                 }
             }
         };
 
         traceThread = new Thread(new Runnable() {
-            public void run(){
+            public void run() {
 
-               trace();
+                trace();
             }
         });
         traceThread.start();
     }
 
-
-    public boolean isCalibrated() {
-        return isCalibrated;
-    }
-
-    public void calibration()
-    {
+    public void calibration() {
         // The default calibration position is POLARIS
         position.setRa(POLARIS_RA);
         position.setDec(POLARIS_DEC);
         position.equatorialToTelescope();
         isCalibrated = true;
+        mainActivity.updateStatus();
     }
 
     public Position getPosition() {
@@ -90,15 +89,22 @@ public class Telescope {
     }
 
     public void setBtryVoltage(double btryVoltage) {
+
         this.btryVoltage = btryVoltage;
+        if (btryVoltage < TRSHLD_BTRY) {
+            batteryOk = false;
+            clearReady();
+        } else {
+            batteryOk = true;
+            setReady();
+        }
     }
 
     public double getBtryVoltage() {
         return btryVoltage;
     }
 
-    private void move()
-    {
+    private void move() {
         double dif_az;
         double dif_hi;
         double azimuth_tmp;
@@ -116,10 +122,9 @@ public class Telescope {
         hSteps += (dif_az * K) / 360.0;
         vSteps += (dif_hi * K) / 360.0;
 
-        if((Math.abs(hSteps) >= PRECISION) ||
-                (Math.abs(vSteps) >= PRECISION))
-        {
-            if(isReady) {
+        if ((Math.abs(hSteps) >= PRECISION) ||
+                (Math.abs(vSteps) >= PRECISION)) {
+            if (isReady) {
                 cur_h_steps = (int) hSteps;
                 cur_v_steps = (int) vSteps;
                 hSteps -= cur_h_steps;
@@ -128,10 +133,6 @@ public class Telescope {
 
                 clearReady();
                 h.obtainMessage(UPDATE_MESSAGE).sendToTarget();
-                if(!isTracing) {
-
-                    mainActivity.showPosition();
-                }
             } else {
                 h.obtainMessage(BUSY_MESSAGE).sendToTarget();
             }
@@ -139,10 +140,10 @@ public class Telescope {
     }
 
     private void trace() {
-         while (true) {
+        while (true) {
 
             try {
-                if(isTracing) {
+                if (isTracing) {
                     move();
                 }
                 traceThread.sleep(1000);
@@ -156,16 +157,19 @@ public class Telescope {
     public void onTrace() {
 
         isTracing = true;
+        mainActivity.updateStatus();
     }
 
     public void offTrace() {
 
         isTracing = false;
+        mainActivity.updateStatus();
     }
 
     public void setReady() {
 
         isReady = true;
+        mainActivity.updateStatus();
     }
 
     public void clearReady() {
@@ -185,5 +189,17 @@ public class Telescope {
 
     public boolean isReady() {
         return isReady;
+    }
+
+    public boolean getBattery() throws InterruptedException {
+
+        mainActivity.telescope.control.btry();
+        Thread.sleep(1000);
+
+        return batteryOk;
+    }
+
+    public boolean isBatteryOk() {
+        return batteryOk;
     }
 }
