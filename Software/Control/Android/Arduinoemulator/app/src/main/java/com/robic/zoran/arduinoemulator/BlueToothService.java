@@ -43,6 +43,7 @@ public class BlueToothService {
     private static final String NAME = "MOONSTALKER";
     // Status  for Handler
     private static final int RECIEVE_MESSAGE = 1;
+    private static final int CONNECTION_CANCELED_MESSAGE = 2;
     private BluetoothAdapter btAdapter = null;
     private MainActivity mainActivity;
     private AcceptThread acceptThread;
@@ -50,6 +51,8 @@ public class BlueToothService {
     Handler h;
     String rcvdMsg;
     String outMessage;
+    boolean connectionCanceled = true;
+    BluetoothSocket socket = null;
 
     public BlueToothService(final MainActivity myMainActivity) {
 
@@ -67,6 +70,11 @@ public class BlueToothService {
                         Log.d(TAG, rcvdMsg);
                         myMainActivity.print(rcvdMsg);
                         processMsg(rcvdMsg);
+                        break;
+                    case CONNECTION_CANCELED_MESSAGE:
+                        connectionCanceled = true;
+                        Log.d(TAG, "...Connection Canceled...");
+                        socket = null;
                         break;
                 }
             };
@@ -127,10 +135,10 @@ public class BlueToothService {
         }
 
         public void run() {
-            BluetoothSocket socket = null;
             // Keep listening until exception occurs or a socket is returned
             while (true) {
                 try {
+                    if(!connectionCanceled) continue;
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
                     break;
@@ -140,13 +148,13 @@ public class BlueToothService {
                     btReadWrite = new BtReadWrite(socket);
                     btReadWrite.start();
                     Log.d(TAG, "...Connection was accepted...");
+                    connectionCanceled = false;
                     rdy();
                     try {
                         mmServerSocket.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    break;
                 }
             }
         }
@@ -187,12 +195,14 @@ public class BlueToothService {
 
             // Keep listening to the InputStream until an exception occurs
             while (true) {
+                if(connectionCanceled) break;
                 try {
                     // Read from the InputStream
                     bytes = mmInStream.read(buffer);        // Get number of bytes and message in "buffer"
                     Log.d(TAG, "...Readed" + bytes + " bytes...");
                     h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();     // Send to message queue Handler
                 } catch (IOException e) {
+                    h.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
                     break;
                 }
             }
@@ -205,6 +215,7 @@ public class BlueToothService {
             try {
                 mmOutStream.write(msgBuffer);
             } catch (IOException e) {
+                h.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
                 Log.d(TAG, "...Error data send: " + e.getMessage() + "...");
             }
         }

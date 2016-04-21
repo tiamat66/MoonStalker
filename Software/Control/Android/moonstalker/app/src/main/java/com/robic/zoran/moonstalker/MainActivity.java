@@ -158,8 +158,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         String output;
 
-        output = String.format("LAT=%.2f\n", gpsService.getLatitude()) +
-                String.format("LON=%.2f\n", gpsService.getLongitude());
+        output = String.format("LAT=%s", convertDec2Hour(gpsService.getLatitude())) +
+                 String.format("LON=%s", convertDec2Hour(gpsService.getLongitude()));
         locTextView.setText(output);
         myView.invalidate();
     }
@@ -175,15 +175,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             disableButton(moveButton);
 
         } else if (btService.isConnected() &&
-                telescope.isReady &&
-                telescope.isCalibrated &&
+                telescope.isReady() &&
+                telescope.isCalibrated() &&
                 !telescope.isTracing()) {
 
             enableButton(traceButton);
             enableButton(moveButton);
         } else if (btService.isConnected() &&
-                telescope.isReady &&
-                telescope.isCalibrated &&
+                telescope.isReady() &&
+                telescope.isCalibrated() &&
                 telescope.isTracing()) {
 
             enableButton(traceButton);
@@ -192,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if(!btService.isConnected())
             disableButton(calibrateButton);
-        else
+        else if(!telescope.isCalibrated())
             enableButton(calibrateButton);
 
         if (btService.isConnected()) {
@@ -248,6 +248,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
             default:
                 break;
         }
@@ -348,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawRect(X, Y, X + D, Y + D, paint);
 
             paint.setColor(Color.BLACK);
-            output = String.format("HEIGHT: %.2f\n", telescope.getPosition().getHeight());
+            output = String.format("HEIGHT: %s\n",convertDec2Hour(telescope.getPosition().getHeight()));
             canvas.drawText(output, X, Y - O, paint);
             canvas.drawText("+90", X + (D / 2), Y - O, paint);
             canvas.drawText("-90", X + (D / 2), Y + D + O, paint);
@@ -375,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             paint.setColor(Color.BLACK);
             paint.setFakeBoldText(true);
-            output = String.format("AZIMUTH: %.2f\n", telescope.getPosition().getAzimuth());
+            output = String.format("AZIMUTH: %s\n", convertDec2Hour(telescope.getPosition().getAzimuth()));
             canvas.drawText(output, X, Y - O, paint);
             canvas.drawText("N", X + (D / 2), Y - O, paint);
             canvas.drawText("S", X + (D / 2), Y + D + 2 * O, paint);
@@ -422,7 +423,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             } else {
 
                 paint.setColor(Color.RED);
-                out = "BUSY";
+                out = "NOT READY";
             }
             canvas.drawText(out, X + offset, Y + i * offset, paint);
             i++;
@@ -465,6 +466,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawText(out, X + offset, Y + i * offset, paint);
             i++;
 
+            if(telescope.ishNegative()) {
+
+                paint.setColor(Color.RED);
+                out = "HEIGHT NEGATIVE";
+                canvas.drawText(out, X + offset, Y + i * offset, paint);
+                i++;
+            }
+
+
         }
 
         @Override
@@ -497,5 +507,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             drawStatus(10, 10, canvas);
         }
+    }
+
+    private String convertDec2Hour(double num)
+    {
+
+        long hours;
+        long minutes;
+        double seconds;
+        double fPart;
+        String hour;
+
+        hours = (long) num;
+        fPart = num - hours;
+        fPart *= 60;
+        minutes = (long) fPart;
+        seconds = fPart - minutes;
+        seconds *= 60;
+
+        hour = String.format("%d %d\' %.2f\"", hours, minutes, seconds);
+        return hour;
     }
 }

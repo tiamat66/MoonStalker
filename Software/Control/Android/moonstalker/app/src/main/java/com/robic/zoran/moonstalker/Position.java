@@ -1,5 +1,7 @@
 package com.robic.zoran.moonstalker;
 
+import android.util.Log;
+import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 /**
@@ -8,25 +10,11 @@ import java.util.GregorianCalendar;
 public class Position {
     GregorianCalendar calendar;
 
-    private static final int VTSK_HOUR = 3600;
-    private static final int VTSK_DAY = 86400;
-    private static final int VTSK_YEAR = 31536000;
-    private static final int RA_OFFSET = 9 * 15;
-    //Vernal equinox time
-    private static final int VEQ_YEAR = 2016;
-    private static final int VEQ_MONTH = 2;
-    private static final int VEQ_DAY = 20;
-    private static final int VEQ_HOUR = 5;
-    private static final int VEQ_MIN = 30;
+    private static final String TAG = "Position";
 
     //Equatorial coordinates
     double ra;
     double dec;
-
-    //Sferical coordinates
-    double d;   //delta->f(dec)         [rad]
-    double fi;  //fi   ->f(ra)          [rad]
-    double t;   //theta->f(latitude)    [rad]
 
     //Telescope coordinates
     double azimuth; //[deg]
@@ -37,7 +25,7 @@ public class Position {
     public Position(GPSService myGpsService) {
 
         gpsService = myGpsService;
-        calendar = new GregorianCalendar(VEQ_YEAR, VEQ_MONTH, VEQ_DAY, VEQ_HOUR, VEQ_MIN);
+        calendar = new GregorianCalendar(2000, Calendar.JANUARY, 1, 0, 0);
     }
 
     public void setDec(double dec) {
@@ -56,76 +44,58 @@ public class Position {
         return height;
     }
 
-    private void equatorialToSferical() {
-        double ra_tmp = ra;
+    public void RaDec2AltAz() {
 
-        long seconds;
-        double day_modulo_offset;  //The Earth is turning around its own axis
-        double year_modulo_offset; //The Earth is turning around the sun
-        double tmp1;
+        Log.d(TAG, "RA=" + ra * 15.0);
+        double RA = ra * 15.0;
+        double DEC = dec;
 
-        //delta
-        d = 90.0 - dec;
-        d = Math.toRadians(d);
+        double LAT = gpsService.getLatitude();
+        double daysFromY2k = getTime() / 1000.0 / 86400.0;
 
-        //fi
-        seconds = getTime() / 1000;
-        seconds %= VTSK_DAY;
-        day_modulo_offset = (double) seconds / (double) VTSK_HOUR;
-        seconds = getTime() / 1000;
-        seconds %= VTSK_YEAR;
-        year_modulo_offset = ((double) seconds * 24.0) / (double) VTSK_YEAR;
-        ra_tmp -= day_modulo_offset;
-        if (ra_tmp < 0.0) ra_tmp += 24.0;
-        ra_tmp -= year_modulo_offset;
-        if (ra_tmp < 0.0) ra_tmp += 24.0;
-        tmp1 = (ra_tmp * 15.0) + RA_OFFSET;
-        if (tmp1 > 360.0) tmp1 -= 360.0;
-        tmp1 = 360.0 - tmp1;
-        fi = Math.toRadians(tmp1);
+        double LST = 100.46 +
+                0.985647 * daysFromY2k +
+                gpsService.getLongitude() +
+                15.0 * getUTC();
 
-        //theta
-        t = Math.toRadians(gpsService.getLatitude());
-    }
+        Log.d(TAG, "DaysFromY2k = " + daysFromY2k);
+        Log.d(TAG, "UTC =" + getUTC());
+        Log.d(TAG, "LST=" + LST);
+        long a = (long) LST / 360;
+        LST = LST -
+                a * 360;
+        Log.d(TAG, "LST[deg]=" + LST);
+        getUTC();
 
-    private void alphaToAzimuth(double alpha, double Y) {
-        azimuth = Math.toDegrees(alpha);
+        double HA = LST - RA;
+        if (HA < 0.0) HA += 360.0;
+        Log.d(TAG, "HA=" + HA);
 
-        if (Y < 0.0) {
-            azimuth += 180.0;
-        }
+        HA = Math.toRadians(HA);
+        DEC = Math.toRadians(DEC);
+        LAT = Math.toRadians(LAT);
 
-        if (Y >= 0.0) {
-            azimuth += 360.0;
-        }
+        double sinALT = Math.sin(DEC) * Math.sin(LAT) + Math.cos(DEC) * Math.cos(LAT) * Math.cos(HA);
+        double ALT = Math.asin(sinALT);
 
-        if (azimuth >= 360.0) {
-            azimuth -= 360.0;
-        }
-    }
+        double b1 = Math.sin(DEC) - Math.sin(ALT) * Math.sin(LAT);
+        double b2 = Math.cos(ALT) * Math.cos(LAT);
 
-    public void equatorialToTelescope() {
-        double tmp1, tmp2, tmp3, tmp4;
-        double X, Y, Z;
-        double alpha, omega;
+        double cosA = b1 / b2;
+        double A = Math.acos(cosA);
 
-        equatorialToSferical();
-        // alpha-> azimuth
-        tmp1 = Math.sin(d) * Math.cos(fi);
-        tmp2 = Math.cos(t) * Math.cos(d);
-        tmp3 = Math.sin(t) * Math.sin(d) * Math.sin(fi);
-        tmp4 = tmp2 - tmp3;
-        alpha = Math.atan(tmp1 / tmp4);
-        X = tmp1;
-        Y = tmp4;
-        alphaToAzimuth(alpha, Y);
+        height =  Math.toDegrees(ALT);
+        azimuth = Math.toDegrees(A);
 
-        // omega -> heigh
-        tmp1 = Math.sin(t) * Math.cos(d);
-        tmp2 = Math.cos(t) * Math.sin(d) * Math.sin(fi);
-        omega = Math.asin(tmp1 + tmp2);
-        Z = tmp1 + tmp2;
-        height = Math.toDegrees(omega);
+        if (Math.sin(HA) < 0.0) azimuth = 360.0 - azimuth;
+        azimuth = 360.0 - azimuth;
+
+        Log.d(TAG, "sin(HA)="+ Math.sin(HA));
+
+        Log.d(TAG, "Altitude=" + convertDec2Hour(height));
+        Log.d(TAG, "Azimuth=" + convertDec2Hour(azimuth));
+
+
     }
 
     private long getCurrentTime() {
@@ -138,5 +108,38 @@ public class Position {
 
     public long getTime() {
         return (getCurrentTime() - getVernalEquinoxTime());
+    }
+
+    public double getUTC() {
+
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        hour -= 2;
+        int minute = Calendar.getInstance().get(Calendar.MINUTE);
+        minute -= 4;
+        int second = Calendar.getInstance().get(Calendar.SECOND);
+        second -= 8;
+        return hour +
+                minute / 60.0 +
+                second / 3600.0;
+    }
+
+    private String convertDec2Hour(double num)
+    {
+
+        long hours;
+        long minutes;
+        double seconds;
+        double fPart;
+        String hour;
+
+        hours = (long) num;
+        fPart = num - hours;
+        fPart *= 60;
+        minutes = (long) fPart;
+        seconds = fPart - minutes;
+        seconds *= 60;
+
+        hour = String.format("%d %d\' %.2f\"", hours, minutes, seconds);
+        return hour;
     }
 }

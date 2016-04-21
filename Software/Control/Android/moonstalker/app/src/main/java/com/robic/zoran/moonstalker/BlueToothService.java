@@ -20,21 +20,33 @@ import java.util.UUID;
  */
 public class BlueToothService {
 
+    // Delimiters
+    private static final String SM = "<";
+    private static final String EM = ">";
+
+    //Messages
+    //IN
+    private static final String RDY = "RDY";
+    private static final String NOT_RDY = "NOT_RDY";
+    private static final String BTRY_LOW = "BTRY_LOW";
+    private static final String BTRY_RESULT = "BTRY";
+
     private static final String TAG = "bluetooth1";
     // SDP UUID service
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     // Status  for Handler
-    private static final int RECIEVE_MESSAGE = 1;
     private static final int CONNECTION_ACCEPTED_MESSAGE = 2;
     private static final int CONNECTION_CANCELED_MESSAGE = 3;
+    private static final int BTRY_RESULT_MESSAGE = 4;
+    private static final int RDY_MESSAGE = 5;
+    private static final int BTRY_LOW_MESSAGE = 7;
+    private static final int NOT_READY_MESSAGE = 8;
 
     private BluetoothAdapter btAdapter = null;
     private MainActivity mainActivity;
-    private boolean isBtPresent = false;
-    private boolean isBtPOn = false;
     private BtReadWrite btReadWrite;
     private BluetoothDevice pairedDevice;
-    private boolean isConnected = false;
+    private boolean isConnected = true;
     private boolean connecting = false;
 
     private Handler h;
@@ -49,14 +61,6 @@ public class BlueToothService {
         h = new Handler() {
             public void handleMessage(android.os.Message msg) {
                 switch (msg.what) {
-                    case RECIEVE_MESSAGE:
-                        byte[] readBuf = (byte[]) msg.obj;
-                        rcvdMsg = new String(readBuf, 0, msg.arg1);
-
-                        Log.d(TAG, "Message received from Arduino:");
-                        Log.d(TAG, rcvdMsg);
-                        myMainActivity.getTelescope().getControl().processMsg(rcvdMsg);
-                        break;
                     case CONNECTION_ACCEPTED_MESSAGE:
                         isConnected = true;
                         mainActivity.updateStatus();
@@ -68,6 +72,26 @@ public class BlueToothService {
                         connecting = false;
                         mainActivity.telescope.clearReady();
                         mainActivity.updateStatus();
+                        break;
+                    case RDY_MESSAGE:
+                        Log.d(TAG, "Process RDY message from Arduino...");
+                        myMainActivity.telescope.setReady();
+                        break;
+                    case BTRY_RESULT_MESSAGE:
+                        byte[] readBuf = (byte[]) msg.obj;
+                        rcvdMsg = new String(readBuf, 0, msg.arg1);
+                        Log.d(TAG, "Process BTRY_RESULT message from Arduino..." + rcvdMsg);
+                        mainActivity.telescope.btryVoltage(rcvdMsg, BTRY_RESULT);
+                        break;
+                    case NOT_READY_MESSAGE:
+                        mainActivity.telescope.clearReady();
+                        mainActivity.updateStatus();
+                        break;
+                    case BTRY_LOW_MESSAGE:
+                        mainActivity.telescope.setBatteryOk(false);
+                        mainActivity.telescope.clearReady();
+                        mainActivity.updateStatus();
+                        break;
                 }
             }
         };
@@ -75,17 +99,49 @@ public class BlueToothService {
         checkBTState();
     }
 
+    private void processMsg(String msg, int bytes, byte[] buffer) {
+
+        if (chkMsg(msg, RDY)) {
+
+            h.obtainMessage(RDY_MESSAGE).sendToTarget();
+            return;
+        }
+
+        if (chkMsg(msg, BTRY_RESULT)) {
+
+            h.obtainMessage(BTRY_RESULT_MESSAGE, bytes, -1, buffer).sendToTarget();
+            return;
+        }
+
+        if (chkMsg(msg, NOT_RDY)) {
+
+
+            return;
+        }
+
+        if (chkMsg(msg, BTRY_LOW)) {
+
+            Log.d(TAG, "Process BTRY_LOW message from Arduino");
+//            telescope.clearReady();
+            return;
+        }
+
+        Log.d(TAG, "Unknown message received from Arduino");
+    }
+
+    private boolean chkMsg(String recMsg, String expMsg) {
+        recMsg = recMsg.substring(1, 1 + expMsg.length());
+        return (recMsg.equals(expMsg));
+    }
+
     private void checkBTState() {
 
         // Check for Bluetooth support and then check to make sure it is turned on
         // Emulator doesn't support Bluetooth and will return null
         if (btAdapter == null) {
-            isBtPresent = false;
             errorExit("Fatal Error", "Bluetooth not support");
         } else {
-            isBtPresent = true;
             if (btAdapter.isEnabled()) {
-                isBtPOn = true;
                 Log.d(TAG, "...Bluetooth ON...");
             } else {
                 //Prompt user to turn on Bluetooth
@@ -208,7 +264,8 @@ public class BlueToothService {
                 try {
                     // Read from the InputStream
                     bytes = mmInStream.read(buffer);
-                    h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();
+                    rcvdMsg = new String(buffer, 0, bytes);
+                    processMsg(rcvdMsg, bytes, buffer);
                 } catch (IOException e) {
                     h.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
                     Log.d(TAG, "...Error data receive: " + e.getMessage() + "...");
@@ -236,14 +293,6 @@ public class BlueToothService {
             btReadWrite.write(msg);
             Log.d(TAG, "Message sent to Arduino: " + msg);
         }
-    }
-
-    public boolean isBtPOn() {
-        return isBtPOn;
-    }
-
-    public boolean isBtPresent() {
-        return isBtPresent;
     }
 
     public boolean isConnected() {

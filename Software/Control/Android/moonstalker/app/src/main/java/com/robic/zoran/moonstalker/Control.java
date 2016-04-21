@@ -70,63 +70,6 @@ public class Control {
         Log.d(TAG, outMessage);
         BTservice.write(outMessage);
     }
-
-    public void processMsg(String msg) {
-
-        if(chkMsg(msg, RDY)) {
-
-            Log.d(TAG, "Process RDY message from Arduino");
-
-            telescope.setReady();
-
-            return;
-        }
-
-        if(chkMsg(msg, NOT_RDY)) {
-
-            Log.d(TAG, "Process NOT_RDY message from Arduino");
-
-            telescope.clearReady();
-            return;
-        }
-
-        if(chkMsg(msg, BTRY_RESULT)) {
-
-            Log.d(TAG, "Process BTRY_RESULT message from Arduino");
-            btryVoltage(msg, BTRY_RESULT);
-            return;
-        }
-
-        if(chkMsg(msg, FATAL_ERROR)) {
-
-            Log.d(TAG, "Process FATAL_ERROR message from Arduino");
-            telescope.clearReady();
-            return;
-        }
-
-        if(chkMsg(msg, BTRY_LOW)) {
-
-            Log.d(TAG, "Process BTRY_LOW message from Arduino");
-            telescope.clearReady();
-            return;
-        }
-
-        Log.d(TAG, "Unknown message received from Arduino");
-    }
-
-    private boolean chkMsg(String recMsg, String expMsg)
-    {
-        recMsg = recMsg.substring(1, 1+expMsg.length());
-        return(recMsg.equals(expMsg));
-    }
-
-    private void btryVoltage(String recMsg, String expMsg) {
-
-        String btryVoltage;
-        btryVoltage = recMsg.substring(2+expMsg.length(), recMsg.length() -2);
-        telescope.setBtryVoltage(Double.valueOf(btryVoltage));
-        telescope.mainActivity.updateStatus();
-    }
 }
 
 
