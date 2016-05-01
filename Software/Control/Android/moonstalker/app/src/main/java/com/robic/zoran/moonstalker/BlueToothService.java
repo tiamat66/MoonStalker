@@ -71,6 +71,15 @@ public class BlueToothService {
                         connecting = false;
                         mainActivity.updateStatus();
                         Log.d(TAG, "BlueTooth connection accepted");
+                        mainActivity.telescope.control.st();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        //Prompt to calibrate
+                        if (!mainActivity.telescope.isCalibrated)
+                            mainActivity.calibrateMessage();
                         break;
                     case CONNECTION_CANCELED_MESSAGE:
                         Log.d(TAG, "...BT connection canceled...");
@@ -83,6 +92,7 @@ public class BlueToothService {
                     case RDY_MESSAGE:
                         Log.d(TAG, "Process RDY message from Arduino...");
                         myMainActivity.telescope.setReady();
+                        mainActivity.updateStatus();
                         break;
                     case BTRY_RESULT_MESSAGE:
                         byte[] readBuf = (byte[]) msg.obj;
@@ -249,11 +259,11 @@ public class BlueToothService {
         }
     }
 
-    private class Shcheduler extends  Thread {
+    private class Shcheduler extends Thread {
 
         public void run() {
 
-            while(connecting) {
+            while (connecting) {
 
                 try {
                     sleep(1000);
@@ -261,11 +271,12 @@ public class BlueToothService {
                     e.printStackTrace();
                 }
                 waiting++;
-                if(waiting == 10){
+                if (waiting == 10) {
 
                     h.obtainMessage(CONNECTION_TIMED_OUT_MESSAGE).sendToTarget();
                 }
             }
+            waiting = 0;
         }
     }
 

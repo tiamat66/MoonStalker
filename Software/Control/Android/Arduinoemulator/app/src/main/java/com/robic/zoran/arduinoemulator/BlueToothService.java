@@ -149,7 +149,6 @@ public class BlueToothService {
                     btReadWrite.start();
                     Log.d(TAG, "...Connection was accepted...");
                     connectionCanceled = false;
-                    rdy();
                     try {
                         mmServerSocket.close();
                     } catch (IOException e) {
@@ -249,7 +248,7 @@ public class BlueToothService {
         if(chkMsg(msg, ST)) {
 
             Log.d(TAG, "Process STATUS message from Client)");
-            notRdy();
+            rdy();
             return;
         }
 

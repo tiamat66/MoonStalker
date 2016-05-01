@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         calibrateButton = new Button(this);
         calibrateButton.setId(R.id.calibrate_button);
-        calibrateButton.setText("CALIBRATE");
+        calibrateButton.setText("CALIBRATED");
         L1.addView(calibrateButton);
 
         testButton = new Button(this);
@@ -251,7 +251,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.calibrate_button:
-                calibrateMessage();
+                telescope.calibrated();
+                disableButton(calibrateButton);
+                move();
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    telescope.getBattery();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 break;
 
             case R.id.test_button:
@@ -563,7 +575,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void connectionCanceled() {
 
-        Toast.makeText(getApplicationContext(), "Connection lost!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "Connection lost!", Toast.LENGTH_LONG).show();
 
     }
 
@@ -571,25 +583,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
         builder1.setTitle("Calibration");
-        builder1.setMessage("Manually move the telescope to Star Polaris.");
+        builder1.setMessage("Manually move the telescope to Star Polaris and then click CALIBRATED");
         builder1.setCancelable(true);
         builder1.setNeutralButton(android.R.string.ok,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         dialog.cancel();
-                        telescope.calibrated();
-                        disableButton(calibrateButton);
-                        move();
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            telescope.getBattery();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
                     }
                 });
         AlertDialog alert11 = builder1.create();
