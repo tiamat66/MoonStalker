@@ -1,6 +1,8 @@
 package com.robic.zoran.moonstalker;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -14,6 +16,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import junit.framework.Assert;
 
@@ -32,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button moveButton;
     Button connectButton;
     Button calibrateButton;
+    Button testButton;
 
     Spinner mStarDropDown;
     ArrayAdapter<CharSequence> mStarAdapter;
@@ -45,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -84,6 +89,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         calibrateButton.setId(R.id.calibrate_button);
         calibrateButton.setText("CALIBRATE");
         L1.addView(calibrateButton);
+
+        testButton = new Button(this);
+        testButton.setId(R.id.test_button);
+        testButton.setText("EXIT");
+        L1.addView(testButton);
 
         //DropDown
         mStarDropDown = new Spinner(this);
@@ -133,6 +143,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void moonstalkerMain() throws InterruptedException {
 
+        testButton.setOnClickListener(this);
+
         calibrateButton.setOnClickListener(this);
 
         traceButton.setOnClickListener(this);
@@ -159,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String output;
 
         output = String.format("LAT=%s", convertDec2Hour(gpsService.getLatitude())) +
-                 String.format("LON=%s", convertDec2Hour(gpsService.getLongitude()));
+                String.format("LON=%s", convertDec2Hour(gpsService.getLongitude()));
         locTextView.setText(output);
         myView.invalidate();
     }
@@ -169,9 +181,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (!btService.isConnected() ||
                 !telescope.isReady ||
                 !telescope.isCalibrated ||
-                curAstroObject == null ) {
+                curAstroObject == null) {
 
-            if(!telescope.isTracing) disableButton(traceButton);
+            if (!telescope.isTracing) disableButton(traceButton);
             disableButton(moveButton);
 
         } else if (btService.isConnected() &&
@@ -190,9 +202,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             disableButton(moveButton);
         }
 
-        if(!btService.isConnected())
+        if (!btService.isConnected())
             disableButton(calibrateButton);
-        else if(!telescope.isCalibrated())
+        else if (!telescope.isCalibrated())
             enableButton(calibrateButton);
 
         if (btService.isConnected()) {
@@ -220,6 +232,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (!telescope.isTracing) {
 
                     traceButton.setText("TRACE OFF");
+                    move();
                     telescope.onTrace();
                 } else {
 
@@ -232,26 +245,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.move_button:
                 if (curAstroObject != null) {
 
-                    double ra = Double.valueOf(curAstroObject.getmRa());
-                    double dec = Double.valueOf(curAstroObject.getmDec());
-                    telescope.onMove(ra, dec);
+                    move();
                     updateStatus();
                 }
                 break;
 
             case R.id.calibrate_button:
-                //Calibrate the telescope
-                telescope.calibration();
-                disableButton(calibrateButton);
-                try {
-                    telescope.getBattery();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                calibrateMessage();
+                break;
+
+            case R.id.test_button:
+                finish();
+                break;
 
             default:
                 break;
         }
+    }
+
+    public void move() {
+
+        double ra = Double.valueOf(curAstroObject.getmRa());
+        double dec = Double.valueOf(curAstroObject.getmDec());
+        telescope.onMove(ra, dec);
     }
 
     private void scanAstroLine(int position, AstroObject obj) {
@@ -349,7 +365,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawRect(X, Y, X + D, Y + D, paint);
 
             paint.setColor(Color.BLACK);
-            output = String.format("HEIGHT: %s\n",convertDec2Hour(telescope.getPosition().getHeight()));
+            output = String.format("ALTITUDE: %s\n", convertDec2Hour(telescope.getPosition().getHeight()));
             canvas.drawText(output, X, Y - O, paint);
             canvas.drawText("+90", X + (D / 2), Y - O, paint);
             canvas.drawText("-90", X + (D / 2), Y + D + O, paint);
@@ -432,7 +448,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 paint.setColor(Color.GREEN);
                 out = "CONNECTED";
                 disableButton(connectButton);
-            } else if(btService.isConnecting()) {
+            } else if (btService.isConnecting()) {
                 paint.setColor(Color.YELLOW);
                 out = "CONNECTING...";
                 disableButton(connectButton);
@@ -454,7 +470,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 i++;
             }
 
-            if(telescope.isBatteryOk()) {
+            if (telescope.isBatteryOk()) {
 
                 paint.setColor(Color.GREEN);
                 out = "BATTERY OK";
@@ -466,7 +482,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawText(out, X + offset, Y + i * offset, paint);
             i++;
 
-            if(telescope.ishNegative()) {
+            if (telescope.ishNegative()) {
 
                 paint.setColor(Color.RED);
                 out = "HEIGHT NEGATIVE";
@@ -509,8 +525,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private String convertDec2Hour(double num)
-    {
+    private String convertDec2Hour(double num) {
 
         long hours;
         long minutes;
@@ -527,5 +542,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         hour = String.format("%d %d\' %.2f\"", hours, minutes, seconds);
         return hour;
+    }
+
+    public void connectionTimedOutMessage() {
+
+        AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
+        builder1.setTitle("BT connection timed out");
+        builder1.setMessage("Please check the BlueTooth connection!");
+        builder1.setCancelable(true);
+        builder1.setNeutralButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                        finish();
+                    }
+                });
+        AlertDialog alert11 = builder1.create();
+        alert11.show();
+    }
+
+    public void connectionCanceled() {
+
+        Toast.makeText(getApplicationContext(), "Connection lost!", Toast.LENGTH_SHORT).show();
+
+    }
+
+    public void calibrateMessage() {
+
+        AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
+        builder1.setTitle("Calibration");
+        builder1.setMessage("Manually move the telescope to Star Polaris.");
+        builder1.setCancelable(true);
+        builder1.setNeutralButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                        telescope.calibrated();
+                        disableButton(calibrateButton);
+                        move();
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            telescope.getBattery();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+        AlertDialog alert11 = builder1.create();
+        alert11.show();
     }
 }

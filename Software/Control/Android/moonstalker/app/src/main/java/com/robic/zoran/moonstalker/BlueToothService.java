@@ -41,13 +41,18 @@ public class BlueToothService {
     private static final int RDY_MESSAGE = 5;
     private static final int BTRY_LOW_MESSAGE = 7;
     private static final int NOT_READY_MESSAGE = 8;
+    private static final int CONNECTION_TIMED_OUT_MESSAGE = 9;
 
     private BluetoothAdapter btAdapter = null;
     private MainActivity mainActivity;
     private BtReadWrite btReadWrite;
     private BluetoothDevice pairedDevice;
-    private boolean isConnected = true;
+    private boolean isConnected = false;
     private boolean connecting = false;
+    private int waiting = 0;
+
+    private ConnectThread connectThread;
+    private Shcheduler scheduler;
 
     private Handler h;
 
@@ -63,6 +68,7 @@ public class BlueToothService {
                 switch (msg.what) {
                     case CONNECTION_ACCEPTED_MESSAGE:
                         isConnected = true;
+                        connecting = false;
                         mainActivity.updateStatus();
                         Log.d(TAG, "BlueTooth connection accepted");
                         break;
@@ -72,6 +78,7 @@ public class BlueToothService {
                         connecting = false;
                         mainActivity.telescope.clearReady();
                         mainActivity.updateStatus();
+                        mainActivity.connectionCanceled();
                         break;
                     case RDY_MESSAGE:
                         Log.d(TAG, "Process RDY message from Arduino...");
@@ -91,6 +98,9 @@ public class BlueToothService {
                         mainActivity.telescope.setBatteryOk(false);
                         mainActivity.telescope.clearReady();
                         mainActivity.updateStatus();
+                        break;
+                    case CONNECTION_TIMED_OUT_MESSAGE:
+                        mainActivity.connectionTimedOutMessage();
                         break;
                 }
             }
@@ -122,7 +132,6 @@ public class BlueToothService {
         if (chkMsg(msg, BTRY_LOW)) {
 
             Log.d(TAG, "Process BTRY_LOW message from Arduino");
-//            telescope.clearReady();
             return;
         }
 
@@ -180,7 +189,10 @@ public class BlueToothService {
             try {
                 // Connect the device through the socket. This will block
                 // until it succeeds or throws an exception
+                Log.d(TAG, "Startav gledat c srvr ce apstaja");
+
                 mmSocket.connect();
+                Log.d(TAG, "Jedavc sj kanektav");
             } catch (IOException connectException) {
                 // Unable to connect; close the socket and get out
                 try {
@@ -230,8 +242,30 @@ public class BlueToothService {
             Log.d(TAG, "...No paired device...");
         } else {
             connecting = true;
-            ConnectThread connectThread = new ConnectThread(pairedDevice);
+            connectThread = new ConnectThread(pairedDevice);
             connectThread.start();
+            scheduler = new Shcheduler();
+            scheduler.start();
+        }
+    }
+
+    private class Shcheduler extends  Thread {
+
+        public void run() {
+
+            while(connecting) {
+
+                try {
+                    sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                waiting++;
+                if(waiting == 10){
+
+                    h.obtainMessage(CONNECTION_TIMED_OUT_MESSAGE).sendToTarget();
+                }
+            }
         }
     }
 

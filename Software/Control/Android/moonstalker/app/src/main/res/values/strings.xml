@@ -8,7 +8,9 @@
     <string name="edit_DEC">DEC</string>
     <string name="update_button">Update</string>
     <string name="calibrate_button">Calibrate</string>
+    <string name="test_button">Test</string>
     <string-array name="stars" >
+        <item>Polaris 2.53 89.26</item>
         <item>Deneb 20.69 45.28</item>
         <item>Alphekka 15.58 42.71</item>
         <item>Sirius 6.75 -16.73</item>

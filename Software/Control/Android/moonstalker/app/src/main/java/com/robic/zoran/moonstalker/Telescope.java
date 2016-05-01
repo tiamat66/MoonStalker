@@ -1,6 +1,7 @@
 package com.robic.zoran.moonstalker;
 
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 /**
@@ -11,12 +12,11 @@ public class Telescope {
     Control control;
     MainActivity mainActivity = null;
     private static final int BUSY_MESSAGE = 2;
-    private static final int H_NEGATIVE_MESSAGE = 6;
-    private static final int H_POSITIVE_MESSAGE = 7;
+    private static final int ALT_NEGATIVE_MESSAGE = 6;
+    private static final int ALT_POSITIVE_MESSAGE = 7;
+    private static final int CALIBRATING_MESSAGE = 8;
 
-    private static final double POLARIS_RA = 0;
-    private static final double POLARIS_DEC = 90;
-    private static final double PRECISION = 1.0;
+    private static final double PRECISION = 2.0;
     // Mechanical characteristics
     private static final double MOTOR_STEPS_NUM = 200.0;
     private static final double REDUCTOR_TRANSMITION = 30.0;
@@ -29,9 +29,9 @@ public class Telescope {
     private static final double TRSHLD_BTRY = 11.0;
 
     boolean isCalibrated = false;
-    boolean isReady = true;
+    boolean isReady = false;
     boolean isTracing = false;
-    boolean batteryOk = true;
+    boolean batteryOk = false;
     boolean hNegative = false;
 
     double hSteps;
@@ -49,22 +49,25 @@ public class Telescope {
         vSteps = 0;
 
         h = new Handler() {
-            public void handleMessage(android.os.Message msg) {
+            public void handleMessage(Message msg) {
                 switch (msg.what) {
                     case BUSY_MESSAGE:
                         clearReady();
                         mainActivity.updateStatus();
                         break;
-                    case H_NEGATIVE_MESSAGE:
-                        //clearReady();
+                    case ALT_NEGATIVE_MESSAGE:
                         hNegative = true;
                         mainActivity.updateStatus();
                         break;
-                    case H_POSITIVE_MESSAGE:
+                    case ALT_POSITIVE_MESSAGE:
                         setReady();
                         hNegative = false;
                         mainActivity.updateStatus();
                         break;
+                    case CALIBRATING_MESSAGE:
+                        mainActivity.calibrateMessage();
+                        break;
+
                 }
             }
         };
@@ -78,11 +81,9 @@ public class Telescope {
         traceThread.start();
     }
 
-    public void calibration() {
+    public void calibrated() {
+
         // The default calibration position is POLARIS
-        position.setRa(POLARIS_RA);
-        position.setDec(POLARIS_DEC);
-        position.RaDec2AltAz();
         isCalibrated = true;
         mainActivity.updateStatus();
     }
@@ -137,10 +138,10 @@ public class Telescope {
                 //Check for negative height
                 if (position.getHeight() <= H_NEGATIVE) {
 
-                    h.obtainMessage(H_NEGATIVE_MESSAGE).sendToTarget();
+                    h.obtainMessage(ALT_NEGATIVE_MESSAGE).sendToTarget();
                 } else {
 
-                    h.obtainMessage(H_POSITIVE_MESSAGE).sendToTarget();
+                    h.obtainMessage(ALT_POSITIVE_MESSAGE).sendToTarget();
                     control.move(cur_h_steps, cur_v_steps);
                 }
 
@@ -191,7 +192,7 @@ public class Telescope {
 
     public void clearReady() {
 
-        isReady = true;
+        isReady = false;
     }
 
     public Control getControl() {

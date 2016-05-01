@@ -11,6 +11,9 @@ public class Position {
     GregorianCalendar calendar;
 
     private static final String TAG = "Position";
+    private static final int offsetHour =   -2;
+    private static final int offsetMinute = -4;
+    private static final int offsetSecond = -49;
 
     //Equatorial coordinates
     double ra;
@@ -46,7 +49,6 @@ public class Position {
 
     public void RaDec2AltAz() {
 
-        Log.d(TAG, "RA=" + ra * 15.0);
         double RA = ra * 15.0;
         double DEC = dec;
 
@@ -58,18 +60,13 @@ public class Position {
                 gpsService.getLongitude() +
                 15.0 * getUTC();
 
-        Log.d(TAG, "DaysFromY2k = " + daysFromY2k);
-        Log.d(TAG, "UTC =" + getUTC());
-        Log.d(TAG, "LST=" + LST);
         long a = (long) LST / 360;
         LST = LST -
                 a * 360;
-        Log.d(TAG, "LST[deg]=" + LST);
         getUTC();
 
         double HA = LST - RA;
         if (HA < 0.0) HA += 360.0;
-        Log.d(TAG, "HA=" + HA);
 
         HA = Math.toRadians(HA);
         DEC = Math.toRadians(DEC);
@@ -90,12 +87,8 @@ public class Position {
         if (Math.sin(HA) < 0.0) azimuth = 360.0 - azimuth;
         azimuth = 360.0 - azimuth;
 
-        Log.d(TAG, "sin(HA)="+ Math.sin(HA));
-
         Log.d(TAG, "Altitude=" + convertDec2Hour(height));
         Log.d(TAG, "Azimuth=" + convertDec2Hour(azimuth));
-
-
     }
 
     private long getCurrentTime() {
@@ -113,11 +106,13 @@ public class Position {
     public double getUTC() {
 
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        hour -= 2;
+        hour += offsetHour;
         int minute = Calendar.getInstance().get(Calendar.MINUTE);
-        minute -= 4;
+        minute += offsetMinute ;
         int second = Calendar.getInstance().get(Calendar.SECOND);
-        second -= 8;
+        second += offsetSecond;
+//        second -= 40; on zaostaja 2 minuti
+//        second -= 30; on zaostaja 4 minute
         return hour +
                 minute / 60.0 +
                 second / 3600.0;
