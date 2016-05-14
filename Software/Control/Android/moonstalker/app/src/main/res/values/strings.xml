@@ -9,19 +9,22 @@
     <string name="update_button">Update</string>
     <string name="calibrate_button">Calibrate</string>
     <string name="test_button">Test</string>
+    <string name="up_button">UP</string>
+    <string name="down_button">DOWN</string>
+    <string name="left_button">LEFT</string>
+    <string name="right_button">RIGHT</string>
     <string-array name="stars" >
-        <item>Polaris 2.53 89.26</item>
-        <item>Deneb 20.69 45.28</item>
-        <item>Alphekka 15.58 42.71</item>
-        <item>Sirius 6.75 -16.73</item>
-        <item>Altair 19.85 8.87</item>
-        <item>Arcturus 14.27 19.2</item>
-        <item>Vega 18.62 38.8</item>
-        <item>Capella 5.28 46.0</item>
-        <item>Rigel 5.24 -8.2</item>
-        <item>Procyon 7.65 5.2</item>
-        <item>Betelgeuse 5.92 7.4</item>
-        <item>Aldebaran 4.6 16.5</item>
-        <item>Test 22.59 -0.12</item>
+        <item>Test 16 41 42 36 28 0</item>
+        <item>Polaris(CMin) 2 31 50.3 89 15 51.3</item>
+        <item>Mirach(Andr) 1 9 44.1 35 37 11.8 </item>
+        <item>Zosma(Leo) 11 14 6.6 20 31 24.5</item>
+        <item>Menkar(Cet) 3 2 16.8 4 5 21.8</item>
+        <item>Errai(Ceph) 23 39 21.4 77 37 57.3</item>
+        <item>Porrima(Vir) 12 41 39.3 -1 26 57.9</item>
+        <item>Chertan(Leo) 11 14 14.3 15 25 45.1</item>
+        <item>Alphard(Hya) 9 27 35.2 -8 39 30.3</item>
+        <item>Saiph(Ori) 5 47 45.4 -9 40 10.6</item>
+        <item>Acubens(Cnc) 8 58 29.3 11 51 27.1
+        </item>
     </string-array>
 </resources>

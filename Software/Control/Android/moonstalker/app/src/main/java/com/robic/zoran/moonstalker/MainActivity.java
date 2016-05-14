@@ -36,6 +36,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button connectButton;
     Button calibrateButton;
     Button testButton;
+    Button up;
+    Button down;
+    Button left;
+    Button right;
 
     Spinner mStarDropDown;
     ArrayAdapter<CharSequence> mStarAdapter;
@@ -94,6 +98,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         testButton.setId(R.id.test_button);
         testButton.setText("EXIT");
         L1.addView(testButton);
+
+        up = new Button(this);
+        up.setId(R.id.up_button);
+        up.setText("U");
+        L1.addView(up);
+
+        down = new Button(this);
+        down.setId(R.id.down_button);
+        down.setText("D");
+        L1.addView(down);
+
+        left = new Button(this);
+        left.setId(R.id.left_button);
+        left.setText("L");
+        L1.addView(left);
+
+        right = new Button(this);
+        right.setId(R.id.right_button);
+        right.setText("R");
+        L1.addView(right);
 
         //DropDown
         mStarDropDown = new Spinner(this);
@@ -161,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mStarDropDown.setAdapter(mStarAdapter);
         mStarDropDown.setOnItemSelectedListener(this);
+        mStarDropDown.setEnabled(false);
 
         showLocation();
         updateStatus();
@@ -185,6 +210,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             if (!telescope.isTracing) disableButton(traceButton);
             disableButton(moveButton);
+            mStarDropDown.setEnabled(false);
+
 
         } else if (btService.isConnected() &&
                 telescope.isReady() &&
@@ -193,6 +220,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             enableButton(traceButton);
             enableButton(moveButton);
+            mStarDropDown.setEnabled(true);
         } else if (btService.isConnected() &&
                 telescope.isReady() &&
                 telescope.isCalibrated() &&
@@ -200,6 +228,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             enableButton(traceButton);
             disableButton(moveButton);
+            mStarDropDown.setEnabled(false);
         }
 
         if (!btService.isConnected())
@@ -215,6 +244,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             enableButton(connectButton);
             connectButton.setText("CONNECT");
         }
+
+        if(telescope.isTracing)
+            traceButton.setText("TRACE OFF");
+        else
+            traceButton.setText("TRACE");
+
 
         myView.invalidate();
     }
@@ -293,8 +328,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         sc = new Scanner(buf);
         name = sc.next();
-        ra = sc.next();
-        dec = sc.next();
+        //ra h min sec
+        ra = sc.next() + " ";
+        ra += sc.next() + " ";
+        ra += sc.next() + " ";
+        //dec h min sec
+        dec = sc.next() + " ";
+        dec += sc.next() + " ";
+        dec += sc.next() + " ";
         obj.setAll(name, ra, dec);
     }
 
@@ -320,10 +361,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private class AstroObject {
 
         private String mName;
-        private String mType;
         private String mRa;
         private String mDec;
-        private String mDescription;
 
 
         public void setAll(String name, String ra, String dec) {
@@ -340,12 +379,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return output;
         }
 
-        public String getmRa() {
-            return mRa;
+        public double getmRa() {
+
+            double h, min, s;
+            Scanner sc;
+
+            sc = new Scanner(mRa);
+            h = Double.valueOf(sc.next());
+            min = Double.valueOf(sc.next());
+            s = Double.valueOf(sc.next());
+            return convertHour2Dec(h, min, s);
         }
 
-        public String getmDec() {
-            return mDec;
+        public double getmDec() {
+
+            double h, min, s;
+            Scanner sc;
+
+            sc = new Scanner(mDec);
+            h = Double.valueOf(sc.next());
+            min = Double.valueOf(sc.next());
+            s = Double.valueOf(sc.next());
+            return convertHour2Dec(h, min, s);
         }
     }
 
@@ -403,8 +458,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawRect(X, Y, X + D, Y + D, paint);
 
             paint.setColor(Color.BLACK);
-            paint.setFakeBoldText(true);
             output = String.format("AZIMUTH: %s\n", convertDec2Hour(telescope.getPosition().getAzimuth()));
+            paint.setFakeBoldText(true);
             canvas.drawText(output, X, Y - O, paint);
             canvas.drawText("N", X + (D / 2), Y - O, paint);
             canvas.drawText("S", X + (D / 2), Y + D + 2 * O, paint);
@@ -496,8 +551,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             if (telescope.ishNegative()) {
 
-                paint.setColor(Color.RED);
-                out = "HEIGHT NEGATIVE";
+                paint.setColor(Color.YELLOW);
+                out = "NEGATIVE ALTITUDE";
                 canvas.drawText(out, X + offset, Y + i * offset, paint);
                 i++;
             }
@@ -535,6 +590,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             drawStatus(10, 10, canvas);
         }
+    }
+
+    private double convertHour2Dec(double h, double min, double s) {
+
+        return (h + (min / 60.0) + (s / 3600.0));
     }
 
     private String convertDec2Hour(double num) {

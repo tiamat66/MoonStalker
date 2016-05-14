@@ -43,6 +43,8 @@ public class BlueToothService {
     private static final int NOT_READY_MESSAGE = 8;
     private static final int CONNECTION_TIMED_OUT_MESSAGE = 9;
 
+    private static final int CONNECTION_TIMEOUT = 20;
+
     private BluetoothAdapter btAdapter = null;
     private MainActivity mainActivity;
     private BtReadWrite btReadWrite;
@@ -88,6 +90,11 @@ public class BlueToothService {
                         mainActivity.telescope.clearReady();
                         mainActivity.updateStatus();
                         mainActivity.connectionCanceled();
+                        if(mainActivity.telescope.isTracing()) {
+                            mainActivity.telescope.offTrace();
+                            mainActivity.updateStatus();
+                        }
+
                         break;
                     case RDY_MESSAGE:
                         Log.d(TAG, "Process RDY message from Arduino...");
@@ -199,10 +206,7 @@ public class BlueToothService {
             try {
                 // Connect the device through the socket. This will block
                 // until it succeeds or throws an exception
-                Log.d(TAG, "Startav gledat c srvr ce apstaja");
-
                 mmSocket.connect();
-                Log.d(TAG, "Jedavc sj kanektav");
             } catch (IOException connectException) {
                 // Unable to connect; close the socket and get out
                 try {
@@ -271,7 +275,7 @@ public class BlueToothService {
                     e.printStackTrace();
                 }
                 waiting++;
-                if (waiting == 10) {
+                if (waiting == CONNECTION_TIMEOUT) {
 
                     h.obtainMessage(CONNECTION_TIMED_OUT_MESSAGE).sendToTarget();
                 }

@@ -13,9 +13,11 @@ public class GPSService implements LocationListener {
 
     private static final String TAG = "gps1";
     private static final double DEF_LONGITUDE = 13.82;
-    private static final double DEF_LATITUDE =  46.45;
-    private static final int    MINIMUM_TIME = 10000;  // 10s
-    private static final int    MINIMUM_DISTANCE = 50; // 50m
+//    private static final double DEF_LONGITUDE = -1.9166667;
+    private static final double DEF_LATITUDE = 46.45;
+//    private static final double DEF_LATITUDE = 52.5;
+    private static final int MINIMUM_TIME = 10000;  // 10s
+    private static final int MINIMUM_DISTANCE = 50; // 50m
 
     double latitude;
     double longitude;
@@ -25,7 +27,7 @@ public class GPSService implements LocationListener {
 
     public GPSService(MainActivity myMainActivity) {
         mainActivity = myMainActivity;
-        latitude =  DEF_LATITUDE;
+        latitude = DEF_LATITUDE;
         longitude = DEF_LONGITUDE;
 
         enableGPSService();
@@ -33,12 +35,12 @@ public class GPSService implements LocationListener {
 
     private void enableGPSService() {
 
-        mLocationManager = (LocationManager)  mainActivity.getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager = (LocationManager) mainActivity.getSystemService(Context.LOCATION_SERVICE);
 
-        if(mLocationManager == null) {
-            Log.d(TAG,"Cannot get the LocationManager");
+        if (mLocationManager == null) {
+            Log.d(TAG, "Cannot get the LocationManager");
         } else {
-            Log.d(TAG,"The LocationManager succesfuly granted");
+            Log.d(TAG, "The LocationManager succesfuly granted");
         }
 
         // We have to check if ACCESS_FINE_LOCATION and/or ACCESS_COARSE_LOCATION permission are granted
