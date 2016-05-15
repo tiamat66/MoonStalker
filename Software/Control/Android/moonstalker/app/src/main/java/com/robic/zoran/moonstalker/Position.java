@@ -13,7 +13,6 @@ public class Position {
     GregorianCalendar testCalendar;
 
     private static final String TAG = "Position";
-//    double testCnst = 0.28122999999999976;
     double testCnst = 0.3526933333332993;
     double testAlt = 32.60971039;
 
