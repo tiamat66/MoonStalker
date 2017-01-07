@@ -1,0 +1,33 @@
+Source,/Users/saso/work/MoonStalker/Hardware/PCB/MoonStalker.sch
+Kicad Rev,Eeschema 4.0.4-stable
+Generated Date,2017 January 07, Saturday 22:28:43
+
+Title,MoonStalker Drive Unit
+Company,Koza d.o.o.
+Revision,0.1
+Date Issue,2016-01-08
+Comment,It is very nice
+
+Reference,Value,Library,Library Ref
+U4,Arduino_Micro,MoonStalker,Arduino_Micro
+U1,Pololu_DRV8825,MoonStalker,Pololu_DRV8825
+U2,Pololu_DRV8825,MoonStalker,Pololu_DRV8825
+U5,HC-05_Bluetooth_Radio,MoonStalker,HC-05_Bluetooth_Radio
+U3,TEL3-1211,MoonStalker,TEL3-1211
+C8,1000uF,device,CP
+P3,CONN_01X02,conn,CONN_01X02
+P2,CONN_01X02,conn,CONN_01X02
+P5,CONN_01X02,conn,CONN_01X02
+P4,CONN_01X02,conn,CONN_01X02
+P1,CONN_01X02,conn,CONN_01X02
+R1,3k3,device,R
+R2,1k,device,R
+C7,1000uF,device,CP
+C2,220uF,device,CP
+C3,220uF,device,CP
+C6,47nF,device,C
+C1,47nF,device,C
+C9,47nF,device,C
+C4,100nF,device,C
+C5,100nF,device,C
+C10,47nF,device,C
