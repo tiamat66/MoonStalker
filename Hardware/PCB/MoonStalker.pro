@@ -1,4 +1,4 @@
-update=sob 31 dec 2016 18:22:25 CET
+update=8.1.2017 21:19:44
 version=1
 last_client=kicad
 [pcbnew]
@@ -23,6 +23,16 @@ ModuleOutlineThickness=0.150000000000
 [cvpcb]
 version=1
 NetIExt=net
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=/home/saso/work/MoonStalker/Hardware/PCB/
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=
+SpiceForceRefPrefix=0
+SpiceUseNetNumbers=0
+LabSize=79
 [eeschema]
 version=1
 LibDir=
@@ -55,17 +65,7 @@ LibName25=siliconi
 LibName26=opto
 LibName27=atmel
 LibName28=contrib
-LibName29=valves
-LibName30=/home/saso/work/MoonStalker/Hardware/PCB/MoonStalker
-[schematic_editor]
-version=1
-PageLayoutDescrFile=
-PlotDirectoryName=/home/saso/work/MoonStalker/Hardware/PCB/
-SubpartIdSeparator=0
-SubpartFirstId=65
-NetFmtName=
-SpiceForceRefPrefix=0
-SpiceUseNetNumbers=0
-LabSize=79
+LibName29=MoonStalker
+LibName30=valves
 [general]
 version=1
