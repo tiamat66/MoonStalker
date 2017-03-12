@@ -1,9 +1,9 @@
-(kicad_pcb (version 4) (host pcbnew 4.0.6-e0-6349~53~ubuntu16.04.1)
+(kicad_pcb (version 4) (host pcbnew 4.0.4-stable)
 
   (general
     (links 72)
     (no_connects 0)
-    (area 44.704743 52.8226 155.295258 139.775001)
+    (area 54.534999 53.264999 146.125001 139.775001)
     (thickness 1.6)
     (drawings 6)
     (tracks 168)
@@ -15,7 +15,7 @@
   (page A4)
   (layers
     (0 F.Cu signal)
-    (31 B.Cu signal hide)
+    (31 B.Cu signal)
     (32 B.Adhes user)
     (33 F.Adhes user)
     (34 B.Paste user)
@@ -1167,11 +1167,11 @@
     )
   )
 
-  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 56D1B4CB) (tstamp 58C4885F)
+  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 58C49156) (tstamp 58C4885F)
     (at 60 57.5)
     (descr "Mounting Hole 3.2mm, M3, ISO14580")
     (tags "mounting hole 3.2mm m3 iso14580")
-    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS)
+    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value MountingHole_3.2mm_M3_ISO14580_Pad (at 0 3.75) (layer F.Fab)
@@ -1182,11 +1182,11 @@
     (pad 1 thru_hole circle (at 0 0) (size 5.5 5.5) (drill 3.2) (layers *.Cu *.Mask))
   )
 
-  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 56D1B4CB) (tstamp 58C48866)
+  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 58C49161) (tstamp 58C48866)
     (at 140 57.5)
     (descr "Mounting Hole 3.2mm, M3, ISO14580")
     (tags "mounting hole 3.2mm m3 iso14580")
-    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS)
+    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value MountingHole_3.2mm_M3_ISO14580_Pad (at 0 3.75) (layer F.Fab)
@@ -1197,11 +1197,11 @@
     (pad 1 thru_hole circle (at 0 0) (size 5.5 5.5) (drill 3.2) (layers *.Cu *.Mask))
   )
 
-  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 56D1B4CB) (tstamp 58C4886D)
+  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 58C4914A) (tstamp 58C4886D)
     (at 60 132.5)
     (descr "Mounting Hole 3.2mm, M3, ISO14580")
     (tags "mounting hole 3.2mm m3 iso14580")
-    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS)
+    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value MountingHole_3.2mm_M3_ISO14580_Pad (at 0 3.75) (layer F.Fab)
@@ -1212,11 +1212,11 @@
     (pad 1 thru_hole circle (at 0 0) (size 5.5 5.5) (drill 3.2) (layers *.Cu *.Mask))
   )
 
-  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 58C48A16) (tstamp 58C48874)
+  (module Mounting_Holes:MountingHole_3.2mm_M3_ISO14580_Pad (layer F.Cu) (tedit 58C4913D) (tstamp 58C48874)
     (at 140 132.5)
     (descr "Mounting Hole 3.2mm, M3, ISO14580")
     (tags "mounting hole 3.2mm m3 iso14580")
-    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS)
+    (fp_text reference REF** (at 0 -3.75) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value MountingHole_3.2mm_M3_ISO14580_Pad (at 0 3.75) (layer F.Fab)
