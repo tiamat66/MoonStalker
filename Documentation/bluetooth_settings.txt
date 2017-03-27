@@ -1,0 +1,3 @@
+Bluetooth name: MoonStalker
+Password: rute3456
+Speed: 115200
