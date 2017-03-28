@@ -1,3 +1,13 @@
+/* MoonStalker
+ * 
+ * This SW controls the MoonStalker drive unit.
+ */
+
+/* pin numbers */
+
+const int battery_voltage_pin = A0;
+const int bluetooth_tx_pin = 1;
+const int bluetooth_rx_pin = 0;
 int step_pin = 2;
 int direction_pin = 3;
 int enable_pin = 4;
@@ -5,39 +15,35 @@ int direction = HIGH;
 
 void setup()
 {
-  Serial.begin(9600);
-  pinMode(step_pin, OUTPUT);
-  pinMode(direction_pin, OUTPUT);
-  pinMode(enable_pin, OUTPUT);
-  digitalWrite(step_pin, LOW);
-  digitalWrite(direction_pin, LOW);
-  digitalWrite(enable_pin, HIGH);
+  /* Open bluetooth serial port */
+  Serial1.begin(115200);
+  while (!Serial)
+  {
+      ; // Wait for serial port to connect
+  }
 }
 
 void loop()
 {
-  while(1)
-  {
-    Serial.write("Moving\n");
-    digitalWrite(enable_pin, LOW);
-    digitalWrite(direction_pin, direction);
-    for (int j = 0; j <= 2000; j++)
-    {
-      digitalWrite(step_pin, HIGH);
-      delayMicroseconds(1000);
-      digitalWrite(step_pin, LOW);
-      delayMicroseconds(1000);
-    }
-    digitalWrite(enable_pin, HIGH);
-    Serial.write("Stopped\n");
-    delay(2000);
-    if (direction == HIGH)
-    {
-      direction = LOW;
-    }
-    else
-    {
-      direction = HIGH;
-    }
-  }
+    handle_input_requests();
+    int battery_value = 0;
+    battery_value = read_battery_value();
 }
+
+int read_battery_value()
+{
+    int value = 0;
+
+    value = analogRead(battery_voltage_pin);
+    return value;
+}
+
+/* handle_input_requests
+ * 
+ * Read requests from bluetooth serial and
+ * act on them.
+ */
+void handle_input_requests()
+{
+}
+
