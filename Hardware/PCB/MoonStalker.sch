@@ -27,8 +27,8 @@ LIBS:siliconi
 LIBS:opto
 LIBS:atmel
 LIBS:contrib
-LIBS:valves
 LIBS:MoonStalker
+LIBS:valves
 LIBS:MoonStalker-cache
 EELAYER 25 0
 EELAYER END
@@ -550,7 +550,7 @@ L R R1
 U 1 1 5692FAD4
 P 3900 5550
 F 0 "R1" V 3980 5550 50  0000 C CNN
-F 1 "3k3" V 3900 5550 50  0000 C CNN
+F 1 "14k93" V 4050 5550 50  0000 C CNN
 F 2 "Resistors_ThroughHole:Resistor_Horizontal_RM7mm" V 3830 5550 50  0001 C CNN
 F 3 "" H 3900 5550 50  0000 C CNN
 	1    3900 5550
@@ -561,7 +561,7 @@ L R R2
 U 1 1 5692FB07
 P 3900 5900
 F 0 "R2" V 3980 5900 50  0000 C CNN
-F 1 "1k" V 3900 5900 50  0000 C CNN
+F 1 "5088R" V 4050 5900 50  0000 C CNN
 F 2 "Resistors_ThroughHole:Resistor_Horizontal_RM7mm" V 3830 5900 50  0001 C CNN
 F 3 "" H 3900 5900 50  0000 C CNN
 	1    3900 5900
