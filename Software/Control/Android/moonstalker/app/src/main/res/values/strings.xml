@@ -8,13 +8,13 @@
     <string name="edit_DEC">DEC</string>
     <string name="update_button">Update</string>
     <string name="calibrate_button">Calibrate</string>
-    <string name="test_button">Test</string>
+    <string name="exit_button">EXIT</string>
     <string name="up_button">UP</string>
     <string name="down_button">DOWN</string>
     <string name="left_button">LEFT</string>
     <string name="right_button">RIGHT</string>
+    <!--First Object in list is calibration object-->
     <string-array name="stars" >
-        <item>Test 16 41 42 36 28 0</item>
         <item>Polaris(CMin) 2 31 50.3 89 15 51.3</item>
         <item>Mirach(Andr) 1 9 44.1 35 37 11.8 </item>
         <item>Zosma(Leo) 11 14 6.6 20 31 24.5</item>

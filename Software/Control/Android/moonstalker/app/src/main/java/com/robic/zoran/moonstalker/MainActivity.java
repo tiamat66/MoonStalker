@@ -1,5 +1,6 @@
 package com.robic.zoran.moonstalker;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -18,14 +19,12 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import junit.framework.Assert;
-
 import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
-        AdapterView.OnItemSelectedListener {
-
-    private static final String TAG = "main";
+        AdapterView.OnItemSelectedListener
+{
+    private static final String TAG = "Telescope-Main";
 
     TextView posTextView;
     TextView locTextView;
@@ -35,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button moveButton;
     Button connectButton;
     Button calibrateButton;
-    Button testButton;
+    Button exitButton;
     Button up;
     Button down;
     Button left;
@@ -44,16 +43,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Spinner mStarDropDown;
     ArrayAdapter<CharSequence> mStarAdapter;
 
-    Telescope telescope;
-    BlueToothService btService;
-    GPSService gpsService;
-    AstroObject curAstroObject = null;
-    MyView myView = null;
+    private DeviceIO  deviceIO;
+    private Telescope t;
+    private BlueToothService bt;
+    private Control ctr;
+    private GPSService gps;
+    private AstroObject curObj = null;
+    private MyView myView = null;
+    private Paint drawPaint = new Paint();
 
+    DeviceIO getDevice()
+    {
+        return deviceIO;
+    }
+
+    BlueToothService getBt()
+    {
+        return bt;
+    }
+
+    Control getCtr()
+    {
+        return ctr;
+    }
+
+    GPSService get_gps()
+    {
+        return gps;
+    }
+
+    Telescope getTelescope()
+    {
+        return t;
+    }
+
+    @SuppressLint("SetTextI18n")
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
-
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -94,10 +122,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         calibrateButton.setText("CALIBRATED");
         L1.addView(calibrateButton);
 
-        testButton = new Button(this);
-        testButton.setId(R.id.test_button);
-        testButton.setText("EXIT");
-        L1.addView(testButton);
+        exitButton = new Button(this);
+        exitButton.setId(R.id.exit_button);
+        exitButton.setText("EXIT");
+        L1.addView(exitButton);
 
         up = new Button(this);
         up.setId(R.id.up_button);
@@ -128,296 +156,231 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         myView = new MyView(this);
         root.addView(myView);
-
         setContentView(root);
 
-        btService = new BlueToothService(this);
-        gpsService = new GPSService(this);
-        telescope = new Telescope(btService, gpsService, this);
-        try {
-            moonstalkerMain();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        bt = new BlueToothService(this);
+        gps = new GPSService(this);
+        t = new Telescope(gps, this);
+        ctr = new Control(t, this);
+        deviceIO = new DeviceIO(this);
+        deviceIO.start();
+        try {moonstalkerMain();}
+        catch (InterruptedException e) {e.printStackTrace();}
     }
 
     @Override
-    public void onResume() {
+    public void onResume()
+    {
         super.onResume();
-
     }
 
     @Override
-    public void onPause() {
+    public void onPause()
+    {
         super.onPause();
-
     }
 
-    private void disableButton(Button button) {
-
+    private void disableButton(Button button)
+    {
         button.setAlpha(0.5f);
         button.setClickable(false);
     }
 
-    private void enableButton(Button button) {
-
+    private void enableButton(Button button)
+    {
         button.setAlpha(1.0f);
         button.setClickable(true);
     }
 
-    private void moonstalkerMain() throws InterruptedException {
-
-        testButton.setOnClickListener(this);
-
+    private void moonstalkerMain() throws InterruptedException
+    {
+        exitButton.setOnClickListener(this);
         calibrateButton.setOnClickListener(this);
-
         traceButton.setOnClickListener(this);
         disableButton(traceButton);
-
         moveButton.setOnClickListener(this);
         disableButton(moveButton);
-
         connectButton.setOnClickListener(this);
-
         mStarAdapter = ArrayAdapter
                 .createFromResource(this, R.array.stars,
                         android.R.layout.simple_spinner_item);
-
         mStarDropDown.setAdapter(mStarAdapter);
         mStarDropDown.setOnItemSelectedListener(this);
         mStarDropDown.setEnabled(false);
-
         showLocation();
         updateStatus();
     }
 
-    public void showLocation() {
-
-        String output;
-
-        output = String.format("LAT=%s", convertDec2Hour(gpsService.getLatitude())) +
-                String.format("LON=%s", convertDec2Hour(gpsService.getLongitude()));
+    public void showLocation()
+    {
+        String output = String.format("LAT=%s", t.getPos().convertDec2Hour(gps.getLatitude())) +
+                String.format("LON=%s", t.getPos().convertDec2Hour (gps.getLongitude()));
         locTextView.setText(output);
         myView.invalidate();
     }
 
-    public void updateStatus() {
-
-        if (!btService.isConnected() ||
-                !telescope.isReady ||
-                !telescope.isCalibrated ||
-                curAstroObject == null) {
-
-            if (!telescope.isTracing) disableButton(traceButton);
+    @SuppressLint("SetTextI18n")
+    public void updateStatus()
+    {
+        if (!bt.connected ||
+                t.ready==Telescope.ERROR ||
+                !t.calibrated ||
+                curObj == null) {
+            if (!t.tracing) disableButton(traceButton);
             disableButton(moveButton);
             mStarDropDown.setEnabled(false);
-
-
-        } else if (btService.isConnected() &&
-                telescope.isReady() &&
-                telescope.isCalibrated() &&
-                !telescope.isTracing()) {
-
+        }
+        else if (!t.tracing) {
             enableButton(traceButton);
             enableButton(moveButton);
             mStarDropDown.setEnabled(true);
-        } else if (btService.isConnected() &&
-                telescope.isReady() &&
-                telescope.isCalibrated() &&
-                telescope.isTracing()) {
-
+        }
+        else {
             enableButton(traceButton);
             disableButton(moveButton);
             mStarDropDown.setEnabled(false);
         }
 
-        if (!btService.isConnected())
+        if (!bt.connected)
             disableButton(calibrateButton);
-        else if (!telescope.isCalibrated())
+        else if (!t.calibrated)
             enableButton(calibrateButton);
 
-        if (btService.isConnected()) {
-
+        if (bt.connected) {
             disableButton(connectButton);
             connectButton.setText("CONNECTED");
-        } else {
+        }
+        else {
             enableButton(connectButton);
             connectButton.setText("CONNECT");
         }
 
-        if(telescope.isTracing)
-            traceButton.setText("TRACE OFF");
-        else
-            traceButton.setText("TRACE");
-
+        if(t.tracing) traceButton.setText("TRACE OFF");
+        else traceButton.setText("TRACE");
 
         myView.invalidate();
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
-    public void onClick(View v) {
+    public void onClick(View v)
+    {
         switch (v.getId()) {
-
             case R.id.connect_button:
-                btService.connect();
+                bt.connect();
                 updateStatus();
                 break;
-
             case R.id.trace_button:
-                if (!telescope.isTracing) {
-
+                if (!t.tracing) {
                     traceButton.setText("TRACE OFF");
-                    move();
-                    telescope.onTrace();
+                    t.setTrace(true);
                 } else {
-
                     traceButton.setText("TRACE");
-                    telescope.offTrace();
+                    t.setTrace(false);
                 }
-                updateStatus();
                 break;
-
             case R.id.move_button:
-                if (curAstroObject != null) {
-
+                if (curObj != null) {
                     move();
                     updateStatus();
                 }
                 break;
-
             case R.id.calibrate_button:
-                telescope.calibrated();
                 disableButton(calibrateButton);
+                t.calibrate();
                 move();
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    telescope.getBattery();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 break;
-
-            case R.id.test_button:
-                finish();
-                break;
-
-            default:
+            case R.id.exit_button:
+                errorExit("Application terminated", "");
                 break;
         }
     }
 
-    public void move() {
-
-        double ra = Double.valueOf(curAstroObject.getmRa());
-        double dec = Double.valueOf(curAstroObject.getmDec());
-        telescope.onMove(ra, dec);
+    public void move()
+    {
+        double ra = curObj.getRa();
+        double dec = curObj.getDec();
+        t.onMove(ra, dec);
     }
 
-    private void scanAstroLine(int position, AstroObject obj) {
-
-        Scanner sc;
-        String name;
-        String ra;
-        String dec;
+    private void scanAstroLine(int position, AstroObject obj)
+    {
         String buf = mStarDropDown.getItemAtPosition(position).toString();
         Log.d(TAG, position + ": " + buf);
 
-        sc = new Scanner(buf);
-        name = sc.next();
+        Scanner sc = new Scanner(buf);
+        String name = sc.next();
         //ra h min sec
-        ra = sc.next() + " ";
+        String ra = sc.next() + " ";
         ra += sc.next() + " ";
         ra += sc.next() + " ";
         //dec h min sec
-        dec = sc.next() + " ";
+        String dec = sc.next() + " ";
         dec += sc.next() + " ";
         dec += sc.next() + " ";
-        obj.setAll(name, ra, dec);
-    }
-
-    public Telescope getTelescope() {
-        return telescope;
+        obj.set(name, ra, dec);
     }
 
     @Override
-    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
-        if (curAstroObject == null) {
-
-            curAstroObject = new AstroObject();
-        }
-        scanAstroLine(position, curAstroObject);
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+    {
+        if (curObj == null) curObj = new AstroObject("", "", "");
+        scanAstroLine(position, curObj);
     }
 
     @Override
-    public void onNothingSelected(AdapterView<?> parent) {
+    public void onNothingSelected(AdapterView<?> parent)
+    {}
 
-    }
+    private class AstroObject
+    {
+        private String name;
+        private String ra;
+        private String dec;
 
-    private class AstroObject {
-
-        private String mName;
-        private String mRa;
-        private String mDec;
-
-
-        public void setAll(String name, String ra, String dec) {
-
-            mName = name;
-            mRa = ra;
-            mDec = dec;
+        AstroObject(String name, String ra, String dec)
+        {
+            set(name, ra, dec);
         }
 
-        public String print() {
-
-            String output =
-                    mName + "  " + mRa + "  " + mDec;
-            return output;
+        void set(String name, String ra, String dec)
+        {
+            this.name = name;
+            this.ra = ra;
+            this.dec = dec;
         }
 
-        public double getmRa() {
-
-            double h, min, s;
-            Scanner sc;
-
-            sc = new Scanner(mRa);
-            h = Double.valueOf(sc.next());
-            min = Double.valueOf(sc.next());
-            s = Double.valueOf(sc.next());
-            return convertHour2Dec(h, min, s);
+        double getRa()
+        {
+            Scanner sc = new Scanner(ra);
+            return convertHour2Dec(Double.valueOf(sc.next()),
+                    Double.valueOf(sc.next()),
+                    Double.valueOf(sc.next()));
         }
 
-        public double getmDec() {
-
-            double h, min, s;
-            Scanner sc;
-
-            sc = new Scanner(mDec);
-            h = Double.valueOf(sc.next());
-            min = Double.valueOf(sc.next());
-            s = Double.valueOf(sc.next());
-            return convertHour2Dec(h, min, s);
+        double getDec()
+        {
+            Scanner sc = new Scanner(dec);
+            return convertHour2Dec(Double.valueOf(sc.next()),
+                    Double.valueOf(sc.next()),
+                    Double.valueOf(sc.next()));
         }
     }
 
-    public class MyView extends View {
-
+    public class MyView extends View
+    {
         private static final int D = 300;
         private static final int O = 10;
 
-        public MyView(Context context) {
+        public MyView(Context context)
+        {
             super(context);
-
         }
 
-        protected void drawHeight(int X, int Y, double x, double y, Canvas canvas) {
-
-            Paint paint = new Paint();
+        protected void drawHeight(int X, int Y, double x, double y, Canvas canvas)
+        {
             String output;
+            Paint paint = new Paint();
 
             paint.setColor(Color.GREEN);
             canvas.drawCircle(X + (D / 2) + (float) x, Y + (D / 2) - (float) y, O, paint);
@@ -432,7 +395,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawRect(X, Y, X + D, Y + D, paint);
 
             paint.setColor(Color.BLACK);
-            output = String.format("ALTITUDE: %s\n", convertDec2Hour(telescope.getPosition().getHeight()));
+            output = String.format("ALTITUDE: %s\n", t.getPos().convertDec2Hour(t.getPos().h));
             canvas.drawText(output, X, Y - O, paint);
             canvas.drawText("+90", X + (D / 2), Y - O, paint);
             canvas.drawText("-90", X + (D / 2), Y + D + O, paint);
@@ -440,10 +403,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawText("0", X + D + O, Y + (D / 2), paint);
         }
 
-        protected void drawAzimuth(int X, int Y, double x, double y, Canvas canvas) {
-
-            Paint paint = new Paint();
+        protected void drawAzimuth(int X, int Y, double x, double y, Canvas canvas)
+        {
             String output;
+            Paint paint = new Paint();
+
 
             paint.setColor(Color.GREEN);
             canvas.drawCircle(X + (D / 2) + (float) x, Y + (D / 2) - (float) y, O, paint);
@@ -458,7 +422,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawRect(X, Y, X + D, Y + D, paint);
 
             paint.setColor(Color.BLACK);
-            output = String.format("AZIMUTH: %s\n", convertDec2Hour(telescope.getPosition().getAzimuth()));
+            output = String.format("AZIMUTH: %s\n", t.getPos().convertDec2Hour(t.getPos().az));
             paint.setFakeBoldText(true);
             canvas.drawText(output, X, Y - O, paint);
             canvas.drawText("N", X + (D / 2), Y - O, paint);
@@ -467,61 +431,61 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawText("E", X + D + O, Y + (D / 2), paint);
         }
 
-        protected void drawStatus(int X, int Y, Canvas canvas) {
-
-            Paint paint = new Paint();
-            String out = "";
+        protected void drawStatus(int X, int Y, Canvas canvas)
+        {
+            String out;
             int i = 1;
             int offset = 20;
+            Paint paint = new Paint();
 
             paint.setColor(Color.BLACK);
             canvas.drawRect(X, Y, X + D / 2, Y + D / 2, paint);
 
-            if (gpsService.isGotLocation()) {
+            if (t.ready == Telescope.OK) {
+                paint.setColor(Color.GREEN);
+                out = "OK";
+            }
+            else if (t.ready == Telescope.BUSY) {
+                paint.setColor(Color.BLUE);
+                out = "BUSY";
+            }
+            else {
+                paint.setColor(Color.RED);
+                out = "ERROR";
+            }
+            canvas.drawText(out, X + offset, Y + i * offset, paint);
+            i++;
 
+            if (gps.isGotLocation()) {
                 paint.setColor(Color.GREEN);
                 out = "GPS LOCKED";
             } else {
-
                 paint.setColor(Color.RED);
                 out = "GPS NOT LOCKED";
             }
             canvas.drawText(out, X + offset, Y + i * offset, paint);
             i++;
 
-            if (telescope.isCalibrated) {
+            if (t.calibrated) {
                 paint.setColor(Color.GREEN);
                 out = "CALIBRATED";
             } else {
-
                 paint.setColor(Color.RED);
                 out = "NOT CALIBRATED";
             }
             canvas.drawText(out, X + offset, Y + i * offset, paint);
             i++;
 
-            if (telescope.isReady) {
-                paint.setColor(Color.GREEN);
-                out = "READY";
-            } else {
-
-                paint.setColor(Color.RED);
-                out = "NOT READY";
-            }
-            canvas.drawText(out, X + offset, Y + i * offset, paint);
-            i++;
-
-            if (btService.isConnected()) {
+            if (bt.connected) {
                 paint.setColor(Color.GREEN);
                 out = "CONNECTED";
                 disableButton(connectButton);
-            } else if (btService.isConnecting()) {
+            } else if (bt.connecting) {
                 paint.setColor(Color.YELLOW);
                 out = "CONNECTING...";
                 disableButton(connectButton);
                 canvas.drawText(out, X + offset, Y + 4 * offset, paint);
             } else {
-
                 paint.setColor(Color.RED);
                 out = "NOT CONNECTED";
                 enableButton(connectButton);
@@ -529,45 +493,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             canvas.drawText(out, X + offset, Y + i * offset, paint);
             i++;
 
-            if (telescope.isTracing) {
-
+            if (t.tracing) {
                 paint.setColor(Color.YELLOW);
                 out = "TRACING";
                 canvas.drawText(out, X + offset, Y + i * offset, paint);
                 i++;
             }
 
-            if (telescope.isBatteryOk()) {
-
+            if (t.batteryOk) {
                 paint.setColor(Color.GREEN);
                 out = "BATTERY OK";
             } else {
-
                 paint.setColor(Color.RED);
-                out = "BATTERY LOW";
+                out = "BATTERY ERROR";
             }
             canvas.drawText(out, X + offset, Y + i * offset, paint);
             i++;
 
-            if (telescope.ishNegative()) {
-
+            if (t.hNegative) {
                 paint.setColor(Color.YELLOW);
                 out = "NEGATIVE ALTITUDE";
                 canvas.drawText(out, X + offset, Y + i * offset, paint);
-                i++;
             }
-
-
         }
 
         @Override
-        protected void onDraw(Canvas canvas) {
+        protected void onDraw(Canvas canvas)
+        {
             super.onDraw(canvas);
 
-            double x, y, h, az;
-
-            az = telescope.getPosition().getAzimuth();
-            h = telescope.getPosition().getHeight();
+            double x, y;
+            double az = t.getPos().az;
+            double h =  t.getPos().h;
 
             if ((az > 180) && (az < 360))
                 h = Math.toRadians(270 - (h - 270));
@@ -576,9 +533,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             az = Math.toRadians((360 - az) + 90);
 
-            Paint paint = new Paint();
-            paint.setColor(Color.CYAN);
-            canvas.drawPaint(paint);
+            drawPaint.setColor(Color.CYAN);
+            canvas.drawPaint(drawPaint);
 
             x = (D / 2) * Math.cos(h);
             y = (D / 2) * Math.sin(h);
@@ -592,58 +548,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private double convertHour2Dec(double h, double min, double s) {
-
+    private double convertHour2Dec(double h, double min, double s)
+    {
         return (h + (min / 60.0) + (s / 3600.0));
     }
 
-    private String convertDec2Hour(double num) {
-
-        long hours;
-        long minutes;
-        double seconds;
-        double fPart;
-        String hour;
-
-        hours = (long) num;
-        fPart = num - hours;
-        fPart *= 60;
-        minutes = (long) fPart;
-        seconds = fPart - minutes;
-        seconds *= 60;
-
-        hour = String.format("%d %d\' %.2f\"", hours, minutes, seconds);
-        return hour;
+    public void connectionTimedOutMessage()
+    {
+        Toast.makeText(this, "BlueTooth connection to server timed out.\n" +
+                "Please check connection.", Toast.LENGTH_LONG).show();
+        updateStatus();
     }
 
-    public void connectionTimedOutMessage() {
+    public void connectionCanceled()
+    {
+        Toast.makeText(this, "Connection lost!", Toast.LENGTH_LONG).show();
+        updateStatus();
+    }
 
+    public void messagePrompt(String title, String message)
+    {
         AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
-        builder1.setTitle("BT connection timed out");
-        builder1.setMessage("Please check the BlueTooth connection!");
-        builder1.setCancelable(true);
-        builder1.setNeutralButton(android.R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.cancel();
-                        finish();
-                    }
-                });
-        AlertDialog alert11 = builder1.create();
-        alert11.show();
-    }
-
-    public void connectionCanceled() {
-
-        Toast.makeText(getApplicationContext(), "Connection lost!", Toast.LENGTH_LONG).show();
-
-    }
-
-    public void calibrateMessage() {
-
-        AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
-        builder1.setTitle("Calibration");
-        builder1.setMessage("Manually move the telescope to Star Polaris and then click CALIBRATED");
+        builder1.setTitle(title);
+        builder1.setMessage(message);
         builder1.setCancelable(true);
         builder1.setNeutralButton(android.R.string.ok,
                 new DialogInterface.OnClickListener() {
@@ -653,5 +580,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
         AlertDialog alert11 = builder1.create();
         alert11.show();
+    }
+
+    void errorExit(String title, String message)
+    {
+        Log.d(TAG, title + " - " + message);
+        finish();
+        System.exit(0);
     }
 }

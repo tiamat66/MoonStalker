@@ -1,235 +1,154 @@
 package com.robic.zoran.moonstalker;
 
-import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
-
-/**
- * Created by zoran on 7.3.2016.
- */
-public class Telescope {
-    Position position;
-    Control control;
-    MainActivity mainActivity = null;
-    private static final int BUSY_MESSAGE = 2;
-    private static final int ALT_NEGATIVE_MESSAGE = 6;
-    private static final int ALT_POSITIVE_MESSAGE = 7;
-    private static final int CALIBRATING_MESSAGE = 8;
-
+class Telescope
+{
+    static final String TAG = "Telescope";
+    static final int OK    = 1;
+    static final int ERROR = 2;
+    static final int BUSY  = 3;
+    private Position     pos;
+    private MainActivity act;
     private static final double PRECISION = 2.0;
     // Mechanical characteristics
-    private static final double MOTOR_STEPS_NUM = 200.0;
-    private static final double REDUCTOR_TRANSMITION = 30.0;
-    private static final double BELT_TRANSMITION = 48.0 / 14.0;
-    private static final double K = MOTOR_STEPS_NUM *
-            REDUCTOR_TRANSMITION *
-            BELT_TRANSMITION;
+    private static final double MOTOR_STEPS_NUM      = 200.0;
+    private static final double REDUCTOR_TRANSLATION = 30.0;
+    private static final double BELT_TRANSLATION     = 48.0 / 14.0;
 
-    private static final int H_NEGATIVE = 0;
+    private static final double K = MOTOR_STEPS_NUM *
+            REDUCTOR_TRANSLATION *
+            BELT_TRANSLATION;
+
+    private static final int    H_NEGATIVE  = 0;
     private static final double TRSHLD_BTRY = 11.0;
 
-    boolean isCalibrated = false;
-    boolean isReady = false;
-    boolean isTracing = false;
-    boolean batteryOk = false;
-    boolean hNegative = false;
+    boolean calibrated = false;
+    int     ready =      ERROR;
+    boolean tracing =    false;
+    boolean batteryOk =  false;
+    boolean hNegative =  false;
 
-    double hSteps;
-    double vSteps;
-    double btryVoltage;
-    Thread traceThread;
-    Handler h;
+    private double hSteps = 0;
+    private double vSteps = 0;
 
-    public Telescope(BlueToothService myBtService, GPSService myGpsService, MainActivity myMainActivity) {
-        control = new Control(myBtService, this);
-        position = new Position(myGpsService);
-        isCalibrated = false;
-        mainActivity = myMainActivity;
-        hSteps = 0;
-        vSteps = 0;
+    Telescope(GPSService gps, MainActivity act)
+    {
+        pos = new Position(gps);
+        this.act = act;
 
-        h = new Handler() {
-            public void handleMessage(Message msg) {
-                switch (msg.what) {
-                    case BUSY_MESSAGE:
-                        clearReady();
-                        mainActivity.updateStatus();
-                        break;
-                    case ALT_NEGATIVE_MESSAGE:
-                        hNegative = true;
-                        mainActivity.updateStatus();
-                        break;
-                    case ALT_POSITIVE_MESSAGE:
-                        setReady();
-                        hNegative = false;
-                        mainActivity.updateStatus();
-                        break;
-                    case CALIBRATING_MESSAGE:
-                        mainActivity.calibrateMessage();
-                        break;
-
-                }
-            }
-        };
-
-        traceThread = new Thread(new Runnable() {
-            public void run() {
-
+        Thread traceThread = new Thread(new Runnable() {
+            public void run()
+            {
                 trace();
             }
         });
         traceThread.start();
     }
 
-    public void calibrated() {
-
-        // The default calibration position is POLARIS
-        isCalibrated = true;
-        mainActivity.updateStatus();
+    Position getPos()
+    {
+        return pos;
     }
 
-    public Position getPosition() {
-        return position;
+    void calibrate()
+    {
+        // The default calibration position is POLARIS, the first object in table
+        calibrated = true;
+        act.updateStatus();
     }
 
-    public void onMove(double ra, double dec) {
-        position.setRa(ra);
-        position.setDec(dec);
+    void onMove(double ra, double dec)
+    {
+        pos.set(ra, dec);
         move();
     }
 
-    public void setBtryVoltage(double btryVoltage) {
-
-        this.btryVoltage = btryVoltage;
+    private void setBatteryVoltage(double btryVoltage)
+    {
         if (btryVoltage < TRSHLD_BTRY) {
             batteryOk = false;
-            clearReady();
+            setReady(ERROR);
         } else {
             batteryOk = true;
-            setReady();
+            setReady(OK);
         }
     }
 
-    private void move() {
+    private void move()
+    {
         double dif_az;
         double dif_hi;
         double azimuth_tmp;
         double height_tmp;
-        int cur_h_steps = 0;
-        int cur_v_steps = 0;
+        int cur_h_steps;
+        int cur_v_steps;
 
-        azimuth_tmp = position.getAzimuth();
-        height_tmp = position.getHeight();
+        azimuth_tmp = pos.az;
+        height_tmp = pos.h;
 
-        position.RaDec2AltAz();
-        dif_az = position.getAzimuth() - azimuth_tmp;
-        dif_hi = position.getHeight() - height_tmp;
+        pos.RaDec2AltAz();
+        dif_az = pos.az - azimuth_tmp;
+        dif_hi = pos.h  - height_tmp;
 
         hSteps += (dif_az * K) / 360.0;
         vSteps += (dif_hi * K) / 360.0;
 
-        if ((Math.abs(hSteps) >= PRECISION) ||
-                (Math.abs(vSteps) >= PRECISION)) {
-            if (isReady) {
+        if ((Math.abs(hSteps) >= PRECISION) || (Math.abs(vSteps) >= PRECISION)) {
+            if (ready != ERROR) {
                 cur_h_steps = (int) hSteps;
                 cur_v_steps = (int) vSteps;
                 hSteps -= cur_h_steps;
                 vSteps -= cur_v_steps;
-                //Check for negative height
-                if (position.getHeight() <= H_NEGATIVE) {
 
-                    h.obtainMessage(ALT_NEGATIVE_MESSAGE).sendToTarget();
-                } else {
-
-                    h.obtainMessage(ALT_POSITIVE_MESSAGE).sendToTarget();
-                    control.move(cur_h_steps, cur_v_steps);
+                if (pos.h <= H_NEGATIVE)
+                    act.getCtr().inMsgProcess(Control.ALT_NEGATIVE);
+                else {
+                    act.getCtr().inMsgProcess(Control.ALT_POSITIVE);
+                    act.getCtr().outMessage(Control.MOVE,
+                            String.valueOf(cur_h_steps), String.valueOf(cur_v_steps));
                 }
-
-            } else {
-                h.obtainMessage(BUSY_MESSAGE).sendToTarget();
             }
         }
     }
 
-    private void trace() {
+    private void trace()
+    {
         while (true) {
-
             try {
-                if (isTracing) {
-                    move();
-                }
-                traceThread.sleep(1000);
-            } catch (InterruptedException e) {
-                break;
-            }
+                if (tracing) move();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {break;}
         }
     }
 
-    public void btryVoltage(String recMsg, String expMsg) {
-
-        String btryVoltage;
-        btryVoltage = recMsg.substring(2 + expMsg.length(), recMsg.length() - 2);
-        setBtryVoltage(Double.valueOf(btryVoltage));
-        mainActivity.updateStatus();
+    void batteryVoltage(String recMsg)
+    {
+        String batteryVoltage = recMsg.substring(
+                2 + Control.MSG_BATTERY_RES.length(), recMsg.length() - 2);
+        setBatteryVoltage(Double.valueOf(batteryVoltage));
+        act.updateStatus();
     }
 
-    public void onTrace() {
-
-        isTracing = true;
-        mainActivity.updateStatus();
+    void setTrace(boolean val)
+    {
+        tracing = val;
+        act.updateStatus();
     }
 
-    public void offTrace() {
-
-        isTracing = false;
-        mainActivity.updateStatus();
+    void setReady(int val)
+    {
+        ready = val;
+        act.updateStatus();
     }
 
-    public void setReady() {
-
-        isReady = true;
+    void setHNegative(boolean val)
+    {
+        hNegative = val;
+        act.updateStatus();
     }
 
-    public void clearReady() {
-
-        isReady = false;
-    }
-
-    public Control getControl() {
-
-        assert control == null;
-        return control;
-    }
-
-    public boolean isCalibrated() {
-        return isCalibrated;
-    }
-
-    public boolean isTracing() {
-        return isTracing;
-    }
-
-    public boolean isReady() {
-        return isReady;
-    }
-
-    public boolean getBattery() throws InterruptedException {
-
-        mainActivity.telescope.control.btry();
-        Thread.sleep(1000);
-
-        return batteryOk;
-    }
-
-    public boolean isBatteryOk() {
-        return batteryOk;
-    }
-
-    public boolean ishNegative() {
-        return hNegative;
-    }
-
-    public void setBatteryOk(boolean batteryOk) {
-        this.batteryOk = batteryOk;
+    void setBatteryOk(boolean val)
+    {
+        this.batteryOk = val;
+        act.updateStatus();
     }
 }

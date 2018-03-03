@@ -5,5 +5,6 @@
     <string name="button2">Devices</string>
     <string name="button3">Start BT server</string>
     <string name="edit1">Msg</string>
+    <string name="button4">Exit</string>
 
 </resources>
