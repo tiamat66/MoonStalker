@@ -1,36 +1,34 @@
 package com.robic.zoran.arduinoemulator;
 
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-
-    private static final String TAG = "MainActivity1";
+public class MainActivity extends AppCompatActivity implements View.OnClickListener
+{
+    private static final String TAG = "MainActivity";
 
     BlueToothService btService;
     TextView mainTextView;
     Button sendButton;
     Button devButton;
     Button serButton;
+    Button exitButton;
     EditText mainEditText;
+    boolean BTServerStarted = false;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         btService = new  BlueToothService(this);
         mainEditText = (EditText) findViewById(R.id.edittext_msg);
@@ -39,43 +37,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onResume() {
+    protected void onResume()
+    {
         super.onResume();
-
     }
 
     @Override
-    protected void onPause() {
+    protected void onPause()
+    {
         super.onPause();
-
     }
 
-
-
-    public void main() {
-
+    public void main()
+    {
         sendButton = (Button) findViewById(R.id.main_button);
         assert sendButton != null;
         sendButton.setOnClickListener(this);
@@ -88,36 +62,62 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         assert serButton != null;
         serButton.setOnClickListener(this);
 
-        print("Ti boga ždevca mladi moš!!!!");
+        exitButton = (Button) findViewById(R.id.button4);
+        assert exitButton != null;
+        exitButton.setOnClickListener(this);
 
-        btService.startBtServer();
+        print("Arduino emulator");
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
-    public void onClick(View v) {
-
+    public void onClick(View v)
+    {
         switch (v.getId()) {
 
             case R.id.main_button:
-                mainTextView.setText("Sent message: " +
-                        mainEditText.getText().toString());
+                mainTextView.setText("Sent message: " + mainEditText.getText().toString());
                 btService.write(mainEditText.getText().toString());
                 break;
             case R.id.button2:
                 btService.getPairedDevices();
                 break;
             case R.id.button3:
-                btService.startBtServer();
+                if (BTServerStarted) stopBTServer();
+                else
+                {
+                    try {
+                        btService.startBtServer();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    serButton.setText("STOP BT SERVER");  BTServerStarted = true;
+                }
                 break;
+            case R.id.button4:
+                exit("Aplication terminated", "");
         }
     }
 
-    public void print(String msg) {
+    @SuppressLint("SetTextI18n")
+    public void stopBTServer()
+    {
+        btService.stopBtServer();
+        serButton.setText("START BT SERVER"); BTServerStarted = false;
+    }
 
+    public void print(String msg)
+    {
         mainTextView = (TextView) findViewById(R.id.main_textview);
-        assert mainTextView == null;
-
+        assert mainTextView != null;
         mainTextView.setText(msg);
     }
 
+    public void exit(String title, String message)
+    {
+        Log.d(TAG, title + " - " + message);
+        finish();
+        System.exit(0);
+    }
 }
+

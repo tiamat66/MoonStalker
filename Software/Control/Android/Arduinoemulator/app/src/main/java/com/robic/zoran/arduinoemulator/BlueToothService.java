@@ -1,16 +1,15 @@
 package com.robic.zoran.arduinoemulator;
 
-/**
- * Created by zoran on 14.3.2016.
- */
-
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,9 +17,9 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
-public class BlueToothService {
-
-    private static final String TAG = "bluetooth1";
+class BlueToothService
+{
+    private static final String TAG = "Bluetooth";
 
     // Delimiters
     private static final String SM = "<";
@@ -29,14 +28,13 @@ public class BlueToothService {
     //Messages
     //IN
     private static final String MOVE = "MV";
-    private static final String ST = "ST?";
+    private static final String ST =   "ST?";
     private static final String BTRY = "BTRY?";
 
     //OUT
-    private static final String RDY = "RDY";
-    private static final String NOT_RDY = "NOT_RDY";
+    private static final String RDY =      "RDY";
+    private static final String NOT_RDY =  "NOT_RDY";
     private static final String BTRY_RES = "BTRY";
-
 
     // SDP UUID service
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -45,101 +43,103 @@ public class BlueToothService {
     private static final int RECIEVE_MESSAGE = 1;
     private static final int CONNECTION_CANCELED_MESSAGE = 2;
     private BluetoothAdapter btAdapter = null;
-    private MainActivity mainActivity;
-    private AcceptThread acceptThread;
+    private MainActivity act;
     private BtReadWrite btReadWrite;
-    Handler h;
-    String rcvdMsg;
-    String outMessage;
-    boolean connectionCanceled = true;
-    BluetoothSocket socket = null;
+    private AcceptThread acceptThread;
+    private BlueToothServiceHandler handler;
+    private String outMessage;
+    private boolean connectionCanceled = true;
+    private BluetoothSocket socket = null;
 
-    public BlueToothService(final MainActivity myMainActivity) {
-
-        mainActivity = myMainActivity;
+    @SuppressLint("HandlerLeak")
+    BlueToothService(MainActivity act)
+    {
+        this.act = act;
         btAdapter = BluetoothAdapter.getDefaultAdapter();
-        acceptThread = new AcceptThread();
-
-        h = new Handler() {
-            public void handleMessage(android.os.Message msg) {
-                switch (msg.what) {
-                    case RECIEVE_MESSAGE:
-                        byte[] readBuf = (byte[]) msg.obj;
-                        rcvdMsg = new String(readBuf, 0, msg.arg1);
-                        Log.d(TAG, "Message received from Client:");
-                        Log.d(TAG, rcvdMsg);
-                        myMainActivity.print(rcvdMsg);
-                        processMsg(rcvdMsg);
-                        break;
-                    case CONNECTION_CANCELED_MESSAGE:
-                        connectionCanceled = true;
-                        Log.d(TAG, "...Connection Canceled...");
-                        socket = null;
-                        break;
-                }
-            };
-        };
-
+        handler = new BlueToothServiceHandler();
         checkBTState();
     }
 
-    private void checkBTState() {
-
+    private void checkBTState()
+    {
         // Check for Bluetooth support and then check to make sure it is turned on
         // Emulator doesn't support Bluetooth and will return null
-        if (btAdapter == null) {
-            errorExit("Fatal Error", "Bluetooth not support");
-        } else {
+        if (btAdapter == null) act.exit("Fatal Error", "Bluetooth not support");
+        else
+        {
             if (btAdapter.isEnabled()) {
                 Log.d(TAG, "...Bluetooth ON...");
             } else {
                 //Prompt user to turn on Bluetooth
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                mainActivity.startActivityForResult(enableBtIntent, 1);
+                act.startActivityForResult(enableBtIntent, 1);
             }
 
         }
     }
 
-    private void errorExit(String title, String message) {
-
-        Log.d(TAG, title + " - " + message);
-        mainActivity.finish();
-    }
-
-    public void getPairedDevices() {
-
+    void getPairedDevices()
+    {
         Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
-        // If there are paired devices
         if (pairedDevices.size() > 0) {
-            // Loop through paired devices
             for (BluetoothDevice device : pairedDevices) {
                 Log.d(TAG, device.getName() + "\n" + device.getAddress());
             }
         }
     }
 
-    // This acts as Server
-    private class AcceptThread extends Thread {
-        private final BluetoothServerSocket mmServerSocket;
+    @SuppressLint("HandlerLeak")
+    class BlueToothServiceHandler extends Handler
+    {
+        @Override
+        public void handleMessage(Message msg)
+        {
+            String str;
+            switch (msg.what) {
+                case RECIEVE_MESSAGE:
+                    byte[] readBuf = (byte[]) msg.obj;
+                    String rcvdMsg = new String(readBuf, 0, msg.arg1);
+                    str = "...Message received from Client...\n" +
+                            rcvdMsg;
+                    Log.d(TAG, str);
+                    act.print(str);
+                    processMsg(rcvdMsg);
+                    break;
+                case CONNECTION_CANCELED_MESSAGE:
+                    connectionCanceled = true;
+                    str = "...Connection Canceled...";
+                    act.stopBTServer();
+                    Log.d(TAG, str);
+                    act.print(str);
+                    socket = null;
+                    break;
+            }
+        }
+    }
 
-        public AcceptThread() {
-            // Use a temporary object that is later assigned to mmServerSocket,
-            // because mmServerSocket is final
-            BluetoothServerSocket tmp = null;
+    // This acts as Server
+    private class AcceptThread extends Thread
+    {
+        BluetoothServerSocket mmServerSocket = null;
+        boolean isRunning = false;
+
+        AcceptThread()
+        {
             try {
-                // MY_UUID is the app's UUID string, also used by the client code
-                tmp = btAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
+                mmServerSocket = btAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
             } catch (IOException ignored) { }
-            mmServerSocket = tmp;
         }
 
-        public void run() {
+        @Override
+        public void run()
+        {
             // Keep listening until exception occurs or a socket is returned
-            while (true) {
+            isRunning = true;
+            while (isRunning) {
                 try {
                     if(!connectionCanceled) continue;
-                    socket = mmServerSocket.accept();
+                    if (mmServerSocket != null) socket = mmServerSocket.accept();
+                    else Log.e(TAG, "Error Server Socket");
                 } catch (IOException e) {
                     break;
                 }
@@ -158,19 +158,23 @@ public class BlueToothService {
             }
         }
 
-        /** Will cancel the listening socket, and cause the thread to finish */
-        public void cancel() {
+       void cancel()
+        {
             try {
                 mmServerSocket.close();
             } catch (IOException ignored) { }
+            isRunning = false;
         }
     }
 
-    private class BtReadWrite extends Thread {
-        private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
+    private class BtReadWrite extends Thread
+    {
+        final InputStream mmInStream;
+        final OutputStream mmOutStream;
+        private boolean isRunning = false;
 
-        public BtReadWrite(BluetoothSocket socket) {
+        BtReadWrite(BluetoothSocket socket)
+        {
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
 
@@ -188,89 +192,104 @@ public class BlueToothService {
             mmOutStream = tmpOut;
         }
 
-        public void run() {
+        @Override
+        public void run()
+        {
             byte[] buffer = new byte[256];  // buffer store for the stream
-            int bytes; // bytes returned from read()
+            int bytes;
 
-            // Keep listening to the InputStream until an exception occurs
-            while (true) {
+            isRunning = true;
+            while (isRunning) {
                 if(connectionCanceled) break;
                 try {
                     // Read from the InputStream
                     bytes = mmInStream.read(buffer);        // Get number of bytes and message in "buffer"
                     Log.d(TAG, "...Readed" + bytes + " bytes...");
-                    h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();     // Send to message queue Handler
+                    handler.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();     // Send to message queue Handler
                 } catch (IOException e) {
-                    h.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
+                    handler.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
                     break;
                 }
             }
         }
 
         /* Call this from the main activity to send data to the remote device */
-        public void write(String message) {
-            Log.d(TAG, "...Data to send: " + message + "...");
+        void write(String message)
+        {
+            String str;
+
+            str = "...Data to send: " + message + "...";
+            Log.d(TAG, str);
+            act.print(str);
             byte[] msgBuffer = message.getBytes();
             try {
                 mmOutStream.write(msgBuffer);
             } catch (IOException e) {
-                h.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
-                Log.d(TAG, "...Error data send: " + e.getMessage() + "...");
+                handler.obtainMessage(CONNECTION_CANCELED_MESSAGE).sendToTarget();
+                 str = "...Error data send: " + e.getMessage() + "...";
+                Log.d(TAG, str);
+                act.print(str);
             }
         }
     }
 
-    public void write(String msg) {
-
+    void write(String msg)
+    {
         if(btReadWrite != null) {
             btReadWrite.write(msg);
-            Log.d(TAG, "Message sent to Client: " + msg);
+            String str = "...Message sent to Client: " + msg + "...";
+            Log.d(TAG, str);
+            act.print(str);
         }
     }
 
-    public void startBtServer() {
-
+    void startBtServer() throws InterruptedException
+    {
+        acceptThread = new AcceptThread();
         acceptThread.start();
-        Log.d(TAG, "...Bluetooth Server Started...");
+        String str = "...Bluetooth Server Started...";
+        Log.d(TAG, str);
+        Toast.makeText(act, str, Toast.LENGTH_LONG).show();
+        act.print(str);
     }
 
-    private void processMsg(String msg) {
+    void stopBtServer()
+    {
+        acceptThread.cancel();
+        String str = "...Bluetooth Server Stopped...";
+        Log.d(TAG, str);
+        act.print(str);
+    }
 
-        //MV
-        if(chkMsg(msg, MOVE)) {
-
+    private void processMsg(String msg)
+    {
+       if(chkMsg(msg, MOVE)) {
             Log.d(TAG, "Process MV message from Client)");
             rdy();
             return;
         }
-
-        //ST
         if(chkMsg(msg, ST)) {
-
             Log.d(TAG, "Process STATUS message from Client)");
             rdy();
             return;
         }
-
         if(chkMsg(msg, BTRY)) {
 
             Log.d(TAG, "Process STATUS message from Client)");
             btryRes();
             return;
         }
-
         Log.d(TAG, "Unknown message received from Arduino");
     }
 
     private boolean chkMsg(String recMsg, String expMsg)
     {
-
         recMsg = recMsg.substring(1, 1+expMsg.length());
         return(recMsg.equals(expMsg));
     }
 
-    private void rdy() {
-
+    private void rdy()
+    {
         // send <RDY>
         outMessage = SM +
                 RDY +
@@ -279,8 +298,8 @@ public class BlueToothService {
         write(outMessage);
     }
 
-    private void notRdy() {
-
+    private void notRdy()
+    {
         // send <NOT_RDY>
         outMessage = SM +
                 NOT_RDY +
@@ -289,8 +308,8 @@ public class BlueToothService {
         write(outMessage);
     }
 
-    private void btryRes() {
-
+    private void btryRes()
+    {
         // send <BTRY>
         outMessage = SM +
                 BTRY_RES + " 11.4V" +
