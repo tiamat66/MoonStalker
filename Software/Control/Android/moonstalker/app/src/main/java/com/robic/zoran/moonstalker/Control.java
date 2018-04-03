@@ -1,188 +1,171 @@
 package com.robic.zoran.moonstalker;
 
 import android.annotation.SuppressLint;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import static com.robic.zoran.moonstalker.Telescope.ERROR;
-import static com.robic.zoran.moonstalker.Telescope.OK;
+import static com.robic.zoran.moonstalker.Telescope.ST_MOVING;
+import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CAL;
+import static com.robic.zoran.moonstalker.Telescope.ST_TRACING;
 
 class Control
 {
-    static final int timeout = 1000;
-    private static final String TAG = "Control";
+  private static final String TAG = "IZAA";
 
-    // Messages
-    private static final String MSG_READY =        "RDY";
-    private static final String MSG_NOT_READY =    "NOT_RDY";
-    private static final String MSG_BATTERY_LOW =  "BTRY_LOW";
-    static final         String MSG_BATTERY_RES =  "BTRY";
-    private static final String MSG_FATAL_ERROR =  "FATAL_ERROR";
-    private static final String MSG_ALT_NEGATIVE = "ALT_NEGATIVE";
-    private static final String MSG_ALT_POSITIVE = "ALT_POSITIVE";
-    private static final String MSG_BUSY =         "BUSY";
-    private static final String MSG_IDLE =         "IDLE";
-    private static final String MSG_INIT =         "INIT";
-    private static final int READY  = 1;
-    private static final int NOT_READY = 2;
-    private static final int BATTERY_RES = 3;
-    private static final int BATTERY_LOW = 4;
-    private static final int FATAL_ERROR = 5;
-    static final int         ALT_NEGATIVE = 6;
-    static final int         ALT_POSITIVE = 7;
-    static private final int BUSY = 8;
-    static private final int IDLE = 9;
-    static final int         INIT = 10;
+  // Messages
+  // TODO: Naredi list msg+stevilka
+  static final String MSG_READY   = "RDY";    // RDY
+  static final String MSG_BATTERY = "BTRY";   // BTRY,11.7
+  static final String MSG_ERROR   = "ERROR";  // ERROR,1     [1=battery low]
+  static final String MSG_INIT    = "INIT";   // INIT
 
-    // Commands
-    private static final String CMD_MOVE =    "MV";
-    private static final String CMD_STATUS =  "<ST?>";
-    private static final String CMD_BATTERY = "<BTRY?>";
-    static final int         MOVE    = 1;
-    private static final int STATUS  = 2;
-    private static final int BATTERY = 3;
+  static final int    READY   = 1;
+  static final int    BATTERY = 3;
+  static final int    ERROR   = 5;
+  static final int    INIT    = 10;
 
-    private InMessageHandler inMessageHandler;
-    private MainActivity act;
-    private Telescope t;
+  // Commands
+  static final String CMD_MOVE    = "MV";    // MV,7,-12
+  static final String CMD_STATUS  = "ST";    // ST
+  static final String CMD_BATTERY = "BTRY";  // BTRY
 
-    Control(Telescope t, MainActivity act)
-    {
-        this.act = act;
-        this.t = t;
-        inMessageHandler = new InMessageHandler();
+  static final int    MOVE        = 1;
+  static final int    GET_STATUS  = 2;
+  static final int    GET_BATTERY = 3;
+
+  private InMessageHandler  inMessageHandler;
+  private OutMessageHandler outMessageHandler;
+  private MainActivity act;
+  private Telescope t;
+
+  Control(Telescope t, MainActivity act)
+  {
+    this.act = act;
+    this.t = t;
+    inMessageHandler =  new InMessageHandler();
+    outMessageHandler = new OutMessageHandler();
+  }
+
+  private void postCommand(String outMessage)
+  {
+    Log.i(TAG, "Sending to Server: " + outMessage);
+    if (DeviceIO.EMULATED)
+      act.getDevice().write(outMessage, DeviceIO.EMULATED);
+    else
+      act.getDevice().write(outMessage);
+  }
+
+  void outMessageProcess(int msg, Bundle bundle)
+  {
+    switch (msg) {
+      case GET_BATTERY:
+        outMessageHandler.obtainMessage(msg).sendToTarget();
+        break;
+      case GET_STATUS:
+        outMessageHandler.obtainMessage(msg).sendToTarget();
+        break;
+      case MOVE:
+        outMessageHandler.obtainMessage(msg, bundle).sendToTarget();
+        break;
     }
+  }
 
-    private void postCommand(String outMessage)
-    {
-        Log.d(TAG, outMessage);
-        act.getDevice().write(outMessage);
-        sleep(timeout);
+  void inMsgProcess(int msg, Bundle bundle)
+  {
+    switch (msg) {
+      case READY:
+        inMessageHandler.obtainMessage(msg).sendToTarget();
+        break;
+      case BATTERY:
+        inMessageHandler.obtainMessage(msg, bundle).sendToTarget();
+        break;
+      case ERROR:
+        inMessageHandler.obtainMessage(msg, bundle).sendToTarget();
+        break;
+      case INIT:
+        inMessageHandler.obtainMessage(msg).sendToTarget();
+        break;
     }
+  }
 
-    private void sleep(int ms)
+  @SuppressLint("HandlerLeak")
+  class OutMessageHandler extends Handler
+  {
+    @Override
+    public void handleMessage(Message message)
     {
-        try {Thread.sleep(ms);} catch (InterruptedException e) {e.printStackTrace();}
+      String outMessage = "";
+      switch (message.what)
+      {
+        case MOVE:
+          Bundle b = (Bundle) message.obj;
+          outMessage = CMD_MOVE + "," + b.getInt("arg1")
+            + "," + b.getInt("arg2");
+          if (t.p.getStatus() != ST_TRACING) t.p.setStatus(ST_MOVING);
+          break;
+        case GET_BATTERY:
+          outMessage = CMD_BATTERY;
+          break;
+        case GET_STATUS:
+          outMessage = CMD_STATUS;
+          break;
+      }
+      postCommand(outMessage);
     }
+  }
 
-    void outMessage(int msg, String p1, String p2)
+  @SuppressLint("HandlerLeak")
+  class InMessageHandler extends Handler
+  {
+    @Override
+    public void handleMessage(Message message)
     {
-        String outMessage;
-        switch (msg) {
-            case MOVE:    outMessage = "<" + CMD_MOVE + " " + p1 + "," + p2 + ">"; break;
-            default: return;
-        }
-        postCommand(outMessage);
-    }
+      String inMessage = "";
+      Bundle b = (Bundle) message.obj;
+      switch (message.what) {
+        case READY:
+          inMessage = MSG_READY;
+          processReady();
+          break;
+        case BATTERY:
+          inMessage = MSG_BATTERY + "," + b.getFloat("arg1");
+          t.batteryVoltage(b.getFloat("arg1"));
+          break;
+        case ERROR:
+          inMessage = MSG_ERROR + "," + b.getString("arg1");
+          t.p.setError(b.getString("arg1"));
+          break;
+        case INIT:
+          inMessage = MSG_INIT;
+          outMessageProcess(GET_STATUS, null);
+          outMessageProcess(GET_BATTERY, null);
+          break;
 
-    private void outMessage(int msg)
-    {
-        String outMessage;
-        switch (msg) {
-            case BATTERY: outMessage = CMD_BATTERY; break;
-            case STATUS:  outMessage = CMD_STATUS; break;
-            default: return;
-        }
-        postCommand(outMessage);
+        default:
+          return;
+      }
+      Log.i(Telescope.TAG, "Get message and process it from Server: " + inMessage);
     }
+  }
 
-    void inMsgProcess(int msg)
-    {
-        String message;
-        switch (msg)
-        {
-            case INIT:
-                outMessage(STATUS);
-                if (!t.calibrated)
-                    act.messagePrompt(
-                            "Calibration",
-                            "Manually move the telescope to object Polaris" +
-                                    " and then click CALIBRATED");
-                outMessage(BATTERY);
-                message = MSG_INIT;
-                break;
-            case ALT_POSITIVE:
-                message = MSG_ALT_POSITIVE;
-                t.setReady(ERROR);
-                t.setHNegative(false);
-                break;
-            case BUSY:
-                message = MSG_BUSY;
-                t.setReady(Telescope.BUSY);
-                break;
-            case IDLE:
-                message = MSG_IDLE;
-                t.setReady(OK);
-                break;
-            default:
-                message = "Unknown message received: " + msg;
-        }
-        Log.i(Telescope.TAG, message);
+  private void processReady()
+  {
+    switch (t.p.getStatus()) {
+      case ST_NOT_CAL:
+        act.messagePrompt(
+          "Calibration",
+          "Manually move the telescope to object Polaris then click CALIBRATED"
+        );
+        break;
+      case ST_MOVING:
+        t.p.setStatus(READY);
+        break;
+      case ST_TRACING:
+        t.p.setStatus(ST_TRACING);
     }
-
-    void inMsgProcess(String msg, int bytes, byte[] buffer)
-    {
-        Log.i(TAG, msg);
-        if (chkMsg(msg, MSG_READY))
-            inMessageHandler.obtainMessage(READY).sendToTarget();
-        else
-        if (chkMsg(msg, MSG_NOT_READY))
-            inMessageHandler.obtainMessage(NOT_READY).sendToTarget();
-        else
-        if (chkMsg(msg, MSG_BATTERY_RES))
-            inMessageHandler.obtainMessage(BATTERY_RES, bytes, -1, buffer).sendToTarget();
-        else
-        if (chkMsg(msg, MSG_BATTERY_LOW))
-            inMessageHandler.obtainMessage(BATTERY_LOW);
-        else
-            Log.d(TAG, "Unknown message received from Telescope Control.");
-    }
-
-    private boolean chkMsg(String recMsg, String expMsg)
-    {
-        recMsg = recMsg.substring(1, 1 + expMsg.length());
-        return (recMsg.equals(expMsg));
-    }
-
-    @SuppressLint("HandlerLeak")
-    class InMessageHandler extends Handler
-    {
-        @Override
-        public void handleMessage(Message message)
-        {
-            String inMessage;
-            switch (message.what)
-            {
-                case READY:
-                    inMessage = MSG_READY;
-                    t.setReady(OK);
-                    break;
-                case NOT_READY: inMessage = MSG_NOT_READY;
-                    t.setReady(ERROR);
-                    break;
-                case BATTERY_RES:
-                    byte[] readBuf = (byte[]) message.obj;
-                    String rcvdMsg = new String(readBuf, 0, message.arg1);
-                    inMessage = rcvdMsg;
-                    t.batteryVoltage(rcvdMsg);
-                    break;
-                case BATTERY_LOW:
-                    inMessage = MSG_BATTERY_LOW;
-                    t.setBatteryOk(false);
-                    t.setReady(ERROR);
-                    break;
-                case ALT_NEGATIVE:
-                    inMessage = MSG_ALT_NEGATIVE;
-                    t.setReady(ERROR);
-                    t.setHNegative(true);
-                    break;
-                default:return;
-            }
-            Log.d(Telescope.TAG, inMessage);
-            sleep(timeout);
-        }
-    }
+  }
 }
 
 
