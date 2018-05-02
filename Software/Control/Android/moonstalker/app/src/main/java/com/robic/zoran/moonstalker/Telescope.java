@@ -19,6 +19,9 @@ class Telescope
   static final int ST_MOVING =   6;
   static final int ST_BTRY_LOW = 7;
   static final int ST_NOT_CAL =  9;
+  static final int ST_NOT_CONNECTED = 10;
+  static final int ST_CONNECTING    = 11;
+  static final int ST_CONNECTED     = 12;
 
   // Mechanical characteristics
   private static final double MOTOR_STEPS_NUM      = 200.0;
@@ -47,23 +50,24 @@ class Telescope
     this.act = act;
     traceHandler = new TraceHandler();
   }
-
+static final int NOT_CONNECTED = 1;
+  static final int CONNECTING    = 2;
+  static final int CONNECTED     = 3;
   Position getPos()
   {
     return pos;
-  }
-
-  void calibrate()
-  {
-    // The default calibration position is POLARIS, the first object in table
-    p.setStatus(ST_READY);
-    move();
   }
 
   void move(double ra, double dec)
   {
     pos.set(ra, dec);
     move();
+  }
+
+  void calibrate()
+  {
+    pos.set(act.curObj.getRa(), act.curObj.getDec());
+    p.setStatus(ST_READY);
   }
 
   private void move()
@@ -160,25 +164,19 @@ class Telescope
     Parameters(Bundle b)
     {
       status = new Bundle();
-      status.putInt("st", ST_NOT_CAL);
+      status.putInt("st", ST_NOT_CONNECTED);
       btryVoltage = 0.0f;
     }
 
     void setStatus(int st)
     {
       status.putInt("st", st);
-      act.updateStatus();
+      act.statusBar.setStatus(st);
     }
 
     void setStatus(Bundle b)
     {
       status = b;
-    }
-
-    Bundle getStatus(boolean inv)
-    {
-      if (inv) act.updateStatus();
-      return status;
     }
 
     int getStatus()

@@ -6,6 +6,8 @@ import android.util.Log;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
+import static com.robic.zoran.moonstalker.MSUtil.convertDec2Hour;
+
 //TODO: Refactor
 class Position
 {
@@ -106,16 +108,4 @@ class Position
     return utc;
   }
 
-  @SuppressLint("DefaultLocale")
-  String convertDec2Hour(double num)
-  {
-    long hours = (long) num;
-    double fPart = num - hours;
-    fPart *= 60;
-    long minutes = (long) fPart;
-    double seconds = fPart - minutes;
-    seconds *= 60;
-
-    return String.format("%d %d\' %.2f\"", hours, minutes, seconds);
-  }
 }

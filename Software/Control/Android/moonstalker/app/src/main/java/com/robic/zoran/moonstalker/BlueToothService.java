@@ -13,14 +13,16 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.robic.zoran.moonstalker.Telescope.NOT_CONNECTED;
+import static com.robic.zoran.moonstalker.Telescope.ST_CONNECTED;
+import static com.robic.zoran.moonstalker.Telescope.ST_CONNECTING;
+import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CAL;
+import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CONNECTED;
+
 class BlueToothService
 {
   private static final String TAG = "IZAA";
   private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-
-  static final int NOT_CONNECTED = 1;
-  static final int CONNECTING    = 2;
-  static final int CONNECTED     = 3;
 
   // Bluetooth connection status
   private static final int CONNECTION_ACCEPTED_MESSAGE  = 1;
@@ -35,8 +37,6 @@ class BlueToothService
   private int waiting = 0;
   private BTMessageHandler btMessageHandler;
   private BluetoothSocket BTsocket = null;
-
-  private int status = NOT_CONNECTED;
 
   BlueToothService(MainActivity act)
   {
@@ -91,8 +91,7 @@ class BlueToothService
     getPairedDevices();
     if (pairedDevice == null) Log.i(TAG, "No paired device");
     else {
-      setStatus(CONNECTING);
-      act.updateStatus();
+      act.getTelescope().p.setStatus(ST_CONNECTING);
       ConnectThread connectThread = new ConnectThread(pairedDevice);
       connectThread.start();
       new Scheduler();
@@ -110,7 +109,7 @@ class BlueToothService
     @Override
     public void run()
     {
-      while (getStatus() == CONNECTING) {
+      while (act.getTelescope().p.getStatus() == ST_CONNECTING) {
           ArduinoEmulator.to(500);
         waiting++;
         if (waiting == TIMEOUT_CONNECTION)
@@ -126,19 +125,20 @@ class BlueToothService
     @Override
     public void handleMessage(Message message)
     {
+      Telescope t = act.getTelescope();
       switch (message.what) {
         case CONNECTION_ACCEPTED_MESSAGE:
           Log.i(TAG, "BT connection accepted");
-          setStatus(CONNECTED);
+          t.p.setStatus(ST_NOT_CAL);
           try {Thread.sleep(2000);} catch (InterruptedException e) {e.printStackTrace();}
           act.getCtr().inMsgProcess(Control.INIT, null);
           break;
         case CONNECTION_CANCELED_MESSAGE:
-          setStatus(NOT_CONNECTED);
+          t.p.setStatus(ST_NOT_CONNECTED);
           act.connectionCanceled();
           break;
         case CONNECTION_TIMED_OUT_MESSAGE:
-          setStatus(NOT_CONNECTED);
+          t.p.setStatus(ST_NOT_CONNECTED);
           act.connectionTimedOutMessage();
           break;
       }
@@ -147,7 +147,7 @@ class BlueToothService
 
   private class ConnectThread extends Thread
   {
-    private final BluetoothSocket mmSocket;
+    private final BluetoothSocket socket;
 
     ConnectThread(BluetoothDevice device)
     {
@@ -156,34 +156,23 @@ class BlueToothService
         tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
       } catch (IOException ignored) {
       }
-      mmSocket = tmp;
+      socket = tmp;
     }
 
     public void run()
     {
       btAdapter.cancelDiscovery();
       try {
-        mmSocket.connect();
+        socket.connect();
       } catch (IOException connectException) {
         try {
-          mmSocket.close();
+          socket.close();
         } catch (IOException ignored) {
         }
         return;
       }
-      BTsocket = mmSocket;
+      BTsocket = socket;
       btMessageHandler.obtainMessage(CONNECTION_ACCEPTED_MESSAGE).sendToTarget();
     }
-  }
-
-  void setStatus(int val)
-  {
-    status = val;
-    act.updateStatus();
-  }
-
-  int getStatus()
-  {
-    return status;
   }
 }
