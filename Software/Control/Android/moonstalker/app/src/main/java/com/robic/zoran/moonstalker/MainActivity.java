@@ -10,8 +10,10 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -31,15 +33,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   private static final boolean IS3D      = true;
   private static final boolean BLUETOOTH = true;
   private static final boolean GPS       = true;
+  private static final int     TS        = 30;
 
-  TextView posTextView;
   TextView locTextView;
-  TextView statusTextView;
 
   Button traceButton;
   Button moveButton;
-  Button connectButton;
-  Button calibrateButton;
   Button exitButton;
 
   Spinner skyObjDropDown;
@@ -54,8 +53,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   private Paint       drawPaint = new Paint();
 
   MsStatusBar statusBar;
+  PositionBar positionBar;
 
-  private LayoutInflater inflater;
+  LinearLayout  cursorKeysBar2;
+  CursorKeysBar cursorKeysBar1, cursorKeysBar3;
+  Buttons buttons;
+
+  int a, b, c;
+
+
 
   private MsView3D view3D = null;
 
@@ -89,48 +95,75 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+    LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    LinearLayout root = (LinearLayout) inflater.inflate(R.layout.content_main, null);
 
-    // Root layout
-    LinearLayout root = new LinearLayout(this);
-    root.setOrientation(LinearLayout.VERTICAL);
-
+    // First line is status line
     LinearLayout L1 = new LinearLayout(this);
     L1.setOrientation(LinearLayout.HORIZONTAL);
+    LinearLayout.LayoutParams prms = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    L1.setGravity(Gravity.END);
+    L1.setLayoutParams(new LinearLayout.LayoutParams(prms));
+
+    statusBar = new MsStatusBar(this);
+    buttons = new Buttons(this);
+    buttons.setPadding(TS, 0, 0, 0);
+    L1.addView(statusBar);
+    L1.addView(buttons);
+    /******************************************/
 
     LinearLayout L2 = new LinearLayout(this);
     L2.setOrientation(LinearLayout.HORIZONTAL);
 
     skyObjDropDown = new Spinner(this);
 
-    // Status
-    statusBar = new MsStatusBar(this);
-    L1.addView(statusBar);
+    // Position
+    positionBar = new PositionBar(this);
+
+    // Cursor keys
+    cursorKeysBar1 = new CursorKeysBar(this, R.drawable.ic_up);
+
+    cursorKeysBar2 = new LinearLayout(this);
+    cursorKeysBar2.setOrientation(LinearLayout.HORIZONTAL);
+    cursorKeysBar2.addView(new CursorKeysBar(this, R.drawable.ic_left));
+    cursorKeysBar2.addView(new CursorKeysBar(this, R.drawable.ic_right));
+
+    cursorKeysBar3 = new CursorKeysBar(this, R.drawable.ic_down);
 
     // Commands
     LinearLayout LControls = new LinearLayout(this);
     LControls.setOrientation(LinearLayout.VERTICAL);
 
-    //Buttons
+
+    a = 1;
+    b = 2;
+    c = 3;
     LinearLayout LButtons = new LinearLayout(this);
     LButtons.setOrientation(LinearLayout.HORIZONTAL);
 
     traceButton = new Button(this);
     traceButton.setText("TRACE");
-    traceButton.setId(R.id.trace_button);
+    traceButton.setId(a);
     LButtons.addView(traceButton);
 
     moveButton = new Button(this);
-    moveButton.setId(R.id.move_button);
+    moveButton.setId(b);
     moveButton.setText("MOVE");
     LButtons.addView(moveButton);
 
     exitButton = new Button(this);
-    exitButton.setId(R.id.exit_button);
+    exitButton.setId(c);
     exitButton.setText("EXIT");
     LButtons.addView(exitButton);
 
-    LControls.addView(LButtons);
+//    LControls.addView(LButtons);
     LControls.addView(skyObjDropDown);
+
+    LControls.addView(positionBar);
+
+    LControls.addView(cursorKeysBar1);
+    LControls.addView(cursorKeysBar2);
+    LControls.addView(cursorKeysBar3);
 
     // Buttons
     L2.addView(LControls);
@@ -259,10 +292,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   public void onClick(View v)
   {
     switch (v.getId()) {
-    case R.id.connect_button:
-      bt.connect();
-      break;
-    case R.id.trace_button:
+    case 1:
       if (t.p.getStatus() == ST_READY) {
         traceButton.setText("TRACE OFF");
         t.startTrace();
@@ -271,15 +301,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         t.p.setStatus(ST_READY);
       }
       break;
-    case R.id.move_button:
+    case 2:
       if (curObj != null)
         t.move(curObj.getRa(), curObj.getDec());
       break;
-    case R.id.calibrate_button:
-      t.getPos().set(curObj.getRa(), curObj.getDec());
-      t.p.setStatus(ST_READY);
-      break;
-    case R.id.exit_button:
+    case 3:
       errorExit("Application terminated", "");
       break;
     }

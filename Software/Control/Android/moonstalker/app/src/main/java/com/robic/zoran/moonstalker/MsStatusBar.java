@@ -2,6 +2,7 @@ package com.robic.zoran.moonstalker;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,10 +12,10 @@ import android.widget.TextView;
 
 import java.text.DecimalFormat;
 
+@SuppressLint("ViewConstructor")
 public class MsStatusBar extends LinearLayout
 {
   MainActivity act;
-  ImageView    status;
   TextView     stTitle;
   @SuppressLint("InflateParams")
   public MsStatusBar(final MainActivity act)
@@ -23,16 +24,14 @@ public class MsStatusBar extends LinearLayout
 
     this.act = act;
 
-    setOrientation(HORIZONTAL);
     LayoutInflater inflater = (LayoutInflater) act.getSystemService(
         Context.LAYOUT_INFLATER_SERVICE);
     if (inflater != null)
       addView(inflater.inflate(R.layout.ms_status_bar, null));
 
-    status = (ImageView) findViewById(R.id.sc_status);
     stTitle = (TextView) findViewById(R.id.tx_status);
 
-    status.setOnClickListener(new OnClickListener()
+    stTitle.setOnClickListener(new OnClickListener()
     {
       @Override public void onClick(View view)
       {
@@ -48,40 +47,34 @@ public class MsStatusBar extends LinearLayout
 
   public void setStatus(int s)
   {
+    Drawable ok = getResources().getDrawable(R.drawable.ic_ok);
+    Drawable notCal = getResources().getDrawable(R.drawable.ic_not_cal);
+    Drawable trac = getResources().getDrawable(R.drawable.ic_tracing);
+    Drawable mov = getResources().getDrawable(R.drawable.ic_moving);
+    Drawable error = getResources().getDrawable(R.drawable.ic_error);
     switch (s) {
     case Telescope.ST_READY:
-      status.setImageResource(R.drawable.ic_ok);
+      stTitle.setCompoundDrawablesWithIntrinsicBounds(ok, null, null, null);
       stTitle.setText(R.string.st_ready);
       break;
     case Telescope.ST_NOT_CAL:
-      status.setImageResource(R.drawable.ic_not_cal);
+      stTitle.setCompoundDrawablesRelativeWithIntrinsicBounds(notCal, null, null, null);
       stTitle.setText(R.string.st_calibrate);
       break;
     case Telescope.ST_TRACING:
-      status.setImageResource(R.drawable.ic_tracing);
+      stTitle.setCompoundDrawablesWithIntrinsicBounds(trac, null, null, null);
       stTitle.setText(R.string.st_tracing);
       break;
     case Telescope.ST_MOVING:
-      status.setImageResource(R.drawable.ic_moving);
+      stTitle.setCompoundDrawablesWithIntrinsicBounds(mov, null, null, null);
       stTitle.setText(R.string.st_moving);
       break;
     default:
-      status.setImageResource(R.drawable.ic_error);
+      stTitle.setCompoundDrawables(error, null, null, null);
       stTitle.setText(R.string.st_error);
       break;
     }
-    status.invalidate();
 
     Log.i("IZAA", "Status SET: " + s);
-  }
-
-  public void setPosition(Position p)
-  {
-//    DecimalFormat df     = new DecimalFormat("#.####");
-//    String        az     = "AZIMUTH=" + df.format(p.az);
-//    String        h      = "HEIGH=" + df.format(p.h);
-//    TextView      pos    = (TextView) findViewById(R.id.tx_location);
-//    String        output = az + " " + h;
-//    pos.setText(output);
   }
 }

@@ -50,9 +50,7 @@ class Telescope
     this.act = act;
     traceHandler = new TraceHandler();
   }
-static final int NOT_CONNECTED = 1;
-  static final int CONNECTING    = 2;
-  static final int CONNECTED     = 3;
+
   Position getPos()
   {
     return pos;
@@ -68,6 +66,7 @@ static final int NOT_CONNECTED = 1;
   {
     pos.set(act.curObj.getRa(), act.curObj.getDec());
     p.setStatus(ST_READY);
+    move();
   }
 
   private void move()

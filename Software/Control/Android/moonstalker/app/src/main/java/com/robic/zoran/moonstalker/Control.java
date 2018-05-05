@@ -104,7 +104,7 @@ class Control
           outMessage = CMD_MOVE + "," + b.getInt("arg1")
             + "," + b.getInt("arg2");
           if (t.p.getStatus() != ST_TRACING) t.p.setStatus(ST_MOVING);
-          act.statusBar.setPosition(t.getPos());
+          act.positionBar.setPosition(t.getPos());
           break;
         case GET_BATTERY:
           outMessage = CMD_BATTERY;

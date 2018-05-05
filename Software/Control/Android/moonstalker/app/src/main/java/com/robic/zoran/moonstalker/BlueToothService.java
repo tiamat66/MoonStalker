@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.robic.zoran.moonstalker.Telescope.NOT_CONNECTED;
+import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CONNECTED;
 import static com.robic.zoran.moonstalker.Telescope.ST_CONNECTED;
 import static com.robic.zoran.moonstalker.Telescope.ST_CONNECTING;
 import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CAL;
