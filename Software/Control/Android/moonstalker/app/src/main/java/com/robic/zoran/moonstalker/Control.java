@@ -8,6 +8,7 @@ import android.util.Log;
 
 import static com.robic.zoran.moonstalker.Telescope.ST_MOVING;
 import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CAL;
+import static com.robic.zoran.moonstalker.Telescope.ST_READY;
 import static com.robic.zoran.moonstalker.Telescope.ST_TRACING;
 
 class Control
@@ -48,6 +49,14 @@ class Control
     outMessageHandler = new OutMessageHandler();
   }
 
+  public void move(int hSteps, int vSteps)
+  {
+    Bundle b = new Bundle();
+    b.putInt("arg1", hSteps);
+    b.putInt("arg2", vSteps);
+    act.getCtr().outMessageProcess(Control.MOVE, b);
+  }
+
   private void postCommand(String outMessage)
   {
     Log.i(TAG, "Sending to Server: " + outMessage);
@@ -57,7 +66,7 @@ class Control
       act.getDevice().write(outMessage);
   }
 
-  void outMessageProcess(int msg, Bundle bundle)
+  private void outMessageProcess(int msg, Bundle bundle)
   {
     switch (msg) {
       case GET_BATTERY:
@@ -101,10 +110,13 @@ class Control
       {
         case MOVE:
           Bundle b = (Bundle) message.obj;
-          outMessage = CMD_MOVE + "," + b.getInt("arg1")
-            + "," + b.getInt("arg2");
-          if (t.p.getStatus() != ST_TRACING) t.p.setStatus(ST_MOVING);
-          act.positionBar.setPosition(t.getPos());
+          outMessage = CMD_MOVE + "," + b.getInt("arg1") + "," + b.getInt("arg2");
+
+          switch (t.p.getStatus()) {
+          case ST_READY:
+            t.p.setStatus(ST_MOVING);
+          }
+          t.setPosition();
           break;
         case GET_BATTERY:
           outMessage = CMD_BATTERY;
@@ -155,13 +167,9 @@ class Control
   {
     switch (t.p.getStatus()) {
       case ST_NOT_CAL:
-        act.messagePrompt(
-          "Calibration",
-          "Manually move the telescope to object Polaris then click CALIBRATED"
-        );
         break;
       case ST_MOVING:
-        t.p.setStatus(READY);
+        t.p.setStatus(ST_READY);
         break;
       case ST_TRACING:
         t.p.setStatus(ST_TRACING);

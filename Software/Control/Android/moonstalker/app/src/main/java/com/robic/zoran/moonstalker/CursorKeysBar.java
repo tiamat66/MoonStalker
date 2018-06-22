@@ -3,23 +3,51 @@ package com.robic.zoran.moonstalker;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-@SuppressLint("ViewConstructor")
-public class CursorKeysBar extends LinearLayout
+@SuppressLint("ViewConstructor") class CursorKeysBar
 {
-  ImageView arrow;
-  @SuppressLint("InflateParams") public CursorKeysBar(MainActivity act, int id)
+  static final int dx = 5;
+
+  MainActivity act;
+  Telescope t;
+
+  CursorKeysBar(MainActivity act, View v)
   {
-    super(act);
+    this.act = act;
+    t = act.getTelescope();
 
-    LayoutInflater inflater = (LayoutInflater) act.getSystemService(
-        Context.LAYOUT_INFLATER_SERVICE);
-    if (inflater != null)
-      addView(inflater.inflate(R.layout.ms_cursor_keys, null));
-
-    arrow = (ImageView) findViewById(R.id.sc_arrow);
-    arrow.setImageResource(id);
+    v.findViewById(R.id.arrow_u).setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View view)
+      {
+        t.move(dx, 0);
+      }
+    });
+    v.findViewById(R.id.arrow_l).setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View view)
+      {
+        t.move(0, -dx);
+      }
+    });
+    v.findViewById(R.id.arrow_r).setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View view)
+      {
+        t.move(0, dx);
+      }
+    });
+    v.findViewById(R.id.arrow_ok).setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View view)
+      {
+        t.calibrate();
+      }
+    });
+    v.findViewById(R.id.arrow_d).setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View view)
+      {
+        t.move(-dx, 0);
+      }
+    });
   }
 }

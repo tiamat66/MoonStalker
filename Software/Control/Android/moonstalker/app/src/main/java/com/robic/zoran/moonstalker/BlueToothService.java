@@ -59,8 +59,10 @@ class BlueToothService
 
   private void checkBTState()
   {
-    if (btAdapter == null) act.errorExit("Fatal Error",
-      "Bluetooth not support");
+    if (btAdapter == null) {
+      Log.i(TAG, "Bluetooth not support");
+      act.errorExit();
+    }
     else {
       if (btAdapter.isEnabled()) Log.i(TAG, "Bluetooth ON");
       else {

@@ -54,26 +54,25 @@ public class GPSService implements LocationListener
   {
     latitude = location.getLatitude();
     longitude = location.getLongitude();
+    StatusBar sb = act.curentFragment.sb;
+    if (sb != null)
+      sb.setGps();
     gotLocation = true;
-    act.showLocation();
   }
 
   @Override
   public void onStatusChanged(String s, int i, Bundle bundle)
   {
-
   }
 
   @Override
   public void onProviderEnabled(String s)
   {
-
   }
 
   @Override
   public void onProviderDisabled(String s)
   {
-
   }
 
   double getLatitude()

@@ -12,6 +12,7 @@
   <string name="ok">OK</string>
   <string name="cancel">NO</string>
   <string name="position">Position</string>
+  <string name="stop">stop</string>
   <!--First Object in list is calibration object-->
   <!--TODO: Refactor-->
   <string-array name="stars">
@@ -24,19 +25,17 @@
     <item>Chertan(Leo) 11 14 14.3 15 25 45.1</item>
     <item>Alphard(Hya) 9 27 35.2 -8 39 30.3</item>
     <item>Saiph(Ori) 5 47 45.4 -9 40 10.6</item>
-    <item>Acubens(Cnc) 8 58 29.3 11 51 27.1
-        </item>
+    <item>Acubens(Cnc) 8 58 29.3 11 51 27.1</item>
   </string-array>
 
-  <!--Status-->
-  <string name="st_ready">Ready</string>
-  <string name="st_error">Error</string>
-  <string name="st_tracing">Tracing</string>
-  <string name="st_moving">Moving</string>
-  <string name="st_btry_low">Battery low</string>
-  <string name="st_calibrate">Calibrate</string>
-  <string name="st_not_connected">Not connected</string>
+  <string name="st">Status</string>
+  <string name="st_btry_low">battery low</string>
+  <string name="st_not_connected">not connected</string>
+  <string name="st_not_calibrated">not calibrated</string>
   <string name="st_connecting">Connecting</string>
 
   <string name="e_alt_neg">Negative altitude</string>
+
+  <string name="conn_warn">"Do you want to connect Telescope?</string>
+  <string name="cal_msg">Please manually move the telescope to Polaris and then click on indicator</string>
 </resources>

@@ -7,17 +7,15 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import static com.robic.zoran.moonstalker.MSUtil.convertDec2Hour;
+import static java.lang.Math.*;
 
 //TODO: Refactor
 class Position
 {
-  private GregorianCalendar calendar;
-
   private static final String TAG = "IZAA";
 
   private double ra;
   private double dec;
-
   double az;
   double h;
 
@@ -26,86 +24,72 @@ class Position
   Position(GPSService myGpsService)
   {
     gpsService = myGpsService;
-    calendar = new GregorianCalendar(2000, Calendar.JANUARY, 1, 0, 0);
   }
 
   void set(double ra, double dec)
   {
-    this.ra = ra;
+    this.ra =  ra;
     this.dec = dec;
   }
 
-  void RaDec2AltAz()
+//  "Practical astronomy with your calculator" (Duffett-Smith) gives this formula:
+//
+//  sinD=sinAsinL+cosAcosLcosAZ
+//  cosH=(sinA-sinLsinD)/cosLcosD
+//
+//  D=declination
+//  H=hour angle
+//  A=altitude
+//  AZ-azimuth
+//  L=latitude
+
+
+  void altAz2RaDec()
+  {
+    double A  = toRadians(h);
+    double AZ = toRadians(az);
+    double L = toRadians(gpsService.getLatitude());
+
+    double sinD = sin(A) * sin(L) + cos(A) * cos(L) * cos(AZ);
+    double D = asin(sinD);
+    double cosH = (sin(A) - sin(L) * sinD) / (cos(L) * cos(D));
+
+    double RA = MSUtil.LST(gpsService.getLongitude()) - acos(cosH);
+    dec = toDegrees(D);
+    ra = toDegrees(RA);
+  }
+
+  void raDec2AltAz()
   {
     Log.i(TAG, "RA=" + convertDec2Hour(ra));
     Log.i(TAG, "DEC=" + convertDec2Hour(dec));
 
-    double RA = ra * 15.0;
+    double RA  = ra * 15.0;
     double DEC = dec;
-
     double LAT = gpsService.getLatitude();
-    double daysFromY2k = getTime();
-    daysFromY2k /= (86400 * 1000);
-
-    double LST = 100.46 +
-      0.985647 * daysFromY2k +
-      gpsService.getLongitude() +
-      15.0 * getUTC();
-
-    long a = (long) LST / 360;
-    LST = LST -
-      a * 360.0;
-    if (LST < 0.0) LST += 360.0;
+    double LON = gpsService.getLongitude();
+    double LST = MSUtil.LST(LON);
     double HA = LST - RA;
-
     if (HA < 0.0) HA += 360.0;
-
-    HA = Math.toRadians(HA);
-    DEC = Math.toRadians(DEC);
-    LAT = Math.toRadians(LAT);
+    HA  = toRadians(HA);
+    DEC = toRadians(DEC);
+    LAT = toRadians(LAT);
 
     // Altitude
-    double sinALT = Math.sin(DEC) * Math.sin(LAT) + Math.cos(DEC) * Math.cos(LAT) * Math.cos(HA);
-    double ALT = Math.asin(sinALT);
-    h = Math.toDegrees(ALT);
+    double sinALT = sin(DEC) * sin(LAT) + cos(DEC) * cos(LAT) * cos(HA);
+    double ALT = asin(sinALT);
+    h = toDegrees(ALT);
 
     // Azimuth
-    double b1 = Math.sin(DEC) - Math.sin(ALT) * Math.sin(LAT);
-    double b2 = Math.cos(ALT) * Math.cos(LAT);
+    double b1 = sin(DEC) - sin(ALT) * sin(LAT);
+    double b2 = cos(ALT) * cos(LAT);
     double cosA = b1 / b2;
-    double A = Math.acos(cosA);
-    az = Math.toDegrees(A);
-    //As sin(HA) is positive, the angle AZ is 360 - A
-    if (Math.sin(HA) > 0.0) az = 360.0 - az;
+    double A = acos(cosA);
+    az = toDegrees(A);
+    //If sin(HA) is positive, the angle AZ is 360 - A
+    if (sin(HA) > 0.0) az = 360.0 - az;
 
     Log.i(TAG, "Altitude=" + h + " " + convertDec2Hour(h));
     Log.i(TAG, "Azimuth=" + az + " " + convertDec2Hour(az));
   }
-
-  private long getCurrentTime()
-  {
-    return (System.currentTimeMillis());
-  }
-
-  private long getVernalEquinoxTime()
-  {
-    return (calendar.getTimeInMillis());
-  }
-
-  private long getTime()
-  {
-    return (getCurrentTime() - getVernalEquinoxTime());
-  }
-
-  private double getUTC()
-  {
-    int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-    int minute = Calendar.getInstance().get(Calendar.MINUTE);
-    int second = Calendar.getInstance().get(Calendar.SECOND);
-    double utc = hour - 2 +
-      minute / 60.0 +
-      second / 3600.0;
-    return utc;
-  }
-
 }

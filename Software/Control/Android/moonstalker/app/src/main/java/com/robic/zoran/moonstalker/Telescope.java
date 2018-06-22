@@ -6,6 +6,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import java.text.DecimalFormat;
+
 import static com.robic.zoran.moonstalker.Control.MOVE;
 
 class Telescope
@@ -56,16 +58,25 @@ class Telescope
     return pos;
   }
 
+  void calibrate()
+  {
+    // Calibration object is now the first item from sky objects list
+    pos.set(act.curObj.getRa(), act.curObj.getDec());
+    pos.raDec2AltAz();
+    setPosition();
+    p.setStatus(ST_READY);
+  }
+
+  void move(int hSteps, int vSteps)
+  {
+    pos.az += (vSteps * 360.0) / K;
+    pos.h  += (hSteps * 360.0) / K;
+    act.getCtr().move(hSteps, vSteps);
+  }
+
   void move(double ra, double dec)
   {
     pos.set(ra, dec);
-    move();
-  }
-
-  void calibrate()
-  {
-    pos.set(act.curObj.getRa(), act.curObj.getDec());
-    p.setStatus(ST_READY);
     move();
   }
 
@@ -78,11 +89,12 @@ class Telescope
     int cur_h_steps;
     int cur_v_steps;
     Bundle bundle = new Bundle();
+    Control c = act.getCtr();
 
     azimuth_tmp = pos.az;
     height_tmp = pos.h;
 
-    pos.RaDec2AltAz();
+    pos.raDec2AltAz();
     dif_az = pos.az - azimuth_tmp;
     dif_hi = pos.h - height_tmp;
 
@@ -94,15 +106,12 @@ class Telescope
     if (Math.abs(cur_h_steps) >= PRECISION || Math.abs(cur_v_steps) >= PRECISION) {
       hSteps -= cur_h_steps;
       vSteps -= cur_v_steps;
-        if (pos.h <= H_NEGATIVE) {
+      if (pos.h <= H_NEGATIVE) {
         bundle.putString("arg1",
           act.getResources().getString(R.string.e_alt_neg));
         act.getCtr().inMsgProcess(Control.ERROR, bundle);
-      } else {
-        bundle.putInt("arg1", cur_h_steps);
-        bundle.putInt("arg2", cur_v_steps);
-        act.getCtr().outMessageProcess(Control.MOVE, bundle);
-      }
+      } else
+        c.move(cur_h_steps, cur_v_steps);
     }
   }
 
@@ -119,6 +128,30 @@ class Telescope
     new TraceThread(1000);
   }
 
+  String formatLocationString()
+  {
+    DecimalFormat df = new DecimalFormat("###.##");
+    String lon = "LO:" + df.format(act.getGps().getLongitude());
+    String lat = "LA:" + df.format(act.getGps().getLatitude());
+
+    return (lon + "|" + lat);
+  }
+
+  String formatPositionString()
+  {
+    DecimalFormat df = new DecimalFormat("###.##");
+    String        az = "A:" + df.format(pos.az);
+    String        h  = "H:" + df.format(pos.h);
+
+    return (az + "|" + h);
+  }
+
+  void setPosition()
+  {
+
+    if (act.curentFragment.sb != null)
+      act.curentFragment.sb.setMessage(formatPositionString());
+  }
 
   @SuppressLint("HandlerLeak")
   class TraceHandler extends Handler
@@ -154,7 +187,6 @@ class Telescope
     }
   }
 
-  // TODO: Refactor
   class Parameters
   {
     Bundle status;
@@ -170,7 +202,8 @@ class Telescope
     void setStatus(int st)
     {
       status.putInt("st", st);
-      act.statusBar.setStatus(st);
+      if (act.curentFragment.sb != null)
+        act.curentFragment.sb.setStatus(st);
     }
 
     void setStatus(Bundle b)
@@ -191,10 +224,9 @@ class Telescope
     void setError(String e)
     {
       Bundle b = new Bundle();
-
       b.putInt("st", ST_ERROR);
       b.putString("arg1", e);
-      setStatus(b);
+      act.curentFragment.sb.setError(b);
     }
   }
 }
