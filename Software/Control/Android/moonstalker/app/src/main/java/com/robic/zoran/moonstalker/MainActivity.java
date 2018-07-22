@@ -59,7 +59,6 @@ public class MainActivity extends AppCompatActivity
     super.onCreate(savedInstanceState);
 
     // TODO: Text v string it to gre v calibration screen
-    // new MSDialog(act, "With cursor keys move telescope to Polaris then click calibrated button", 2000);
     LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     assert inflater != null;
     @SuppressLint("InflateParams")
@@ -73,7 +72,7 @@ public class MainActivity extends AppCompatActivity
     ctr = new Control(t, this);
     deviceIO = new DeviceIO(this);
     deviceIO.start();
-    bt.connect();
+    new MSDialog(this);
 
     view3D = new MsView3D(this);
     setContentView(root);

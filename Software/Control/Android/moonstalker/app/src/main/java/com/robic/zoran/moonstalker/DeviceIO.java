@@ -30,12 +30,13 @@ class DeviceIO extends Thread
   DeviceIO(MainActivity act)
   {
     this.act = act;
-    this.e = new ArduinoEmulator();
+    if (EMULATED)
+      this.e = new ArduinoEmulator();
     this.listening = true;
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   @Override
-  // run for emulator
   public void run()
   {
     Control c = act.getCtr();
@@ -69,12 +70,14 @@ class DeviceIO extends Thread
         if (b == null) continue;
         act.getCtr().inMsgProcess(b.getInt("msg"), b);
       } catch (IOException e) {
-        act.getBt().getBtMessageHandler().obtainMessage(BlueToothService.CONNECTION_CANCELED_MESSAGE).sendToTarget();
+        act.getBt().getBtMessageHandler().
+            obtainMessage(BlueToothService.CONNECTION_CANCELED_MESSAGE).sendToTarget();
         Log.i(Telescope.TAG, "Error data receive: " + e.getMessage());
         break;
       }
     }
   }
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   //emulator write
   void write(String message, boolean t)
