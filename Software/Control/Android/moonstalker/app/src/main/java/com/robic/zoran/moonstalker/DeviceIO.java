@@ -19,25 +19,25 @@ import static com.robic.zoran.moonstalker.Telescope.TAG;
 
 class DeviceIO extends Thread
 {
-  static final boolean EMULATED = true;
-  private ArduinoEmulator     e = null;
+  static final boolean EMULATED = false;
+  private ArduinoEmulator     e;
 
   private InputStream inStream;
   private OutputStream outStream;
   private MainActivity act;
-  private boolean  listening = false;
+  private boolean  listening;
 
   DeviceIO(MainActivity act)
   {
     this.act = act;
+    e = null;
     if (EMULATED)
       this.e = new ArduinoEmulator();
     this.listening = true;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  @Override
-  public void run()
+  public void run_emulator()
   {
     Control c = act.getCtr();
     while (listening) {
@@ -50,7 +50,8 @@ class DeviceIO extends Thread
     }
   }
 
-  public void run_original()
+  @Override
+  public void run()
   {
     byte[] buffer = new byte[256];
     int bytes;

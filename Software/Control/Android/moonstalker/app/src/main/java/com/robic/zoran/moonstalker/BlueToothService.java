@@ -23,6 +23,7 @@ class BlueToothService
 {
   private static final String TAG = "IZAA";
   private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+  private static final String DEVICE_NAME = "Xperia L1";
 
   // Bluetooth connection status
   private static final int CONNECTION_ACCEPTED_MESSAGE  = 1;
@@ -76,9 +77,12 @@ class BlueToothService
   {
     Log.i(TAG, "Enter getPairedDevices");
     Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
-    if (pairedDevices.size() > 0) for (BluetoothDevice device : pairedDevices) {
-      Log.i(TAG, device.getName() + "\n" + device.getAddress());
-      pairedDevice = device;
+    if (pairedDevices.size() > 0)
+      for (BluetoothDevice device : pairedDevices) {
+      if (device.getName().contains(DEVICE_NAME)) {
+        Log.i(TAG, device.getName() + "\n" + device.getAddress());
+        pairedDevice = device;
+      }
     }
   }
 

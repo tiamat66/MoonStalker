@@ -65,12 +65,13 @@ public class StatusBar
       status.setImageResource(R.drawable.ic_mv_s);
       break;
     case ST_ERROR:
+    case ST_BTRY_LOW:
       status.setImageResource(R.drawable.ic_error_s);
     }
-    if (s != ST_BTRY_LOW)
-      btry.setImageResource(R.drawable.ic_ok_s);
-    else
+    if (s == ST_BTRY_LOW)
       btry.setImageResource(R.drawable.ic_error_s);
+    else
+      btry.setImageResource(R.drawable.ic_ok_s);
   }
 
   void setGps()

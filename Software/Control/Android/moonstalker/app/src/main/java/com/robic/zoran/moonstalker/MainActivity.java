@@ -11,6 +11,9 @@ import android.view.LayoutInflater;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.robic.zoran.moonstalker.rest.Drive;
+import com.robic.zoran.moonstalker.rest.LoginBlueTooth;
+
 public class MainActivity extends AppCompatActivity
 {
   private static final String  TAG       = "IZAA";
@@ -65,15 +68,18 @@ public class MainActivity extends AppCompatActivity
     LinearLayout root = (LinearLayout) inflater.inflate(R.layout.content_main, null);
 
     if (BLUETOOTH)
-      bt = new BlueToothService(this);
+//      bt = new BlueToothService(this);
+
     if (GPS)
       gps = new GPSService(this);
     t = new Telescope(gps, this);
     ctr = new Control(t, this);
-    deviceIO = new DeviceIO(this);
-    deviceIO.start();
-    new MSDialog(this);
+//    deviceIO = new DeviceIO(this);
+//    deviceIO.start();
+//    new MSDialog(this);
 
+//    new Drive("Xperia L1", this, ctr);
+    ctr.inMsgProcess(Control.INIT, null);
     view3D = new MsView3D(this);
     setContentView(root);
 
@@ -104,7 +110,7 @@ public class MainActivity extends AppCompatActivity
     Toast.makeText(this, "Connection lost!", Toast.LENGTH_LONG).show();
   }
 
-  void errorExit()
+  public void errorExit()
   {
     finish();
     System.exit(0);
