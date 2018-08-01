@@ -23,11 +23,11 @@ public abstract class Login extends AsyncTask<String, Void, Integer>
   @SuppressLint("StaticFieldLeak")
   MainActivity act;
   String token;
-  REST task;
+  REST   task;
 
   BluetoothSocket socket;
 
-  static final int LOGIN_OK = 0;
+  static final int LOGIN_OK  = 0;
   static final int LOGIN_ERR = -1;
 
   Login(String url, MainActivity act)
@@ -76,7 +76,8 @@ public abstract class Login extends AsyncTask<String, Void, Integer>
         }
       }
     }
-    private static final ThreadFactory           sThreadFactory    = new ThreadFactory()
+
+    private static final ThreadFactory           sThreadFactory       = new ThreadFactory()
     {
       private final AtomicInteger mCount = new AtomicInteger(1);
 
@@ -85,10 +86,11 @@ public abstract class Login extends AsyncTask<String, Void, Integer>
         return new Thread(r, "HTTP Task #" + mCount.getAndIncrement());
       }
     };
-    private static final   BlockingQueue<Runnable> sPoolWorkQueue    = new LinkedBlockingQueue<Runnable>(128);
-    private static final   int                     CPU_COUNT         = Runtime.getRuntime().availableProcessors();
-    private static final   int                     CORE_POOL_SIZE    = CPU_COUNT + 1;
-    private static final   int                     MAXIMUM_POOL_SIZE = CPU_COUNT * 4 + 1;
+    private static final BlockingQueue<Runnable> sPoolWorkQueue       = new LinkedBlockingQueue<Runnable>(
+        128);
+    private static final int                     CPU_COUNT            = Runtime.getRuntime().availableProcessors();
+    private static final int                     CORE_POOL_SIZE       = CPU_COUNT + 1;
+    private static final int                     MAXIMUM_POOL_SIZE    = CPU_COUNT * 4 + 1;
     private static final int                     KEEP_ALIVE           = 1;
     public static final  Executor                THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(
         CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE, TimeUnit.SECONDS,

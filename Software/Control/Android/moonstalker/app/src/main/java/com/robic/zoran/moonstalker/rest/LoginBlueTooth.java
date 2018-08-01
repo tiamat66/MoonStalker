@@ -4,8 +4,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.robic.zoran.moonstalker.MainActivity;
+import com.robic.zoran.moonstalker.R;
 
 import java.io.IOException;
 import java.util.Set;
@@ -16,9 +18,9 @@ public class LoginBlueTooth extends Login
   private static final String TAG = "IZAA";
 
   private BluetoothAdapter btAdapter;
-  private BluetoothDevice pairedDevice;
+  private BluetoothDevice  pairedDevice;
 
-  public LoginBlueTooth(String url, MainActivity act, REST task)
+  LoginBlueTooth(String url, MainActivity act, REST task)
   {
     super(url, act);
 
@@ -43,9 +45,7 @@ public class LoginBlueTooth extends Login
           pairedDevice = device;
         }
       }
-    }
-    else
-    {
+    } else {
       Log.i(TAG, "No paired device");
       errorExit();
     }
@@ -56,8 +56,7 @@ public class LoginBlueTooth extends Login
     if (btAdapter == null) {
       Log.i(TAG, "Bluetooth not support");
       errorExit();
-    }
-    else {
+    } else {
       if (btAdapter.isEnabled()) Log.i(TAG, "Bluetooth ON");
       else {
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -71,8 +70,7 @@ public class LoginBlueTooth extends Login
   {
     try {
       socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(token));
-    }
-    catch (IOException ignored) { }
+    } catch (IOException ignored) { }
     btAdapter.cancelDiscovery();
 
     try {
@@ -94,9 +92,9 @@ public class LoginBlueTooth extends Login
   protected void onPostExecute(Integer responseCode)
   {
     Log.i(TAG, "Login onPostExecute responseCode=" + responseCode);
-    if (task != null && socket != null)
+    if (task != null && socket != null && responseCode == LOGIN_OK) {
       task.executeOnExecutor(TPE.THREAD_POOL_EXECUTOR, (Object[]) new String[]{token});
-    else if (task != null)
+    } else if (task != null)
       task.fail(responseCode);
   }
 }

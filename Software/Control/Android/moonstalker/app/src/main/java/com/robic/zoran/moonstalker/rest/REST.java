@@ -17,30 +17,27 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.ParameterizedType;
 
-@SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+@SuppressWarnings("ALL")
 public abstract class REST<T> extends AsyncTask<String, Void, T>
 {
-  public static final  String TAG                = "IZAA";
-  private static final int    OUTPUT_TYPE_JSON   = 0;
-  private static final int    OUTPUT_TYPE_STRING = 1;
-  private static final int    OUTPUT_TYPE_STREAM = 2;
-  private static final int    SOCKET_TIMEOUT     = -100;
-  private static final int    CONNECT_EXCEPTION  = -101;
-  private static final int    IO_EXCEPTION       = -102;
+  static final String TAG = "IZAA";
 
   private String url   = "";
   private String token = "";
+  protected MainActivity act;
+
 
   private final Class<T> resultClass;
 
   private Login login;
 
-  @SuppressWarnings("unchecked")
-  REST(String url, MainActivity act)
+  @SuppressWarnings("unchecked") REST(String url, MainActivity act)
   {
     super();
-    resultClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    resultClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).
+        getActualTypeArguments()[0];
     this.url = url;
+    this.act = act;
     login = new LoginBlueTooth(url, act, this);
     login.executeOnExecutor(Login.TPE.THREAD_POOL_EXECUTOR);
   }
@@ -79,7 +76,7 @@ public abstract class REST<T> extends AsyncTask<String, Void, T>
       OutputStream outStream = login.socket.getOutputStream();
       write(Json.toJson(params), outStream);
 
-      T result;
+      T           result;
       InputStream inStream = login.socket.getInputStream();
       if (resultClass != Void.class) {
         BufferedReader br = new BufferedReader(new InputStreamReader(inStream), 512);
@@ -96,6 +93,13 @@ public abstract class REST<T> extends AsyncTask<String, Void, T>
   }
 
   abstract T backgroundFunc();
+
   abstract void fail(int responseCode);
+
+  void errorExit()
+  {
+    act.finish();
+    System.exit(0);
+  }
 }
 

@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
@@ -20,26 +21,14 @@ public class MainActivity extends AppCompatActivity
   private static final boolean BLUETOOTH = true;
   private static final boolean GPS       = true;
 
-  private DeviceIO         deviceIO;
-  private Telescope        t;
-  private BlueToothService bt;
-  private Control          ctr;
-  private GPSService       gps;
+  private Telescope  t;
+  private Control    ctr;
+  private GPSService gps;
 
   VajnarFragment curentFragment = null;
 
-  MsView3D    view3D;
+  MsView3D view3D;
   AstroObject curObj = new AstroObject();
-
-  DeviceIO getDevice()
-  {
-    return deviceIO;
-  }
-
-  BlueToothService getBt()
-  {
-    return bt;
-  }
 
   Control getCtr()
   {
@@ -68,18 +57,12 @@ public class MainActivity extends AppCompatActivity
     LinearLayout root = (LinearLayout) inflater.inflate(R.layout.content_main, null);
 
     if (BLUETOOTH)
-//      bt = new BlueToothService(this);
-
-    if (GPS)
-      gps = new GPSService(this);
+      if (GPS)
+        gps = new GPSService(this);
     t = new Telescope(gps, this);
     ctr = new Control(t, this);
-//    deviceIO = new DeviceIO(this);
-//    deviceIO.start();
-//    new MSDialog(this);
+    new MSDialog(this);
 
-//    new Drive("Xperia L1", this, ctr);
-    ctr.inMsgProcess(Control.INIT, null);
     view3D = new MsView3D(this);
     setContentView(root);
 
@@ -98,25 +81,14 @@ public class MainActivity extends AppCompatActivity
     super.onPause();
   }
 
-
-  public void connectionTimedOutMessage()
-  {
-    Toast.makeText(this, "BlueTooth connection to server timed out.\n" +
-                         "Please check connection.", Toast.LENGTH_LONG).show();
-  }
-
-  public void connectionCanceled()
-  {
-    Toast.makeText(this, "Connection lost!", Toast.LENGTH_LONG).show();
-  }
-
   public void errorExit()
   {
     finish();
     System.exit(0);
   }
 
-  public VajnarFragment createFragment(String tag, Class<? extends VajnarFragment> cls, Bundle params)
+  public VajnarFragment createFragment(String tag, Class<? extends VajnarFragment> cls,
+                                       Bundle params)
   {
     VajnarFragment frag;
     frag = (VajnarFragment) getSupportFragmentManager().findFragmentByTag(tag);
@@ -140,22 +112,25 @@ public class MainActivity extends AppCompatActivity
     transaction.addToBackStack(null);
     transaction.commit();
   }
+
+  public void showAlert(String msg, int to, Runnable run)
+  {
+    new MSDialog(this, msg, to, run);
+  }
 }
 
 class MSDialog extends AlertDialog.Builder
 {
-  MSDialog(final MainActivity ctx, String msg, int to)
+  MSDialog(final MainActivity ctx, String msg, int to, Runnable run)
   {
     super(ctx);
 
     setTitle(msg);
-    AlertDialog dlg = create();
+    final AlertDialog dlg = create();
     show();
-    try {
-      Thread.sleep(to);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+
+    if (run != null)
+      new Handler().postDelayed(run, to);
     dlg.dismiss();
   }
 
@@ -165,19 +140,21 @@ class MSDialog extends AlertDialog.Builder
 
     setTitle(ctx.getResources().getString(R.string.conn_warn));
     setPositiveButton(R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                          @Override public void onClick(DialogInterface dialogInterface, int i)
-                          {
-                            ctx.getBt().connect();
-                          }
-                        });
+                      new DialogInterface.OnClickListener()
+                      {
+                        @Override public void onClick(DialogInterface dialogInterface, int i)
+                        {
+                          ctx.getCtr().inMsgProcess(Control.INIT, null);
+                        }
+                      });
     setNegativeButton(R.string.cancel,
-                        new DialogInterface.OnClickListener() {
-                          @Override public void onClick(DialogInterface dialogInterface, int i)
-                          {
-                            ctx.errorExit();
-                          }
-                        });
+                      new DialogInterface.OnClickListener()
+                      {
+                        @Override public void onClick(DialogInterface dialogInterface, int i)
+                        {
+                          ctx.errorExit();
+                        }
+                      });
 
     create();
     show();

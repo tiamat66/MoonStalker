@@ -71,6 +71,7 @@ class Telescope
   {
     pos.az += (vSteps * 360.0) / K;
     pos.h  += (hSteps * 360.0) / K;
+    Log.i(TAG, "move");
     act.getCtr().move(hSteps, vSteps);
   }
 
@@ -181,7 +182,6 @@ class Telescope
     public void run()
     {
       while (p.getStatus() == ST_TRACING) {
-        ArduinoEmulator.to(2000);
         traceHandler.obtainMessage(MOVE).sendToTarget();
       }
     }

@@ -38,4 +38,6 @@
 
   <string name="conn_warn">"Do you want to connect Telescope?</string>
   <string name="cal_msg">Please manually move the telescope to Polaris and then click on indicator</string>
+  <string name="no_conn">Unable to connect telescope. Please check connection.</string>
+  <string name="conn">Connecting…</string>
 </resources>

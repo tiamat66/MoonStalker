@@ -312,6 +312,9 @@ class BlueToothService
         Log.i(TAG, "Process BTRY message from Client");
         btryRes();
         break;
+      case OpCodes.MOVE:
+        Log.i(TAG, "Process MOVE message from Client");
+        move();
       default:
         Log.i(TAG, "processMessage in ProcessMsg: Unknown op code");
       }
@@ -320,23 +323,7 @@ class BlueToothService
 
   private void processMsg(String msg)
   {
-    if (chkMsg(msg, MOVE)) {
-      Log.i(TAG, "Process MV message from Client)");
-      rdy();
-      return;
-    }
-    if (chkMsg(msg, ST)) {
-      Log.i(TAG, "Process STATUS message from Client)");
-      rdy();
-      return;
-    }
-    if (chkMsg(msg, BTRY)) {
-
-      Log.i(TAG, "Process BTRY message from Client)");
-      btryRes();
-      return;
-    }
-    Log.i(TAG, "Unknown message received from Arduino");
+    Log.i(TAG, "Process message = " + msg);
     new Command(msg);
   }
 
@@ -355,17 +342,19 @@ class BlueToothService
       {
         write(Json.toJson(new Response(OpCodes.RDY)));
       }
-    }, 1000);
+    }, 500);
   }
 
-  private void notRdy()
+  private void move()
   {
-    // send <NOT_RDY>
-    outMessage = SM +
-                 NOT_RDY +
-                 EM;
-    Log.i(TAG, outMessage);
-    write(outMessage);
+    Log.i(TAG, "Processing MOVE");
+    new Handler().postDelayed(new Runnable()
+    {
+      @Override public void run()
+      {
+        write(Json.toJson(new Response(OpCodes.RDY)));
+      }
+    }, 1300);
   }
 
   private void btryRes()
@@ -377,7 +366,7 @@ class BlueToothService
       {
         write(Json.toJson(new Response(OpCodes.BTRY, "11.3")));
       }
-    }, 1000);
+    }, 700);
   }
 
   static class OpCodes
@@ -385,6 +374,7 @@ class BlueToothService
     final static int ST   = 1;
     final static int RDY  = 2;
     final static int BTRY = 3;
+    final static int MOVE = 7;
   }
 }
 
