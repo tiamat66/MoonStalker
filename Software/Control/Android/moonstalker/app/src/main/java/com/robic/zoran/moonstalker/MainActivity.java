@@ -8,27 +8,39 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.robic.zoran.moonstalker.rest.Drive;
+import com.robic.zoran.moonstalker.rest.GetConstellationInfo;
+import com.robic.zoran.moonstalker.rest.GetSkyObjInfo;
+import com.robic.zoran.moonstalker.rest.HTTP;
+import com.robic.zoran.moonstalker.rest.Login;
 import com.robic.zoran.moonstalker.rest.LoginBlueTooth;
+
+import java.util.Collections;
+import java.util.Comparator;
+
+import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CAL;
 
 public class MainActivity extends AppCompatActivity
 {
-  private static final String  TAG       = "IZAA";
   private static final boolean BLUETOOTH = true;
   private static final boolean GPS       = true;
 
   private Telescope  t;
   private Control    ctr;
   private GPSService gps;
+  public ArrayAdapter<CharSequence> skyObjAdapter;
+  public ArrayAdapter<CharSequence> constellationAdapter;
 
   VajnarFragment curentFragment = null;
 
   MsView3D view3D;
-  AstroObject curObj = new AstroObject();
+  public AstroObject curObj = null;
 
   Control getCtr()
   {
@@ -61,6 +73,7 @@ public class MainActivity extends AppCompatActivity
         gps = new GPSService(this);
     t = new Telescope(gps, this);
     ctr = new Control(t, this);
+    initAstroObjDatabase();
     new MSDialog(this);
 
     view3D = new MsView3D(this);
@@ -117,6 +130,24 @@ public class MainActivity extends AppCompatActivity
   {
     new MSDialog(this, msg, to, run);
   }
+
+  // TODO: Tu bi rabil pomoc; Manca, Vida.....
+  protected void initAstroObjDatabase()
+  {
+    skyObjAdapter =
+        ArrayAdapter.createFromResource(this, R.array.sky_objects,
+                                        android.R.layout.simple_spinner_item);
+    skyObjAdapter.sort(new Comparator<CharSequence>() {
+      @Override public int compare(CharSequence charSequence, CharSequence t1)
+      {
+        return (charSequence.toString().charAt(0) - t1.toString().charAt(0));
+      }
+    });
+
+    constellationAdapter = new ArrayAdapter<>
+        (this, android.R.layout.simple_spinner_item);
+    new GetConstellationInfo(this, constellationAdapter);
+  }
 }
 
 class MSDialog extends AlertDialog.Builder
@@ -131,7 +162,6 @@ class MSDialog extends AlertDialog.Builder
 
     if (run != null)
       new Handler().postDelayed(run, to);
-    dlg.dismiss();
   }
 
   MSDialog(final MainActivity ctx)
@@ -144,6 +174,7 @@ class MSDialog extends AlertDialog.Builder
                       {
                         @Override public void onClick(DialogInterface dialogInterface, int i)
                         {
+                          ctx.getTelescope().p.setStatus(ST_NOT_CAL);
                           ctx.getCtr().inMsgProcess(Control.INIT, null);
                         }
                       });

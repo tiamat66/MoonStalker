@@ -2,12 +2,8 @@ package com.robic.zoran.moonstalker;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 
 @SuppressLint("ViewConstructor")
 public class Buttons extends LinearLayout
@@ -23,11 +19,6 @@ public class Buttons extends LinearLayout
         Context.LAYOUT_INFLATER_SERVICE);
     if (inflater != null)
       addView(inflater.inflate(R.layout.status, null));
-//
-//    act.skyObjDropDown = (Spinner)findViewById(R.id.sp_sky_obj);
-//
-//    buttons();
-
   }
 
   private void buttons()

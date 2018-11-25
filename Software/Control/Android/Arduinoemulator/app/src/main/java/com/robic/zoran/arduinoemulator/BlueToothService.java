@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -255,10 +254,6 @@ class BlueToothService
   {
     acceptThread = new AcceptThread();
     acceptThread.start();
-    String str = "...Bluetooth Server Started...";
-    Log.i(TAG, str);
-    Toast.makeText(act, str, Toast.LENGTH_LONG).show();
-    act.print(str);
   }
 
   void stopBtServer()
@@ -354,7 +349,7 @@ class BlueToothService
       {
         write(Json.toJson(new Response(OpCodes.RDY)));
       }
-    }, 1300);
+    }, 1000);
   }
 
   private void btryRes()

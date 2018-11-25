@@ -1,43 +1,43 @@
 <resources>
   <string name="app_name">MoonStalker by Zoran Robič</string>
-  <string name="action_settings">Settings</string>
-  <string name="trace_button">Trace</string>
-  <string name="move_button">Move</string>
-  <string name="connect_button">Connect</string>
+  <string name="action_settings">Nastavitve</string>
+  <string name="trace_button">Sledi</string>
+  <string name="move_button">Premakni</string>
+  <string name="connect_button">Poveži</string>
   <string name="edit_RA">RA</string>
   <string name="edit_DEC">DEC</string>
-  <string name="update_button">Update</string>
-  <string name="calibrate_button">Calibrate</string>
-  <string name="exit_button">EXIT</string>
+  <string name="update_button">Posodobi</string>
+  <string name="calibrate_button">Kalibriranje</string>
+  <string name="exit_button">Izhod</string>
   <string name="ok">OK</string>
-  <string name="cancel">NO</string>
-  <string name="position">Position</string>
-  <string name="stop">stop</string>
-  <!--First Object in list is calibration object-->
-  <!--TODO: Refactor-->
-  <string-array name="stars">
-    <item>Polaris(CMin) 2 31 50.3 89 15 51.3</item>
-    <item>Mirach(Andr) 1 9 44.1 35 37 11.8 </item>
-    <item>Zosma(Leo) 11 14 6.6 20 31 24.5</item>
-    <item>Menkar(Cet) 3 2 16.8 4 5 21.8</item>
-    <item>Errai(Ceph) 23 39 21.4 77 37 57.3</item>
-    <item>Porrima(Vir) 12 41 39.3 -1 26 57.9</item>
-    <item>Chertan(Leo) 11 14 14.3 15 25 45.1</item>
-    <item>Alphard(Hya) 9 27 35.2 -8 39 30.3</item>
-    <item>Saiph(Ori) 5 47 45.4 -9 40 10.6</item>
-    <item>Acubens(Cnc) 8 58 29.3 11 51 27.1</item>
+  <string name="cancel">Prekliči</string>
+  <string name="position">Položaj</string>
+  <string name="stop">Stop</string>
+
+  <string-array name="sky_objects">
+    <item>Polaris</item>
+    <item>Capella</item>
+    <item>Canopus</item>
+    <item>Arcturus</item>
+    <item>Vega</item>
+    <item>Alphard</item>
+    <item>Sirius</item>
+
   </string-array>
 
   <string name="st">Status</string>
-  <string name="st_btry_low">battery low</string>
-  <string name="st_not_connected">not connected</string>
-  <string name="st_not_calibrated">not calibrated</string>
-  <string name="st_connecting">Connecting</string>
+  <string name="st_btry_low">Baterija je prazna</string>
+  <string name="st_not_connected">Ni povezan</string>
+  <string name="st_not_calibrated">Ni kalibriran</string>
+  <string name="st_connecting">Povezujem</string>
 
   <string name="e_alt_neg">Negative altitude</string>
 
-  <string name="conn_warn">"Do you want to connect Telescope?</string>
-  <string name="cal_msg">Please manually move the telescope to Polaris and then click on indicator</string>
-  <string name="no_conn">Unable to connect telescope. Please check connection.</string>
-  <string name="conn">Connecting…</string>
+  <string name="conn_warn">"Ali se želite povezati s teleskopom</string>
+  <string name="cal_msg">Ročno premaknite teleskop na izhodiščni objekt ter potrdide</string>
+  <string name="no_conn">Ne morem se povezati s teleskopom. Prosim preverite povezavo.</string>
+  <string name="conn">Povezujem…</string>
+
+  <string name="cal_obj">Polaris</string>
+  <string name="cal_cnstl">UrsaMinor</string>
 </resources>

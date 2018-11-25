@@ -53,18 +53,15 @@ class Telescope
     traceHandler = new TraceHandler();
   }
 
-  Position getPos()
-  {
-    return pos;
-  }
-
   void calibrate()
   {
     // Calibration object is now the first item from sky objects list
-    pos.set(act.curObj.getRa(), act.curObj.getDec());
+    pos.set(act.curObj.ra, act.curObj.dec);
     pos.raDec2AltAz();
     setPosition();
     p.setStatus(ST_READY);
+    act.curentFragment.sb.getConstellations().setEnabled(true);
+    act.curentFragment.sb.getSkyObjects().setEnabled(true);
   }
 
   void move(int hSteps, int vSteps)
@@ -126,7 +123,7 @@ class Telescope
   void startTrace()
   {
     p.setStatus(ST_TRACING);
-    new TraceThread(1000);
+    new TraceThread();
   }
 
   String formatLocationString()
@@ -149,7 +146,6 @@ class Telescope
 
   void setPosition()
   {
-
     if (act.curentFragment.sb != null)
       act.curentFragment.sb.setMessage(formatPositionString());
   }
@@ -172,7 +168,7 @@ class Telescope
 
   private class TraceThread extends Thread
   {
-    TraceThread(long timeout)
+    TraceThread()
     {
       Log.i(TAG, "Start tracing.");
       this.start();
@@ -182,7 +178,14 @@ class Telescope
     public void run()
     {
       while (p.getStatus() == ST_TRACING) {
+        if (act.getCtr().isLocked()) continue;
+        Log.i("IZAA", "Mudlja=" + act.getCtr().isLocked());
         traceHandler.obtainMessage(MOVE).sendToTarget();
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
   }
@@ -214,11 +217,6 @@ class Telescope
     int getStatus()
     {
       return status.getInt("st");
-    }
-
-    float getBtryVoltage()
-    {
-      return btryVoltage;
     }
 
     void setError(String e)

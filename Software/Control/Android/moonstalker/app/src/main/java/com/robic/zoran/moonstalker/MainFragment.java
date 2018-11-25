@@ -36,6 +36,7 @@ public class MainFragment extends VajnarFragment
       @Override public void onClick(View view)
       {
         act.setFragment("calibration", ManualFragment.class, new Bundle());
+        new MSDialog(act, act.getResources().getString(R.string.cal_msg), 2000, null);
       }
     });
     b3 = (Button) res.findViewById(R.id.bt_man);
@@ -72,13 +73,4 @@ public class MainFragment extends VajnarFragment
       b3.setVisibility(View.GONE);
     }
   }
-
-  @Override
-  public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
-  {
-    scanAstroLine(i, sb.getSkyObjects());
-  }
-
-  @Override public void onNothingSelected(AdapterView<?> adapterView)
-  {}
 }

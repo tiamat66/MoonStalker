@@ -24,16 +24,6 @@ public class ManualFragment extends VajnarFragment
     return res;
   }
 
-  @Override
-  public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
-  {
-    scanAstroLine(i, sb.getSkyObjects());
-  }
-
-  @Override
-  public void onNothingSelected(AdapterView<?> adapterView)
-  {}
-
   @Override protected void setStatus(int status)
   {
 

@@ -22,6 +22,7 @@ public class StatusBar
   private ImageView gps;
   private ImageView btry;
   private Spinner   skyObjects;
+  private Spinner   constellations;
   private TextView  msgBox;
   private TextView  msgBox2;
   private TextView  msgBox3;
@@ -31,6 +32,7 @@ public class StatusBar
     this.act = act;
 
     skyObjects = (Spinner) v.findViewById(R.id.spinner1);
+    constellations = (Spinner) v.findViewById(R.id.spinner2);
     status = (ImageView) v.findViewById(R.id.status);
     gps = (ImageView) v.findViewById(R.id.gps);
     btry = (ImageView) v.findViewById(R.id.btry);
@@ -47,6 +49,11 @@ public class StatusBar
     return skyObjects;
   }
 
+  Spinner getConstellations()
+  {
+    return constellations;
+  }
+
   void setStatus(int s)
   {
     switch (s) {
@@ -60,6 +67,7 @@ public class StatusBar
       break;
     case ST_TRACING:
       status.setImageResource(R.drawable.ic_tr_s);
+      setMessage(act.getTelescope().formatPositionString());
       break;
     case ST_MOVING:
       status.setImageResource(R.drawable.ic_mv_s);

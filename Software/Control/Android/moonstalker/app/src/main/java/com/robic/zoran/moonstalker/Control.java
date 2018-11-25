@@ -48,6 +48,8 @@ public class Control
 
   public void move(int hSteps, int vSteps)
   {
+    if (t.p.getStatus() != ST_TRACING)
+      t.p.setStatus(ST_MOVING);
     outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
   }
 
@@ -100,6 +102,7 @@ public class Control
       switch (message.what) {
       case READY:
         processReady();
+        t.setPosition();
         break;
       case BATTERY:
         t.batteryVoltage(b.getFloat("p1"));
@@ -156,6 +159,7 @@ public class Control
 
     void add(Instruction i)
     {
+      Log.i("IZAA", "Instrukcija = " + i);
       l.addLast(i);
     }
   }
@@ -167,21 +171,29 @@ public class Control
     case ST_NOT_CAL:
       break;
     case ST_MOVING:
+    case ST_READY:
       t.p.setStatus(ST_READY);
       break;
     case ST_TRACING:
       t.p.setStatus(ST_TRACING);
+      break;
     }
   }
 
-  private void lock()
+  public void lock()
   {
     isSocketFree = false;
   }
 
   public void release()
   {
+    Log.i(TAG, "Release--------------------------------------------------------------------------");
     isSocketFree = true;
+  }
+
+  public boolean isLocked()
+  {
+    return !isSocketFree;
   }
 }
 

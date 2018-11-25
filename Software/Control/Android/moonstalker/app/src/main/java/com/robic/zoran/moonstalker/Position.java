@@ -9,7 +9,6 @@ import java.util.GregorianCalendar;
 import static com.robic.zoran.moonstalker.MSUtil.convertDec2Hour;
 import static java.lang.Math.*;
 
-//TODO: Refactor
 class Position
 {
   private static final String TAG = "IZAA";

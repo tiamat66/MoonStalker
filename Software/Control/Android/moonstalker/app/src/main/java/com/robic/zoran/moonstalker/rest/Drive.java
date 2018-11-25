@@ -57,6 +57,7 @@ public class Drive extends REST<Response>
   @Override
   protected void onPostExecute(Response j)
   {
+    ctrl.release();
     if (j != null) {
       Log.i(TAG, "on post execute OK");
       process(j);
@@ -64,7 +65,6 @@ public class Drive extends REST<Response>
       Log.i(TAG, "on post execute ERROR");
     }
     Log.i("IZAA", "release socket");
-    ctrl.release();
   }
 
   public static class OpCodes

@@ -32,16 +32,6 @@ public class AutoFragment extends VajnarFragment
   }
 
   @Override
-  public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
-  {
-    scanAstroLine(i, sb.getSkyObjects());
-  }
-
-  @Override
-  public void onNothingSelected(AdapterView<?> adapterView)
-  {}
-
-  @Override
   protected void setStatus(int status)
   {
     ImageView st = (ImageView) res.findViewById(R.id.imageView7);
@@ -73,7 +63,7 @@ public class AutoFragment extends VajnarFragment
     b2.setOnClickListener(new View.OnClickListener() {
       @Override public void onClick(View view)
       {
-        act.getTelescope().move(act.curObj.getRa(), act.curObj.getDec());
+        act.getTelescope().move(act.curObj.ra, act.curObj.dec);
       }
     });
 

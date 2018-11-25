@@ -1,19 +1,22 @@
 package com.robic.zoran.moonstalker;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-class MSUtil
+import static com.robic.zoran.moonstalker.Telescope.TAG;
+
+public class MSUtil
 {
   @SuppressLint("DefaultLocale")
   static String convertDec2Hour(double num)
   {
-    long hours = (long) num;
+    long   hours = (long) num;
     double fPart = num - hours;
     fPart *= 60;
-    long minutes = (long) fPart;
+    long   minutes = (long) fPart;
     double seconds = fPart - minutes;
     seconds *= 60;
     return String.format("%d %d\' %.2f\"", hours, minutes, seconds);
@@ -21,9 +24,36 @@ class MSUtil
 
   static double convertHour2Dec(double h, double min, double s)
   {
+    if (h < 0.0)
+      return (h - (min / 60.0) - (s / 3600.0));
     return (h + (min / 60.0) + (s / 3600.0));
   }
 
+//  2h31m48.704
+  public static double getRaFromString(String s)
+  {
+    double h = Double.valueOf(s.substring(0, s.indexOf('h')));
+    Log.i(TAG, "ddddddddd=" + h);
+    double min = Double.valueOf(s.substring(s.indexOf('h') + 1, s.indexOf('m')));
+    Log.i(TAG, "ddddddddd=" + min);
+    double sec = Double.valueOf(s.substring(s.indexOf('m') + 1, s.length()));
+    Log.i(TAG, "ddddddddd=" + sec);
+
+    return convertHour2Dec(h, min, sec);
+  }
+
+//  +89d15'50.72"
+public static double getDecFromString(String s)
+{
+  double d = Double.valueOf(s.substring(0, s.indexOf('d')));
+  Log.i(TAG, "ddddddddd=" + d);
+  double min = Double.valueOf(s.substring(s.indexOf('d') + 1, s.indexOf('\'')));
+  Log.i(TAG, "ddddddddd=" + min);
+  double sec = Double.valueOf(s.substring(s.indexOf('\'') + 1, s.indexOf('\"')));
+  Log.i(TAG, "ddddddddd=" + sec);
+
+  return convertHour2Dec(d, min, sec);
+}
 
 //  Local Siderial Time
 //  Suppose you have a sunny morning. Put a stick in the ground, and watch the shadow. The shadow will get shorter and shorter - and then start to get longer and longer. The time corresponding to the shortest shadow is your local noon. We reckon a Solar day as (roughly) the mean time between two local noons, and we call this 24 hours of time.
@@ -63,8 +93,8 @@ class MSUtil
 
   static double LST(double longitude)
   {
-    double lst = 100.46 + 0.985647 * j2000() + longitude + 15 * UTC();
-    long lstO = (long) (lst / 360);
+    double lst  = 100.46 + 0.985647 * j2000() + longitude + 15 * UTC();
+    long   lstO = (long) (lst / 360);
     lst = lst - lstO * 360.0;
     if (lst < 0.0) lst += 360.0;
     return lst;
@@ -72,7 +102,7 @@ class MSUtil
 
   private static double UTC()
   {
-    final int  timezone = -2;
+    final int timezone = -2;
 
     int hour   = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
     int minute = Calendar.getInstance().get(Calendar.MINUTE);

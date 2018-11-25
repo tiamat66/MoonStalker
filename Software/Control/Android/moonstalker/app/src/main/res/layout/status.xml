@@ -43,10 +43,20 @@
   </LinearLayout>
 
   <Spinner
-    android:id="@+id/spinner1"
-    android:layout_width="120dp"
+    android:id="@+id/spinner2"
+    android:layout_width="150dp"
     android:layout_height="match_parent"
     android:background="@android:color/holo_blue_dark"
+    tools:layout_marginStart="10dp">
+
+  </Spinner>
+
+  <Spinner
+    android:id="@+id/spinner1"
+    android:layout_width="150dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
+    android:background="#b8d850"
     tools:layout_marginStart="10dp">
 
   </Spinner>

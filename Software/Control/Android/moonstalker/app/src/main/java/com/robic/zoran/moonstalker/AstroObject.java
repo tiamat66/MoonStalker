@@ -1,43 +1,38 @@
 package com.robic.zoran.moonstalker;
 
-import java.util.Scanner;
-
-class AstroObject
+@SuppressWarnings("WeakerAccess")
+public class AstroObject
 {
-  private String name;
-  private String ra;
-  private String dec;
+  public String name;
+  public double ra;
+  public double dec;
+  public String sRa;
+  public String sDec;
+  public String constellation;
 
-  AstroObject(String name, String ra, String dec)
+  public AstroObject(String name, double ra, double dec, String sRa, String sDec)
   {
     set(name, ra, dec);
+    this.sRa = sRa;
+    this.sDec = sDec;
   }
 
-  AstroObject()
-  {}
-
-  void set(String name, String ra, String dec)
+  void set(String name, double ra, double dec)
   {
     this.name = name;
     this.ra = ra;
     this.dec = dec;
   }
 
-  double getRa()
+  @Override
+  public String toString()
   {
-    Scanner sc = new Scanner(ra);
-    return MSUtil.convertHour2Dec(
-        Double.valueOf(sc.next()),
-        Double.valueOf(sc.next()),
-        Double.valueOf(sc.next()));
-  }
-
-  double getDec()
-  {
-    Scanner sc = new Scanner(dec);
-    return MSUtil.convertHour2Dec(
-        Double.valueOf(sc.next()),
-        Double.valueOf(sc.next()),
-        Double.valueOf(sc.next()));
+    return "AstroObject{" +
+           "name=" + name +
+           ", ra=" + ra +
+           ", dec=" + dec +
+           ", sRa=" + sRa +
+           ", sDec=" + sDec +
+           '}';
   }
 }

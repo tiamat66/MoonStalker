@@ -3,7 +3,6 @@ package com.robic.zoran.moonstalker.rest;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 
-import com.robic.zoran.moonstalker.ConstellationItem;
 import com.robic.zoran.moonstalker.MainActivity;
 
 import static com.robic.zoran.moonstalker.rest.REST.TAG;
@@ -34,7 +33,7 @@ public class GetConstellationInfo extends GetSkyObjInfo
   {
     int    lastIndex = 0;
     String enci;
-    ArrayAdapter<ConstellationItem> a = (ArrayAdapter<ConstellationItem>) adapter;
+    ArrayAdapter<CharSequence> a = (ArrayAdapter<CharSequence>) adapter;
 
     while (lastIndex != -1) {
 
@@ -45,7 +44,8 @@ public class GetConstellationInfo extends GetSkyObjInfo
         enci = txt.substring(lastIndex);
 
         Log.i(TAG, enci.substring(enci.indexOf('>') + 1, enci.indexOf('<')));
-        a.add(new ConstellationItem(enci.substring(enci.indexOf('>') + 1, enci.indexOf('<'))));
+        String j = enci.substring(enci.indexOf('>') + 1, enci.indexOf('<'));
+        a.add(j.replaceAll("\\s+", ""));
       }
     }
     return null;

@@ -3,15 +3,10 @@ package com.robic.zoran.moonstalker;
 import android.support.v4.app.DialogFragment;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.Spinner;
+import com.robic.zoran.moonstalker.rest.GetStarInfo;
 
-import java.util.Scanner;
-
-import static com.robic.zoran.moonstalker.Telescope.ST_READY;
-
-public abstract class VajnarFragment extends DialogFragment implements AdapterView.OnItemSelectedListener
+public abstract class VajnarFragment extends DialogFragment
 {
   MainActivity act;
 
@@ -32,28 +27,44 @@ public abstract class VajnarFragment extends DialogFragment implements AdapterVi
   protected void scanAstroLine(int position, Spinner sp)
   {
     if (sp == null) return;
-    String buf = sp.getItemAtPosition(position).toString();
-
-    Scanner sc   = new Scanner(buf);
-    String  name = sc.next();
-    //ra h min sec
-    String ra = sc.next() + " ";
-    ra += sc.next() + " ";
-    ra += sc.next() + " ";
-    //dec h min sec
-    String dec = sc.next() + " ";
-    dec += sc.next() + " ";
-    dec += sc.next() + " ";
-    act.curObj.set(name, ra, dec);
+    String name = sp.getItemAtPosition(position).toString();
+    new GetStarInfo(name, act);
   }
 
   protected void initAstroObjDropDown()
   {
-    ArrayAdapter<CharSequence> skyObjAdapter =
-        ArrayAdapter.createFromResource(act, R.array.stars, android.R.layout.simple_spinner_item);
-    sb.getSkyObjects().setAdapter(skyObjAdapter);
-    sb.getSkyObjects().setOnItemSelectedListener(this);
-    sb.getSkyObjects().setEnabled(true);
+    sb.getSkyObjects().setAdapter(act.skyObjAdapter);
+    sb.getSkyObjects().setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      @Override public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
+      {
+        scanAstroLine(i, sb.getSkyObjects());
+      }
+
+      @Override public void onNothingSelected(AdapterView<?> adapterView)
+      {
+        // TODO
+      }
+    });
+    int i = act.skyObjAdapter.getPosition(act.getResources().getString(R.string.cal_obj));
+    sb.getSkyObjects().setSelection(i);
+    sb.getSkyObjects().setEnabled(false);
+
+    sb.getConstellations().setAdapter(act.constellationAdapter);
+    sb.getConstellations().setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      @Override public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
+      {
+        // TODO
+      }
+
+      @Override public void onNothingSelected(AdapterView<?> adapterView)
+      {
+        // TODO
+      }
+    });
+    i = act.constellationAdapter.getPosition(act.getResources().getString(R.string.cal_cnstl));
+    sb.getConstellations().setSelection(i);
+    sb.getConstellations().setEnabled(false);
+
   }
 
   protected abstract void setStatus(int status);
