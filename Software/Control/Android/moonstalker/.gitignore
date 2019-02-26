@@ -6,3 +6,9 @@
 .DS_Store
 /build
 /captures
+app/libs/jackson-annotations-2.9.0.jar
+app/libs/jackson-core-2.9.1.jar
+app/libs/jackson-databind-2.9.1.jar
+/.idea/caches/
+/.idea/misc.xml
+/gradle/wrapper/gradle-wrapper.properties
