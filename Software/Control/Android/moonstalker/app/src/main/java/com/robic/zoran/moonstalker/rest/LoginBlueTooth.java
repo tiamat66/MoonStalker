@@ -4,10 +4,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.robic.zoran.moonstalker.MainActivity;
-import com.robic.zoran.moonstalker.R;
 
 import java.io.IOException;
 import java.util.Set;
@@ -18,7 +16,7 @@ public class LoginBlueTooth extends Login
   private static final String TAG = "IZAA";
 
   private BluetoothAdapter btAdapter;
-  private BluetoothDevice  pairedDevice;
+  private BluetoothDevice  pairedDevice = null;
 
   LoginBlueTooth(String url, MainActivity act, REST task)
   {
@@ -49,6 +47,9 @@ public class LoginBlueTooth extends Login
       Log.i(TAG, "No paired device");
       errorExit();
     }
+
+    if (pairedDevice == null)
+      errorExit();
   }
 
   private void checkBTState()
@@ -70,7 +71,10 @@ public class LoginBlueTooth extends Login
   {
     try {
       socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(token));
-    } catch (IOException ignored) { }
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+    }
     btAdapter.cancelDiscovery();
 
     try {

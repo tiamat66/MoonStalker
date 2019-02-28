@@ -11,6 +11,7 @@ import com.robic.zoran.moonstalker.rest.Instruction;
 
 import java.util.LinkedList;
 
+import static com.robic.zoran.moonstalker.C.SERVER_NAME;
 import static com.robic.zoran.moonstalker.Telescope.ST_MOVING;
 import static com.robic.zoran.moonstalker.Telescope.ST_NOT_CAL;
 import static com.robic.zoran.moonstalker.Telescope.ST_READY;
@@ -136,7 +137,6 @@ public class Control
 
     void processorStart()
     {
-      final String URL = "Xperia L1";
       new Thread()
       {
         @Override public void run()
@@ -150,7 +150,7 @@ public class Control
             if (!isSocketFree || l.isEmpty()) continue;
             // process command
             lock();
-            new Drive(URL, act, ctrl, l.removeFirst());
+            new Drive(SERVER_NAME, act, ctrl, l.removeFirst());
 
           }
         }
