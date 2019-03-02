@@ -301,7 +301,19 @@ void handle_incoming_command(char *command_buff)
   cmd = strtok(command, " ");
   if (!strcmp(cmd, "MV"))
   {
-    Serial1.println("Would start moving");
+    char *x_str;
+    char *y_str;
+    int x, y;
+
+    x_str = strtok(NULL, " ");
+    y_str = strtok(NULL, " ");
+
+    x = atoi(x_str);
+    y = atoi(y_str);
+    Serial1.print("Would start moving x: ");
+    Serial1.print(x);
+    Serial1.print(" y: ");
+    Serial1.print(y);
   }
   else if (!strcmp(cmd, "BTRY?"))
   {
