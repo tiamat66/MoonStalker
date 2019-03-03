@@ -175,12 +175,13 @@ volatile uint16_t vert_steps_remain = 0;
 void setup()
 {
   /* Open bluetooth serial port */
-  Serial1.begin(115200);
+  Serial.begin(115200);
   while (!Serial)
   {
     ; // Wait for serial port to connect
   }
-  initialize_timers();
+  Serial.println("<INFO System start>");
+  // initialize_timers();
 }
 
 void loop()
@@ -188,26 +189,31 @@ void loop()
   static char command_buffer[65] = "";
   static int num_recv_char = 0;
   char incoming_char = 0;
-  
-  if (Serial1.available() > 0)
+
+  if (Serial.available() > 0)
   {
     if (num_recv_char == 64)
     {
-      Serial1.println("<FATAL_ERROR RCV_BUFFER_OVERFLOW>");
+      Serial.println("<FATAL_ERROR RCV_BUFFER_OVERFLOW>");
     }
-    incoming_char = Serial1.read();
-    command_buffer[num_recv_char] = incoming_char;
-    command_buffer[num_recv_char+1] = 0;
-    num_recv_char++;
-    if (incoming_char == '>')
+    incoming_char = Serial.read();
+    // ignore newline characters
+    if (incoming_char != 10)
     {
-      Serial1.print("<INFO Handling command: ");
-      Serial1.print(command_buffer);
-      Serial.println(">");
-      handle_incoming_command(command_buffer);
+      command_buffer[num_recv_char] = incoming_char;
+      command_buffer[num_recv_char + 1] = 0;
+      num_recv_char++;
+      if (incoming_char == '>')
+      {
+        Serial.print("<INFO Handling command: ");
+        Serial.print(command_buffer);
+        Serial.println(">");
+        handle_incoming_command(command_buffer);
 
-      // clear command buffer, NULL terminate
-      *command_buffer = 0;
+        // clear command buffer, NULL terminate
+        *command_buffer = 0;
+        num_recv_char = 0;
+      }
     }
   }
 }
@@ -228,8 +234,7 @@ ISR(TIMER1_COMPA_vect)
   if (vert_steps_remain > 0)
   {
     // set vert_step_pin 5 high
-    PORTC |= B10000000;
-    
+    PORTC |= B10000000; 
     vert_step_high = true;
     vert_steps_remain--;
   }
@@ -274,7 +279,7 @@ int get_battery_voltage()
   // multiply with the voltage divider 1k and 3.3k
   // voltage_mv = value * (5000 * 4.3)/ 1023;
   voltage_mv = value * 21;
-  
+
   return voltage_mv;
 }
 
@@ -289,16 +294,16 @@ int get_battery_voltage()
    <BTRY?>
    <ST?>
    <SYS_CHK>
-   
+
 */
 void handle_incoming_command(char *command_buff)
 {
   char command[65];
   char *cmd;
-  
+
   // extract command without starting '<'
   // and ending '>'
-  strcpy(command, command_buff+1);
+  strcpy(command, command_buff + 1);
   command[strlen(command) - 1] = 0;
 
   cmd = strtok(command, " ");
@@ -313,14 +318,26 @@ void handle_incoming_command(char *command_buff)
 
     x = atoi(x_str);
     y = atoi(y_str);
-    Serial1.print("Would start moving x: ");
-    Serial1.print(x);
-    Serial1.print(" y: ");
-    Serial1.print(y);
+    Serial.print("<MV_ACK ");
+    Serial.print(x);
+    Serial.print(y);
+    Serial.println(">");
+
+    // TODO - check if we are still moving
+    
+    // Set step variables for
+    // the interrupt routine
+    noInterrupts();
+    horiz_steps_remain = x;
+    vert_steps_remain = y;
+    interrupts();
   }
   else if (!strcmp(cmd, "BTRY?"))
   {
-    Serial1.println("<BTRY xxxx mV>");
+    int volt_mv = get_battery_voltage();
+    Serial.print("<BTRY ");
+    Serial.print(volt_mv);
+    Serial.println(" mV>");
   }
   else if (!strcmp(cmd, "ST?"))
   {
@@ -328,18 +345,32 @@ void handle_incoming_command(char *command_buff)
 
     if ((horiz_steps_remain > 0) || (vert_steps_remain > 0))
     {
-      strcpy(ret_msg, "<NOT_RDY");
+      strcpy(ret_msg, "<NOT_RDY>");
     }
     else
     {
       strcpy(ret_msg, "<RDY>");
     }
-    Serial1.println(ret_msg);
+    Serial.println(ret_msg);
   }
   else if (!strcmp(cmd, "SYS_CHK"))
   {
     // system_check();
-    Serial1.println("Would execute system check");
+    Serial.println("Would execute system check");
+  }
+  else if (!strcmp(cmd, "MV_STATE"))
+  {
+    uint16_t x;
+    uint16_t y;
+    
+    noInterrupts();
+    x = horiz_steps_remain;
+    y = vert_steps_remain;
+    Serial.print("<MV_STATE X: ");
+    Serial.print(x);
+    Serial.print(" Y: ");
+    Serial.print(y);
+    Serial.println(">");
   }
 }
 
@@ -352,7 +383,7 @@ void system_check()
 
   if (battery_volt_mv < BATTERY_LOW_LIMIT_MV)
   {
-    Serial1.print("<LOW_BTRY>");
+    Serial.print("<LOW_BTRY>");
   }
 
   // TODO - Check fault pins from driver
