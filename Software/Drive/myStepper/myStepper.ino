@@ -199,6 +199,11 @@ void loop()
     }
     incoming_char = Serial.read();
     // ignore newline characters
+    Serial.print("Command buffer cont: ");
+    Serial.println(command_buffer);
+    Serial.print("Commnd buffer cont len: ");
+    Serial.println(strlen(command_buffer));
+    
     if (incoming_char != 10)
     {
       command_buffer[num_recv_char] = incoming_char;
@@ -258,15 +263,17 @@ ISR(TIMER1_COMPB_vect)
   {
     // pull the horiz pin 2 low
     PORTD &= B11111101;
+    horiz_step_high = false;
   }
 
   if (vert_step_high)
   {
     // pull the vert pin 5 low
     PORTC &= B01111111;
+    vert_step_high = false;
   }
   // disable OCR1B interrupt
-  TIMSK1 &= (1 << OCIE1B);
+  TIMSK1 &= ~(1 << OCIE1B);
 }
 
 
@@ -321,6 +328,7 @@ void handle_incoming_command(char *command_buff)
     y = atoi(y_str);
     Serial.print("<MV_ACK ");
     Serial.print(x);
+    Serial.print(" ");
     Serial.print(y);
     Serial.println(">");
 
@@ -359,7 +367,7 @@ void handle_incoming_command(char *command_buff)
     // system_check();
     Serial.println("Would execute system check");
   }
-  else if (!strcmp(cmd, "MV_STATE"))
+  else if (!strcmp(cmd, "DEBUG"))
   {
     uint16_t x;
     uint16_t y;
@@ -367,10 +375,15 @@ void handle_incoming_command(char *command_buff)
     noInterrupts();
     x = horiz_steps_remain;
     y = vert_steps_remain;
-    Serial.print("<MV_STATE X: ");
+    Serial.print("<DEBUG X: ");
     Serial.print(x);
     Serial.print(" Y: ");
     Serial.print(y);
+    Serial.println(">");
+    interrupts();
+
+    Serial.print("<DEBUG TIMSK1: ");
+    Serial.print(TIMSK1, BIN);
     Serial.println(">");
   }
 }
