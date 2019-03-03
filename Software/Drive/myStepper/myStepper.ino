@@ -220,14 +220,15 @@ ISR(TIMER1_COMPA_vect)
   if (horiz_steps_remain > 0)
   {
     // set horiz_step_pin 2 high
-    PORTB |= B00000100;
+    PORTD |= B00000010;
     horiz_step_high = true;
     horiz_steps_remain--;
   }
 
   if (vert_steps_remain > 0)
   {
-    // set vert_step_pin high
+    // set vert_step_pin 5 high
+    PORTC |= B10000000;
     
     vert_step_high = true;
     vert_steps_remain--;
@@ -249,14 +250,16 @@ ISR(TIMER1_COMPB_vect)
 {
   if (horiz_step_high)
   {
-    // TODO - pull the horiz pin low
+    // pull the horiz pin 2 low
+    PORTD &= B11111101;
   }
 
   if (vert_step_high)
   {
-    // TODO - pull the vert pin low
+    // pull the vert pin 5 low
+    PORTC &= B01111111;
   }
-  // TODO - disable OCR1B interrupt
+  // disable OCR1B interrupt
   TIMSK1 &= (1 << OCIE1B);
 }
 
