@@ -181,7 +181,8 @@ void setup()
     ; // Wait for serial port to connect
   }
   Serial.println("<INFO System start>");
-  // initialize_timers();
+  initialize_pins();
+  initialize_timers();
 }
 
 void loop()
@@ -416,4 +417,27 @@ void initialize_timers()
   OCR1A = 125;
 
   interrupts();
+}
+
+
+void initialize_pins()
+{
+  // output pins horizontal
+  pinMode(horiz_step_pin, OUTPUT);
+  pinMode(horiz_direction_pin, OUTPUT);
+  pinMode(horiz_reset_pin, OUTPUT);
+  pinMode(horiz_sleep_pin, OUTPUT);
+
+  // output pins vertical
+  pinMode(vert_step_pin, OUTPUT);
+  pinMode(vert_direction_pin, OUTPUT);
+  pinMode(vert_reset_pin, OUTPUT);
+  pinMode(vert_sleep_pin, OUTPUT);
+
+  // input fault pins
+  pinMode(horiz_fault, INPUT);
+  pinMode(vert_fault, INPUT);
+
+  pinMode(battery_voltage_pin, INPUT_PULLUP);
+
 }
