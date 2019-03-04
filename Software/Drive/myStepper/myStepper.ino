@@ -157,8 +157,8 @@ const int vert_reset_pin = 9;
 const int vert_sleep_pin = 10;
 
 // input pins
-const int horiz_fault = 11;
-const int vert_fault = 12;
+const int horiz_fault_pin = 11;
+const int vert_fault_pin = 12;
 
 // global variables
 
@@ -199,11 +199,6 @@ void loop()
     }
     incoming_char = Serial.read();
     // ignore newline characters
-    Serial.print("Command buffer cont: ");
-    Serial.println(command_buffer);
-    Serial.print("Commnd buffer cont len: ");
-    Serial.println(strlen(command_buffer));
-    
     if (incoming_char != 10)
     {
       command_buffer[num_recv_char] = incoming_char;
@@ -263,17 +258,15 @@ ISR(TIMER1_COMPB_vect)
   {
     // pull the horiz pin 2 low
     PORTD &= B11111101;
-    horiz_step_high = false;
   }
 
   if (vert_step_high)
   {
     // pull the vert pin 5 low
     PORTC &= B01111111;
-    vert_step_high = false;
   }
   // disable OCR1B interrupt
-  TIMSK1 &= ~(1 << OCIE1B);
+  TIMSK1 &= (1 << OCIE1B);
 }
 
 
@@ -328,12 +321,30 @@ void handle_incoming_command(char *command_buff)
     y = atoi(y_str);
     Serial.print("<MV_ACK ");
     Serial.print(x);
-    Serial.print(" ");
     Serial.print(y);
     Serial.println(">");
 
     // TODO - check if we are still moving
-    
+
+    // Set direction for horiz and vert
+    if (x < 0)
+    {
+      digitalWrite(horiz_direction_pin, HIGH);
+      x = -x;
+    }
+    else
+    {
+      digitalWrite(horiz_direction_pin, LOW);
+    }
+    if (y < 0)
+    {
+      digitalWrite(vert_direction_pin, HIGH);
+      y = -y;
+    }
+    else
+    {
+      digitalWrite(vert_direction_pin, LOW);
+    }   
     // Set step variables for
     // the interrupt routine
     noInterrupts();
@@ -367,7 +378,7 @@ void handle_incoming_command(char *command_buff)
     // system_check();
     Serial.println("Would execute system check");
   }
-  else if (!strcmp(cmd, "DEBUG"))
+  else if (!strcmp(cmd, "MV_STATE"))
   {
     uint16_t x;
     uint16_t y;
@@ -375,15 +386,10 @@ void handle_incoming_command(char *command_buff)
     noInterrupts();
     x = horiz_steps_remain;
     y = vert_steps_remain;
-    Serial.print("<DEBUG X: ");
+    Serial.print("<MV_STATE X: ");
     Serial.print(x);
     Serial.print(" Y: ");
     Serial.print(y);
-    Serial.println(">");
-    interrupts();
-
-    Serial.print("<DEBUG TIMSK1: ");
-    Serial.print(TIMSK1, BIN);
     Serial.println(">");
   }
 }
@@ -392,15 +398,29 @@ void handle_incoming_command(char *command_buff)
 void system_check()
 {
   int battery_volt_mv;
+  int horiz_fault;
+  int vert_fault;
 
   battery_volt_mv = get_battery_voltage();
 
   if (battery_volt_mv < BATTERY_LOW_LIMIT_MV)
   {
-    Serial.print("<LOW_BTRY>");
+    Serial.println("<ALARM_LOW_BTRY>");
   }
 
-  // TODO - Check fault pins from driver
+  // check drv fault pins
+  horiz_fault = digitalRead(horiz_fault_pin);
+  vert_fault = digitalRead(vert_fault_pin);
+
+  if (horiz_fault == LOW)
+  {
+    Serial.println("<ALARM_DRV_HORIZ_FAULT>");
+  }
+
+  if (vert_fault == LOW)
+  {
+    Serial.println("<ALARM_DRV_VERT_FAULT>");
+  }
 }
 
 
@@ -448,9 +468,17 @@ void initialize_pins()
   pinMode(vert_sleep_pin, OUTPUT);
 
   // input fault pins
-  pinMode(horiz_fault, INPUT);
-  pinMode(vert_fault, INPUT);
+  pinMode(horiz_fault_pin, INPUT);
+  pinMode(vert_fault_pin, INPUT);
 
   pinMode(battery_voltage_pin, INPUT_PULLUP);
+
+  // set sleep pins
+  digitalWrite(horiz_sleep_pin, HIGH);
+  digitalWrite(vert_sleep_pin, HIGH);
+
+  // set reset pins
+  digitalWrite(horiz_reset_pin, HIGH);
+  digitalWrite(vert_reset_pin, HIGH);
 
 }
