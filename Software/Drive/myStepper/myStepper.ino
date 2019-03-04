@@ -266,7 +266,7 @@ ISR(TIMER1_COMPB_vect)
     PORTC &= B01111111;
   }
   // disable OCR1B interrupt
-  TIMSK1 &= (1 << OCIE1B);
+  TIMSK1 &= ~(1 << OCIE1B);
 }
 
 
@@ -295,6 +295,8 @@ int get_battery_voltage()
    <BTRY?>
    <ST?>
    <SYS_CHK>
+   <DEBUG>
+   <STOP>
 
 */
 void handle_incoming_command(char *command_buff)
@@ -313,7 +315,18 @@ void handle_incoming_command(char *command_buff)
     char *x_str;
     char *y_str;
     int x, y;
+    int x_remain, y_remain;
 
+    // check if we are still moving
+    noInterrupts();
+    x_remain = horiz_steps_remain;
+    y_remain = vert_steps_remain;
+    interrupts();
+    if ((x_remain > 0) || (y_remain > 0))
+    {
+      Serial.println("<NOT_RDY>");
+      return;
+    }
     x_str = strtok(NULL, " ");
     y_str = strtok(NULL, " ");
 
@@ -321,10 +334,9 @@ void handle_incoming_command(char *command_buff)
     y = atoi(y_str);
     Serial.print("<MV_ACK ");
     Serial.print(x);
+    Serial.print(" ");
     Serial.print(y);
     Serial.println(">");
-
-    // TODO - check if we are still moving
 
     // Set direction for horiz and vert
     if (x < 0)
@@ -359,7 +371,7 @@ void handle_incoming_command(char *command_buff)
     Serial.print(volt_mv);
     Serial.println(" mV>");
   }
-  else if (!strcmp(cmd, "ST?"))
+  else if (!strcmp(cmd, "MVST?"))
   {
     char ret_msg[32];
 
@@ -378,7 +390,7 @@ void handle_incoming_command(char *command_buff)
     // system_check();
     Serial.println("Would execute system check");
   }
-  else if (!strcmp(cmd, "MV_STATE"))
+  else if (!strcmp(cmd, "DEBUG"))
   {
     uint16_t x;
     uint16_t y;
@@ -386,7 +398,8 @@ void handle_incoming_command(char *command_buff)
     noInterrupts();
     x = horiz_steps_remain;
     y = vert_steps_remain;
-    Serial.print("<MV_STATE X: ");
+    interrupts();
+    Serial.print("<MV_REMAIN X: ");
     Serial.print(x);
     Serial.print(" Y: ");
     Serial.print(y);
@@ -433,6 +446,7 @@ void system_check()
 void initialize_timers()
 {
   noInterrupts();
+  
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1 = 0;
@@ -480,5 +494,4 @@ void initialize_pins()
   // set reset pins
   digitalWrite(horiz_reset_pin, HIGH);
   digitalWrite(vert_reset_pin, HIGH);
-
 }
