@@ -64,8 +64,8 @@ const int vert_fault_pin = 12;
 volatile uint16_t horiz_steps_remain = 0;
 volatile uint16_t vert_steps_remain = 0;
 
-volatile uint16_t horiz_step_current = 0;
-volatile uint16_t vert_step_current = 0;
+volatile uint16_t horiz_steps_current = 0;
+volatile uint16_t vert_steps_current = 0;
 
 volatile uint16_t pulse_timings_num = sizeof(pulse_timings)/sizeof(uint16_t);
 
@@ -131,7 +131,7 @@ ISR(TIMER1_COMPA_vect)
     // set horiz_step_pin 2 high
     PORTD |= B00000010;
     horiz_steps_remain--;
-    horiz_step_current++;
+    horiz_steps_current++;
     // set 1 pulse in OCR1B
     OCR1B = 1;
     // unmask COMPB interrupt
@@ -142,9 +142,13 @@ ISR(TIMER1_COMPA_vect)
   // next step also
   if (horiz_steps_remain > 0)
   {
-    if (horiz_step_current < pulse_timings_num)
+    if ((horiz_steps_current < pulse_timings_num) && (horiz_steps_current < horiz_steps_remain))
     {
-      OCR1A = pgm_read_word_near(pulse_timings + horiz_step_current);
+      OCR1A = pgm_read_word_near(pulse_timings + horiz_steps_current);
+    }
+    else if ((horiz_steps_remain < pulse_timings_num) && (horiz_steps_remain < horiz_steps_current))
+    {
+      OCR1A = pgm_read_word_near(pulse_timings + horiz_steps_remain);
     }
   }
 }
@@ -157,7 +161,7 @@ ISR(TIMER3_COMPA_vect)
     // set vert_step_pin 5 high
     PORTC |= B10000000; 
     vert_steps_remain--;
-    vert_step_current++;
+    vert_steps_current++;
     // set 1 pulse in OCR1B
     OCR3B = 1;
     // unmask COMPB interrupt
@@ -168,9 +172,13 @@ ISR(TIMER3_COMPA_vect)
   // next step also
   if (vert_steps_remain > 0)
   {
-    if (vert_step_current < pulse_timings_num)
+    if ((vert_steps_current < pulse_timings_num) && (vert_steps_current < vert_steps_remain))
     {
-      OCR3A = pgm_read_word_near(pulse_timings + vert_step_current);
+      OCR3A = pgm_read_word_near(pulse_timings + vert_steps_current);
+    }
+    else if ((vert_steps_remain < pulse_timings_num) && (vert_steps_remain < vert_steps_current))
+    {
+      OCR3A = pgm_read_word_near(pulse_timings + vert_steps_remain);
     }
   }
 }
@@ -314,7 +322,7 @@ void handle_incoming_command(char *command_buff)
   }
   else if (!strcmp(cmd, "SYS_CHK"))
   {
-    // system_check();
+    system_check();
     Serial.println("Would execute system check");
   }
   else if (!strcmp(cmd, "DEBUG"))
@@ -331,6 +339,14 @@ void handle_incoming_command(char *command_buff)
     Serial.print(" Y: ");
     Serial.print(y);
     Serial.println(">");
+  }
+  else if (!strcmp(cmd, "STOP"))
+  {
+    noInterrupts();
+    horiz_steps_remain = 0;
+    vert_steps_remain = 0;
+    interrupts();
+    Serial.println("<STOP_ACK>");
   }
 }
 
