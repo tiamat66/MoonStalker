@@ -292,22 +292,22 @@ class BlueToothService
     Command(String msg)
     {
       super(msg);
-      Log.i(TAG, "COMAND = " + result.opCode);
-      processMessage();
+      Log.i(TAG, "COMAND = " + msg);
+      processMessage(msg);
     }
 
-    private void processMessage()
+    private void processMessage(String msg)
     {
-      switch (result.opCode) {
-      case OpCodes.ST:
+      switch (msg) {
+      case "<ST?>":
         Log.i(TAG, "Process STATUS message from Client");
         rdy();
         break;
-      case OpCodes.BTRY:
+      case "<BTRY?>":
         Log.i(TAG, "Process BTRY message from Client");
         btryRes();
         break;
-      case OpCodes.MOVE:
+      case "<MV>":
         Log.i(TAG, "Process MOVE message from Client");
         move();
       default:
