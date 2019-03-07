@@ -335,7 +335,7 @@ class BlueToothService
     {
       @Override public void run()
       {
-        write(Json.toJson(new Response(OpCodes.RDY)));
+        write("<RDY>");
       }
     }, 500);
   }
@@ -347,7 +347,7 @@ class BlueToothService
     {
       @Override public void run()
       {
-        write(Json.toJson(new Response(OpCodes.RDY)));
+        write("<RDY>");
       }
     }, 1000);
   }
@@ -359,17 +359,9 @@ class BlueToothService
     {
       @Override public void run()
       {
-        write(Json.toJson(new Response(OpCodes.BTRY, "11.3")));
+        write("<BTRY 11.3>");
       }
     }, 700);
-  }
-
-  static class OpCodes
-  {
-    final static int ST   = 1;
-    final static int RDY  = 2;
-    final static int BTRY = 3;
-    final static int MOVE = 7;
   }
 }
 
