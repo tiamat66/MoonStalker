@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   private void initControl()
   {
-    new Control(this);
+    new Control(this).init();
   }
 
   @Override

@@ -8,9 +8,9 @@ import android.util.Log;
 
 import java.util.LinkedList;
 
-import si.vajnartech.moonstalker.rest.IOProcessor;
 import si.vajnartech.moonstalker.rest.Instruction;
 
+import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_READY;
@@ -21,14 +21,12 @@ import static si.vajnartech.moonstalker.OpCodes.ERROR;
 import static si.vajnartech.moonstalker.OpCodes.GET_BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.GET_STATUS;
 import static si.vajnartech.moonstalker.OpCodes.INIT;
+import static si.vajnartech.moonstalker.OpCodes.IN_MSG;
 import static si.vajnartech.moonstalker.OpCodes.MOVE;
 import static si.vajnartech.moonstalker.OpCodes.READY;
 
 public class Control extends Telescope
 {
-  private static final int OUT_MSG = 1;
-  private static final int IN_MSG = 2;
-
   private              boolean isSocketFree;
   private InMessageHandler inMessageHandler;
   private CommandProcessor processor;
@@ -60,16 +58,15 @@ public class Control extends Telescope
     else
       i = new Instruction(opcode, p1, p2);
 
+    Log.i("IZAA", "benka=" + i);
     processor.add(i);
   }
 
   @Override
-  public void inMsgProcess(String msg, Bundle params)
+  public void inMsgProcess(String opcode, Bundle params)
   {
-    assert params != null;
-
-    params.putString("opcode", msg);
-    switch (msg) {
+    params.putString("opcode", opcode);
+    switch (opcode) {
     case READY:
       inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
       break;
@@ -111,14 +108,14 @@ public class Control extends Telescope
         TelescopeStatus.setError(parms.getString("p1"));
         break;
       case INIT:
-        outMessageProcess(GET_BATTERY, "", "");
         outMessageProcess(GET_STATUS, "", "");
+        outMessageProcess(GET_BATTERY, "", "");
         break;
       default:
         return;
       }
 
-      Log.i(TAG, "Get message and process it from Server: " + message);
+      Log.i(TAG, "Get message and process it from Server: " + opcode);
     }
   }
 
@@ -150,7 +147,8 @@ public class Control extends Telescope
             }
             if (!isSocketFree || instrBuffer.isEmpty()) continue;
             lock();
-            new IOProcessor(instrBuffer.removeFirst(), BlueTooth.socket, ctrl);
+            new IOProcessor(instrBuffer.removeFirst(), BlueTooth.socket, ctrl)
+                .executeOnExecutor(THREAD_POOL_EXECUTOR);
           }
         }
       }.start();

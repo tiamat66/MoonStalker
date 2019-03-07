@@ -1,4 +1,4 @@
-package si.vajnartech.moonstalker.rest;
+package si.vajnartech.moonstalker;
 
 import android.bluetooth.BluetoothSocket;
 import android.os.AsyncTask;
@@ -10,21 +10,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-
-import si.vajnartech.moonstalker.Control;
-import si.vajnartech.moonstalker.OpCodes;
-import si.vajnartech.moonstalker.Telescope;
+import si.vajnartech.moonstalker.rest.Instruction;
 
 import static si.vajnartech.moonstalker.C.TAG;
+import static si.vajnartech.moonstalker.OpCodes.BATTERY;
+import static si.vajnartech.moonstalker.OpCodes.READY;
 
 public class IOProcessor extends AsyncTask<String, Void, String>
 {
   private Instruction     instruction;
   private BluetoothSocket socket;
   private Control         ctrl;
-  private Telescope telescope;
+  private Telescope       telescope;
 
-  public IOProcessor(Instruction opCode, BluetoothSocket socket, Telescope t)
+  IOProcessor(Instruction opCode, BluetoothSocket socket, Telescope t)
   {
     super();
     telescope = t;
@@ -43,8 +42,8 @@ public class IOProcessor extends AsyncTask<String, Void, String>
         write(instruction.toString(), outStream);
 
         String         result;
-        InputStream    inStream  = socket.getInputStream();
-        BufferedReader br        = new BufferedReader(new InputStreamReader(inStream), 512);
+        InputStream    inStream = socket.getInputStream();
+        BufferedReader br       = new BufferedReader(new InputStreamReader(inStream), 512);
         result = br.readLine();
         br.close();
         return result;
@@ -87,11 +86,11 @@ public class IOProcessor extends AsyncTask<String, Void, String>
       return;
 
     switch (j.opCode) {
-    case OpCodes.RDY:
+    case READY:
       Log.i(TAG, "processing RDY from response ");
-      telescope.inMsgProcess(j.opCode, null);
+      telescope.inMsgProcess(j.opCode, new Bundle());
       break;
-    case OpCodes.BTRY:
+    case BATTERY:
       Log.i(TAG, "processing BTRY from response with p1 = " + j.p1);
       Bundle b = new Bundle();
       b.putFloat("p1", Float.parseFloat(j.p1));

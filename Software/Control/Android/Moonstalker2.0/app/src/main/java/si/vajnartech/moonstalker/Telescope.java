@@ -14,7 +14,9 @@ import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.C.curObj;
-import static si.vajnartech.moonstalker.Control.MOVE;
+import static si.vajnartech.moonstalker.OpCodes.ERROR;
+import static si.vajnartech.moonstalker.OpCodes.INIT;
+import static si.vajnartech.moonstalker.OpCodes.OUT_MSG;
 
 public abstract class Telescope extends PositionCalculus
 {
@@ -85,7 +87,7 @@ public abstract class Telescope extends PositionCalculus
       vSteps -= cur_v_steps;
       if (h <= H_NEGATIVE) {
         bundle.putString("arg1", "Negative altitude");
-        inMsgProcess(Control.ERROR, bundle);
+        inMsgProcess(ERROR, bundle);
       } else
         mv(cur_h_steps, cur_v_steps);
     }
@@ -115,9 +117,9 @@ public abstract class Telescope extends PositionCalculus
     return (az + "|" + h);
   }
 
-  public void init()
+  void init()
   {
-    inMsgProcess(Control.INIT, null);
+    inMsgProcess(INIT, new Bundle());
   }
 
   @SuppressLint("HandlerLeak")
@@ -127,7 +129,7 @@ public abstract class Telescope extends PositionCalculus
     public void handleMessage(Message message)
     {
       switch (message.what) {
-      case MOVE:
+      case OUT_MSG:
         move();
         break;
       }
@@ -138,7 +140,7 @@ public abstract class Telescope extends PositionCalculus
   {
     TraceThread()
     {
-      Log.i(TAG, "Start tracing.");
+      Log.i(TAG, "Start tracing");
       this.start();
     }
 
@@ -147,7 +149,7 @@ public abstract class Telescope extends PositionCalculus
     {
       while (TelescopeStatus.get() == ST_TRACING) {
         if (isLocked()) continue;
-        traceHandler.obtainMessage(MOVE).sendToTarget();
+        traceHandler.obtainMessage(OUT_MSG).sendToTarget();
         try {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -159,7 +161,7 @@ public abstract class Telescope extends PositionCalculus
 
   abstract boolean isLocked();
 
-  public abstract void inMsgProcess(int msg, Bundle bundle);
+  public abstract void inMsgProcess(String msg, Bundle bundle);
 
   abstract void mv(int hSteps, int vSteps);
 }

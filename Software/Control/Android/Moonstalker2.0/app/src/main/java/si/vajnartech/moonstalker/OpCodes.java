@@ -1,10 +1,18 @@
 package si.vajnartech.moonstalker;
 
-public final class OpCodes
+final class OpCodes
 {
-  // op codes
-  public final static  int ST   = 1;
-  public final static int RDY  = 2;
-  public final static int BTRY = 3;
-  public final static  int MOVE = 7;
+  static final int OUT_MSG = 1;
+  static final int IN_MSG = 2;
+
+  // in messages
+  static final String READY   = "RDY";
+  static final String BATTERY = "BTRY";
+  static final String ERROR   = "FATAL_ERROR";
+  static final String INIT    = "INIT";
+
+  // out messages
+  static final String MOVE        = "MV";
+  static final String GET_STATUS  = "ST?";
+  static final String GET_BATTERY = "BTRY?";
 }
