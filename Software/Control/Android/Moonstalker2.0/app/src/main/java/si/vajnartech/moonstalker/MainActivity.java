@@ -3,6 +3,7 @@ package si.vajnartech.moonstalker;
 import android.content.DialogInterface;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -23,6 +24,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
@@ -40,8 +42,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onClick(View view)
       {
-        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-            .setAction("Action", null).show();
+        if (TelescopeStatus.get() == C.ST_CONNECTED) {
+          initControl();
+          Snackbar.make(view, "Init control", Snackbar.LENGTH_LONG)
+              .setAction("Action", null).show();
+        }
+        else
+          connect();
       }
     });
 
@@ -53,8 +60,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     NavigationView navigationView = findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
+  }
 
-    new BlueTooth(C.SERVER_NAME, this, new BTInterface() {
+  private void connect()
+  {
+    new BlueTooth(C.SERVER_NAME, this, new BTInterface()
+    {
       @Override
       public void showMessage(String msg)
       {
@@ -73,7 +84,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         finish();
       }
 
-      @Override public void progressOn()
+      @Override
+      public void progressOn()
       {
         pOn();
       }
@@ -83,7 +95,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       {
         pOff();
       }
+
+      @Override
+      public void onOk()
+      {
+        runOnUiThread(new Runnable()
+        {
+          public void run()
+          {
+            Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_LONG).show();
+          }
+        });
+      }
     });
+  }
+
+  private void initControl()
+  {
+    new Control(this);
   }
 
   @Override
@@ -123,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   @SuppressWarnings("StatementWithEmptyBody")
   @Override
-  public boolean onNavigationItemSelected(MenuItem item)
+  public boolean onNavigationItemSelected(@NonNull MenuItem item)
   {
     // Handle navigation view item clicks here.
     int id = item.getItemId();
@@ -149,19 +178,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   void myMessage(final String msg)
   {
-    runOnUiThread(new Runnable() {
-      public void run() {
+    runOnUiThread(new Runnable()
+    {
+      public void run()
+      {
 
         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
         alertDialog.setTitle("Alert");
         alertDialog.setMessage(msg);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                              new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which)
-                                {
-                                  dialog.dismiss();
-                                }
-                              });
+        alertDialog.setButton(
+            AlertDialog.BUTTON_NEUTRAL, "OK",
+            new DialogInterface.OnClickListener()
+            {
+              public void onClick(DialogInterface dialog, int which)
+              {
+                dialog.dismiss();
+              }
+            });
         alertDialog.show();
       }
     });
@@ -174,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
    ***********************************************************************************************/
   public LinearLayout ll_progress = null;
 
-  public static enum ProgressType
+  public enum ProgressType
   {
     CONNECTING,
   }

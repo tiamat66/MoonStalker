@@ -10,6 +10,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.Set;
 
+import static si.vajnartech.moonstalker.C.ST_CONNECTED;
 import static si.vajnartech.moonstalker.C.TAG;
 
 interface BTInterface
@@ -18,6 +19,7 @@ interface BTInterface
   void exit(String msg);
   void progressOn();
   void progressOff();
+  void onOk();
 }
 
 class BlueTooth extends AsyncTask<String, Void, Void>
@@ -88,7 +90,11 @@ class BlueTooth extends AsyncTask<String, Void, Void>
     try {
       assert socket != null;
       socket.connect();
+      btInterface.progressOff();
+      TelescopeStatus.set(ST_CONNECTED);
+      btInterface.onOk();
     } catch (IOException connectException) {
+      connectException.printStackTrace();
       try {
         Log.i(TAG, "Connection refused=" + socket);
         btInterface.showMessage("Connection refused");
@@ -96,7 +102,7 @@ class BlueTooth extends AsyncTask<String, Void, Void>
         socket.close();
       } catch (IOException ignored) { }
     }
-  }
+}
 
   @Override
   protected Void doInBackground(String... strings)

@@ -1,7 +1,6 @@
 package si.vajnartech.moonstalker;
 
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -48,8 +47,8 @@ public class Control extends Telescope
   @Override
   void mv(int hSteps, int vSteps)
   {
-    if (getStatus() != ST_TRACING)
-      setStatus(ST_MOVING);
+    if (TelescopeStatus.get() != ST_TRACING)
+      TelescopeStatus.set(ST_MOVING);
     outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
   }
 
@@ -105,10 +104,10 @@ public class Control extends Telescope
         processReady();
         break;
       case BATTERY:
-        setBatteryVoltage(b.getFloat("p1"));
+        TelescopeStatus.setBatteryVoltage(b.getFloat("p1"));
         break;
       case ERROR:
-        setError(b.getString("p1"));
+        TelescopeStatus.setError(b.getString("p1"));
         break;
       case INIT:
         outMessageProcess(GET_STATUS);
@@ -165,15 +164,15 @@ public class Control extends Telescope
   private void processReady()
   {
     Log.i(TAG, "processReady in Control");
-    switch (getStatus()) {
+    switch (TelescopeStatus.get()) {
     case ST_NOT_CAL:
       break;
     case ST_MOVING:
     case ST_READY:
-      setStatus(ST_READY);
+      TelescopeStatus.set(ST_READY);
       break;
     case ST_TRACING:
-      setStatus(ST_TRACING);
+      TelescopeStatus.set(ST_TRACING);
       break;
     }
   }

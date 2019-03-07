@@ -9,8 +9,6 @@ import android.util.Log;
 import java.text.DecimalFormat;
 
 import static si.vajnartech.moonstalker.C.K;
-import static si.vajnartech.moonstalker.C.ST_BTRY_LOW;
-import static si.vajnartech.moonstalker.C.ST_ERROR;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
@@ -25,19 +23,14 @@ public abstract class Telescope extends PositionCalculus
 
   private TraceHandler traceHandler;
 
-  private static final int   H_NEGATIVE  = 0;
-  private static final float TRSHLD_BTRY = 11.0f;
-  private static final int   PRECISION   = 1;
-
-  float btryVoltage;
-  Bundle status;
+  private static final int H_NEGATIVE = 0;
+  private static final int PRECISION  = 1;
 
   Telescope(MainActivity act)
   {
     super(act);
 
-    status = new Bundle();
-    setStatus(ST_NOT_CONNECTED);
+    TelescopeStatus.set(ST_NOT_CONNECTED);
     traceHandler = new TraceHandler();
   }
 
@@ -46,7 +39,7 @@ public abstract class Telescope extends PositionCalculus
     // Calibration object is now the first item from sky objects list
     set(curObj);
     // setPosition();
-    setStatus(ST_READY);
+    TelescopeStatus.set(ST_READY);
     // act.curentFragment.sb.getConstellations().setEnabled(true);
     // act.curentFragment.sb.getSkyObjects().setEnabled(true);
   }
@@ -98,16 +91,9 @@ public abstract class Telescope extends PositionCalculus
     }
   }
 
-  void setBatteryVoltage(float voltage)
-  {
-    btryVoltage = voltage;
-    if (voltage < TRSHLD_BTRY)
-      setStatus(ST_BTRY_LOW);
-  }
-
   void startTrace()
   {
-    setStatus(ST_TRACING);
+    TelescopeStatus.set(ST_TRACING);
     new TraceThread();
   }
 
@@ -159,7 +145,7 @@ public abstract class Telescope extends PositionCalculus
     @Override
     public void run()
     {
-      while (getStatus() == ST_TRACING) {
+      while (TelescopeStatus.get() == ST_TRACING) {
         if (isLocked()) continue;
         traceHandler.obtainMessage(MOVE).sendToTarget();
         try {
@@ -169,23 +155,6 @@ public abstract class Telescope extends PositionCalculus
         }
       }
     }
-  }
-
-  void setStatus(int st)
-  {
-    status.putInt("st", st);
-  }
-
-  int getStatus()
-  {
-    return status.getInt("st");
-  }
-
-  void setError(String e)
-  {
-    Bundle b = new Bundle();
-    b.putInt("st", ST_ERROR);
-    b.putString("arg1", e);
   }
 
   abstract boolean isLocked();
