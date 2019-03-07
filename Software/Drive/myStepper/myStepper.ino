@@ -294,9 +294,12 @@ void handle_incoming_command(char *command_buff)
     }   
     // Set step variables for
     // the interrupt routine
+    // and initialize current values
     noInterrupts();
     horiz_steps_remain = x;
     vert_steps_remain = y;
+    horiz_steps_current = 0;
+    vert_steps_current = 0;
     interrupts();
   }
   else if (!strcmp(cmd, "BTRY?"))
@@ -409,6 +412,8 @@ void initialize_timer1()
   OCR1A = initial_ocr1a;
 
   interrupts();
+  Serial.print("Initial ocr1a: ");
+  Serial.println(initial_ocr1a);
 }
 
 
@@ -435,6 +440,8 @@ void initialize_timer3()
   OCR3A = initial_ocr3a;
 
   interrupts();
+  Serial.print("Initial ocr3a: ");
+  Serial.println(initial_ocr3a);
 }
 
 
