@@ -15,33 +15,30 @@ import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
+import static si.vajnartech.moonstalker.C.TAG;
+import static si.vajnartech.moonstalker.OpCodes.BATTERY;
+import static si.vajnartech.moonstalker.OpCodes.ERROR;
+import static si.vajnartech.moonstalker.OpCodes.GET_BATTERY;
+import static si.vajnartech.moonstalker.OpCodes.GET_STATUS;
+import static si.vajnartech.moonstalker.OpCodes.INIT;
+import static si.vajnartech.moonstalker.OpCodes.MOVE;
+import static si.vajnartech.moonstalker.OpCodes.READY;
 
 public class Control extends Telescope
 {
-  private static final String  TAG = "IZAA";
+  private static final int OUT_MSG = 1;
+  private static final int IN_MSG = 2;
+
   private              boolean isSocketFree;
-
-  // in messages
-  private static final int READY   = 2;
-  private static final int BATTERY = 3;
-  static final         int ERROR   = 5;
-  static final         int INIT    = 10;
-
-  // out messages
-  static final         int MOVE        = 7;
-  private static final int GET_STATUS  = 1;
-  private static final int GET_BATTERY = 3;
-
   private InMessageHandler inMessageHandler;
-  private MainActivity     act;
-  private CommandProcessor proc;
+  private CommandProcessor processor;
 
   Control(MainActivity act)
   {
     super(act);
     inMessageHandler = new InMessageHandler();
     isSocketFree = true;
-    proc = new CommandProcessor(this);
+    processor = new CommandProcessor(this);
   }
 
   @Override
@@ -52,77 +49,82 @@ public class Control extends Telescope
     outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
   }
 
-  private void outMessageProcess(int msg, String p1, String p2)
+  private void outMessageProcess(String opcode, String p1, String p2)
   {
-    Log.i(TAG, "outMessageProcess MOVE, socket=" + isSocketFree);
-    switch (msg) {
-    case MOVE:
-      proc.add(new Instruction(OpCodes.MOVE, p1, p2));
-      break;
-    }
+    Log.i(TAG, "outMessageProcess; socket=" + isSocketFree);
+    Instruction i;
+    if (p1.isEmpty() && p2.isEmpty())
+      i = new Instruction(opcode);
+    else if (!p1.isEmpty() && p2.isEmpty())
+      i = new Instruction(opcode, p1);
+    else
+      i = new Instruction(opcode, p1, p2);
+
+    processor.add(i);
   }
 
-  private void outMessageProcess(int msg)
+  @Override
+  public void inMsgProcess(String msg, Bundle params)
   {
-    switch (msg) {
-    case GET_STATUS:
-      proc.add(new Instruction(OpCodes.ST));
-      break;
-    case GET_BATTERY:
-      proc.add(new Instruction(OpCodes.BTRY));
-      break;
-    }
-  }
+    assert params != null;
 
-  @Override public void inMsgProcess(int msg, Bundle bundle)
-  {
+    params.putString("opcode", msg);
     switch (msg) {
     case READY:
-      inMessageHandler.obtainMessage(msg).sendToTarget();
+      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
       break;
     case BATTERY:
-      inMessageHandler.obtainMessage(msg, bundle).sendToTarget();
+      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
       break;
     case ERROR:
-      inMessageHandler.obtainMessage(msg, bundle).sendToTarget();
+      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
       break;
     case INIT:
-      inMessageHandler.obtainMessage(msg).sendToTarget();
+      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
       break;
     }
   }
 
   @SuppressLint("HandlerLeak")
-  class InMessageHandler extends Handler
+  private class InMessageHandler extends Handler
   {
     @Override
     public void handleMessage(Message message)
     {
-      Bundle b = (Bundle) message.obj;
-      switch (message.what) {
+      if (message.what != IN_MSG)
+        return;
+
+      Bundle parms = (Bundle) message.obj;
+      String opcode = "";
+      if (parms != null)
+        opcode = (String) parms.get("opcode");
+
+      assert opcode != null;
+      switch (opcode) {
       case READY:
         processReady();
         break;
       case BATTERY:
-        TelescopeStatus.setBatteryVoltage(b.getFloat("p1"));
+        TelescopeStatus.setBatteryVoltage(parms.getFloat("p1"));
         break;
       case ERROR:
-        TelescopeStatus.setError(b.getString("p1"));
+        TelescopeStatus.setError(parms.getString("p1"));
         break;
       case INIT:
-        outMessageProcess(GET_STATUS);
-        outMessageProcess(GET_BATTERY);
+        outMessageProcess(GET_BATTERY, "", "");
+        outMessageProcess(GET_STATUS, "", "");
         break;
       default:
         return;
       }
+
       Log.i(TAG, "Get message and process it from Server: " + message);
     }
   }
 
   class CommandProcessor
   {
-    LinkedList<Instruction> l = new LinkedList<>();
+    LinkedList<Instruction> instrBuffer = new LinkedList<>();
     boolean                 r;
     Control                 ctrl;
 
@@ -142,13 +144,13 @@ public class Control extends Telescope
         {
           while (r) {
             try {
-              Thread.sleep(100);
+              Thread.sleep(1000);
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
-            if (!isSocketFree || l.isEmpty()) continue;
+            if (!isSocketFree || instrBuffer.isEmpty()) continue;
             lock();
-            new IOProcessor(l.removeFirst(), BlueTooth.socket, ctrl);
+            new IOProcessor(instrBuffer.removeFirst(), BlueTooth.socket, ctrl);
           }
         }
       }.start();
@@ -157,7 +159,7 @@ public class Control extends Telescope
     void add(Instruction i)
     {
       Log.i("IZAA", "Instrukcija = " + i);
-      l.addLast(i);
+      instrBuffer.addLast(i);
     }
   }
 
