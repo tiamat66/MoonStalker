@@ -25,6 +25,12 @@ import static si.vajnartech.moonstalker.OpCodes.IN_MSG;
 import static si.vajnartech.moonstalker.OpCodes.MOVE;
 import static si.vajnartech.moonstalker.OpCodes.READY;
 
+interface ControlInterface
+{
+  void releaseSocket();
+  void messageProcess(String msg, Bundle bundle);
+}
+
 public class Control extends Telescope
 {
   private              boolean isSocketFree;
@@ -147,7 +153,17 @@ public class Control extends Telescope
             }
             if (!isSocketFree || instrBuffer.isEmpty()) continue;
             lock();
-            new IOProcessor(instrBuffer.removeFirst(), BlueTooth.socket, ctrl)
+            new IOProcessor(instrBuffer.removeFirst(), new ControlInterface() {
+              @Override public void releaseSocket()
+              {
+                release();
+              }
+
+              @Override public void messageProcess(String msg, Bundle bundle)
+              {
+                inMsgProcess(msg, bundle);
+              }
+            })
                 .executeOnExecutor(THREAD_POOL_EXECUTOR);
           }
         }

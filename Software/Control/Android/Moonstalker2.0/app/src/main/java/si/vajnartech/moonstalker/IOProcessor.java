@@ -20,14 +20,13 @@ public class IOProcessor extends AsyncTask<String, Void, String>
 {
   private Instruction     instruction;
   private BluetoothSocket socket;
-  private Control         ctrl;
-  private Telescope       telescope;
+  private ControlInterface ctrlInterface;
 
-  IOProcessor(Instruction opCode, BluetoothSocket socket, Telescope t)
+  IOProcessor(Instruction opCode, ControlInterface i)
   {
     super();
-    telescope = t;
-    this.socket = socket;
+    ctrlInterface = i;
+    this.socket = BlueTooth.socket;
     instruction = opCode;
   }
 
@@ -41,23 +40,43 @@ public class IOProcessor extends AsyncTask<String, Void, String>
         OutputStream   outStream = socket.getOutputStream();
         write(instruction.toString(), outStream);
 
-        String         result;
+        byte[] buffer = new byte[256];  // buffer store for the stream
+        int    bytes;
         InputStream    inStream = socket.getInputStream();
-        BufferedReader br       = new BufferedReader(new InputStreamReader(inStream), 512);
-        result = br.readLine();
-        br.close();
+        String result;
+
+        try {
+          // Read from the InputStream
+          bytes = inStream.read(buffer);        // Get number of bytes and message in "buffer"
+          Log.i(TAG, "...Read " + bytes + " bytes...");
+//          handler.obtainMessage(RECIEVE_MESSAGE, bytes, -1,
+//                                buffer).sendToTarget();     // Send to message queue Handler
+          result = new String(buffer, 0, bytes);
+        } catch (IOException e) {
+          result = null;
+          // Send connection canceled
+        }
+
+
+//        String         result;
+//        InputStream    inStream = socket.getInputStream();
+//        BufferedReader br       = new BufferedReader(new InputStreamReader(inStream), 512);
+//        result = br.readLine();
+//        br.close();
+        Log.i("IZAA", "Received=" + result);
         return result;
       } catch (IOException e) {
         e.printStackTrace();
+        // connection canceled
         Log.i(TAG, "IOException in Bluetooth IO processing");
       }
+      Log.i("IZAA", "ADJENJAVVVVVVVV...............");
     return null;
   }
 
   @Override
   protected void onPostExecute(String j)
   {
-    ctrl.release();
     if (j != null) {
       Log.i(TAG, "on post execute OK");
       process(j);
@@ -65,6 +84,7 @@ public class IOProcessor extends AsyncTask<String, Void, String>
       Log.i(TAG, "on post execute ERROR");
     }
     Log.i(TAG, "release socket");
+    ctrlInterface.releaseSocket();
   }
 
   private void write(String message, OutputStream os)
@@ -88,13 +108,13 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     switch (j.opCode) {
     case READY:
       Log.i(TAG, "processing RDY from response ");
-      telescope.inMsgProcess(j.opCode, new Bundle());
+      ctrlInterface.messageProcess(j.opCode, new Bundle());
       break;
     case BATTERY:
       Log.i(TAG, "processing BTRY from response with p1 = " + j.p1);
       Bundle b = new Bundle();
       b.putFloat("p1", Float.parseFloat(j.p1));
-      ctrl.inMsgProcess(j.opCode, b);
+      ctrlInterface.messageProcess(j.opCode, b);
       break;
     default:
       Log.i(TAG, "unknown response received");
