@@ -1,4 +1,6 @@
-package si.vajnartech.moonstalker.rest;
+package si.vajnartech.moonstalker;
+
+import static si.vajnartech.moonstalker.OpCodes.BATTERY;
 
 @SuppressWarnings({"WeakerAccess", "NullableProblems"})
 public class Instruction
@@ -20,9 +22,18 @@ public class Instruction
     this.p1 = p1;
   }
 
-  public Instruction(String opCode)
+  public Instruction(String string)
   {
-    this.opCode = opCode;
+    if (string.contains("<") || string.contains(">"))
+    {
+      opCode = string.replace("<", "").replace(">", "");
+      if(opCode.contains(" ")) {
+        p1 = opCode.substring(opCode.indexOf(" ") + 1);
+        opCode = BATTERY;
+      }
+    }
+    else
+      opCode = string;
   }
 
   @Override
@@ -37,3 +48,4 @@ public class Instruction
     return "";
   }
 }
+

@@ -5,12 +5,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import si.vajnartech.moonstalker.rest.Instruction;
 
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.OpCodes.BATTERY;
@@ -18,8 +15,8 @@ import static si.vajnartech.moonstalker.OpCodes.READY;
 
 public class IOProcessor extends AsyncTask<String, Void, String>
 {
-  private Instruction     instruction;
-  private BluetoothSocket socket;
+  private Instruction      instruction;
+  private BluetoothSocket  socket;
   private ControlInterface ctrlInterface;
 
   IOProcessor(Instruction opCode, ControlInterface i)
@@ -36,41 +33,29 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     if (instruction == null || socket == null)
       return null;
 
+    try {
+      OutputStream outStream = socket.getOutputStream();
+      write(instruction.toString(), outStream);
+
+      byte[]      buffer   = new byte[256];
+      int         bytes;
+      InputStream inStream = socket.getInputStream();
+      String      result;
       try {
-        OutputStream   outStream = socket.getOutputStream();
-        write(instruction.toString(), outStream);
-
-        byte[] buffer = new byte[256];  // buffer store for the stream
-        int    bytes;
-        InputStream    inStream = socket.getInputStream();
-        String result;
-
-        try {
-          // Read from the InputStream
-          bytes = inStream.read(buffer);        // Get number of bytes and message in "buffer"
-          Log.i(TAG, "...Read " + bytes + " bytes...");
-//          handler.obtainMessage(RECIEVE_MESSAGE, bytes, -1,
-//                                buffer).sendToTarget();     // Send to message queue Handler
-          result = new String(buffer, 0, bytes);
-        } catch (IOException e) {
-          result = null;
-          // Send connection canceled
-        }
-
-
-//        String         result;
-//        InputStream    inStream = socket.getInputStream();
-//        BufferedReader br       = new BufferedReader(new InputStreamReader(inStream), 512);
-//        result = br.readLine();
-//        br.close();
-        Log.i("IZAA", "Received=" + result);
-        return result;
+        bytes = inStream.read(buffer);
+        result = new String(buffer, 0, bytes);
       } catch (IOException e) {
-        e.printStackTrace();
-        // connection canceled
+        result = null;
+        // Send connection canceled
         Log.i(TAG, "IOException in Bluetooth IO processing");
       }
-      Log.i("IZAA", "ADJENJAVVVVVVVV...............");
+      Log.i(TAG, "Received msg from arduino=" + result);
+      return result;
+    } catch (IOException e) {
+      // Send connection canceled
+      Log.i(TAG, "IOException in Bluetooth IO processing");
+    }
+
     return null;
   }
 
@@ -83,7 +68,6 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     } else {
       Log.i(TAG, "on post execute ERROR");
     }
-    Log.i(TAG, "release socket");
     ctrlInterface.releaseSocket();
   }
 
@@ -101,9 +85,7 @@ public class IOProcessor extends AsyncTask<String, Void, String>
 
   private void process(String instruction)
   {
-    Instruction j = parse(instruction);
-    if (j == null)
-      return;
+    Instruction j = new Instruction(instruction);
 
     switch (j.opCode) {
     case READY:
@@ -119,13 +101,5 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     default:
       Log.i(TAG, "unknown response received");
     }
-  }
-
-  private static Instruction parse(String ins)
-  {
-    // no param instruction
-    ins = "<ST>";
-    Log.i("IZAA", ins.substring(ins.indexOf("<"), ins.indexOf(">")));
-    return null;
   }
 }

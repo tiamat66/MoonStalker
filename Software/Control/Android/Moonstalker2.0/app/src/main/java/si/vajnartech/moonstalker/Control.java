@@ -8,8 +8,6 @@ import android.util.Log;
 
 import java.util.LinkedList;
 
-import si.vajnartech.moonstalker.rest.Instruction;
-
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
@@ -198,7 +196,7 @@ public class Control extends Telescope
     isSocketFree = false;
   }
 
-  public void release()
+  private void release()
   {
     Log.i(TAG, "Release--------------------------------------------------------------------------");
     isSocketFree = true;
