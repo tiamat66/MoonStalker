@@ -159,7 +159,7 @@ ISR(TIMER3_COMPA_vect)
   if (vert_steps_remain > 0)
   {
     // set vert_step_pin 5 high
-    PORTC |= B10000000; 
+    PORTC |= B01000000; 
     vert_steps_remain--;
     vert_steps_current++;
     // set 1 pulse in OCR1B
@@ -199,7 +199,7 @@ ISR(TIMER1_COMPB_vect)
 ISR(TIMER3_COMPB_vect)
 {
   // pull the vert pin 5 low
-  PORTC &= B01111111;
+  PORTC &= B10111111;
   // disable OCR3B interrupt
   TIMSK3 &= ~(1 << OCIE3B);
 }
