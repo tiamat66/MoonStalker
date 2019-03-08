@@ -8,6 +8,7 @@ import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -28,6 +29,8 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
+  MyFragment currentFragment = null;
+
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
@@ -64,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
       @Override public void calibrateTelescope()
       {
+        setFragment("manual control", ManualFragment.class, new Bundle());
         promptToCalibration();
       }
     });
@@ -243,8 +247,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   }
 
   /*
-  type: 0 - Loading data
-        1 - Saving data
+  type: 0 - Connecting
    */
   public void progressOn(ProgressType type)
   {
@@ -266,7 +269,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     lp_loading.weight = 0;
     lp_loading.gravity = Gravity.CENTER;
     if (type == ProgressType.CONNECTING)
-      loadingText.setText("Connecting");
+      loadingText.setText(tx(R.string.connecting));
     loadingText.setTextColor(getResources().getColor(R.color.colorAccent));
     loadingText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
     loadingText.setLayoutParams(lp_loading);
@@ -311,5 +314,35 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
   }
 
+  /***********************************************************************************************
+   *
+   * Fragment section
+   *
+   ***********************************************************************************************/
+
+  private MyFragment createFragment(String tag, Class<? extends MyFragment> cls, Bundle params)
+  {
+    MyFragment frag;
+    frag = (MyFragment) getSupportFragmentManager().findFragmentByTag(tag);
+    if (frag == null && cls != null) try {
+      frag = MyFragment.instantiate(cls, this);
+      frag.setArguments(params);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
+    }
+    return frag;
+  }
+
+  public void setFragment(String tag, Class<? extends MyFragment> cls, Bundle params)
+  {
+    currentFragment = createFragment(tag, cls, params);
+    if (currentFragment == null) return;
+
+    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+    transaction.replace(R.id.content, currentFragment);
+    transaction.addToBackStack(null);
+    transaction.commit();
+  }
 }
 
