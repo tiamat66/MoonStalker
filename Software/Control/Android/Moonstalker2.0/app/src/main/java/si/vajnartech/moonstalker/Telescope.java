@@ -9,7 +9,7 @@ import android.util.Log;
 import java.text.DecimalFormat;
 
 import static si.vajnartech.moonstalker.C.K;
-import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
+import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.TAG;
@@ -31,8 +31,6 @@ public abstract class Telescope extends PositionCalculus
   Telescope(MainActivity act)
   {
     super(act);
-
-    TelescopeStatus.set(ST_NOT_CONNECTED);
     traceHandler = new TraceHandler();
   }
 
@@ -120,6 +118,7 @@ public abstract class Telescope extends PositionCalculus
   void init()
   {
     inMsgProcess(INIT, new Bundle());
+    TelescopeStatus.set(ST_NOT_CAL);
   }
 
   @SuppressLint("HandlerLeak")

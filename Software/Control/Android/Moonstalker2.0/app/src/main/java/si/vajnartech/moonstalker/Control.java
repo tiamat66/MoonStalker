@@ -61,8 +61,6 @@ public class Control extends Telescope
       i = new Instruction(opcode, p1);
     else
       i = new Instruction(opcode, p1, p2);
-
-    Log.i("IZAA", "benka=" + i);
     processor.add(i);
   }
 
@@ -161,8 +159,7 @@ public class Control extends Telescope
               {
                 inMsgProcess(msg, bundle);
               }
-            })
-                .executeOnExecutor(THREAD_POOL_EXECUTOR);
+            }).executeOnExecutor(THREAD_POOL_EXECUTOR);
           }
         }
       }.start();
@@ -170,7 +167,6 @@ public class Control extends Telescope
 
     void add(Instruction i)
     {
-      Log.i("IZAA", "Instrukcija = " + i);
       instrBuffer.addLast(i);
     }
   }
