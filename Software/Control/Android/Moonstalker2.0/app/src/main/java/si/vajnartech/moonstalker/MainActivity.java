@@ -42,13 +42,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onClick(View view)
       {
-        if (TelescopeStatus.get() == C.ST_CONNECTED) {
-          initControl();
-          Snackbar.make(view, "Init control", Snackbar.LENGTH_LONG)
-              .setAction("Action", null).show();
-        }
-        else
-          connect();
+        connect();
       }
     });
 
@@ -60,6 +54,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     NavigationView navigationView = findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
+
+    // start state machine
+    new StatusSM(new Nucleus() {
+      @Override public void initTelescope()
+      {
+        initControl();
+      }
+
+      @Override public void calibrateTelescope()
+      {
+        promptToCalibration();
+      }
+    });
   }
 
   private void connect()
@@ -103,16 +110,32 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         {
           public void run()
           {
-            Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show();
           }
         });
       }
     });
   }
 
+  private void promptToCalibration()
+  {
+    runOnUiThread(new Runnable() {
+      @Override public void run()
+      {
+        myMessage(tx(R.string.calibration_ntfy));
+      }
+    });
+  }
+
   private void initControl()
   {
-    new Control(this).init();
+    runOnUiThread(new Runnable()
+    {
+      public void run()
+      {
+        new Control(MainActivity.this).init();
+      }
+    });
   }
 
   @Override
@@ -198,6 +221,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         alertDialog.show();
       }
     });
+  }
+
+  public String tx(int stringId, Object... formatArgs)
+  {
+    if (formatArgs.length > 0)
+      return getString(stringId, formatArgs);
+    return getString(stringId);
   }
 
   /***********************************************************************************************
