@@ -8,4 +8,19 @@
   <string name="action_settings">Settings</string>
   <string name="calibration_ntfy">Manually move telescope to calibration object and confirm.</string>
   <string name="connecting">Connecting</string>
+  <string name="calibrated">Calibrated</string>
+  <string name="move">Move</string>
+  <string name="track">Track</string>
+  <string name="calibrate">Calibrate</string>
+
+  <string-array name="sky_objects">
+    <item>Polaris</item>
+    <item>Capella</item>
+    <item>Canopus</item>
+    <item>Arcturus</item>
+    <item>Vega</item>
+    <item>Alphard</item>
+    <item>Sirius</item>
+
+  </string-array>
 </resources>

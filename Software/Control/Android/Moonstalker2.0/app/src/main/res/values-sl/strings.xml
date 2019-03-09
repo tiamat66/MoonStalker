@@ -8,4 +8,9 @@
   <string name="action_settings">Settings</string>
   <string name="calibration_ntfy">Ročno premaknite teleskop na ishodiščni objekt, ter potrdite</string>
   <string name="connecting">Povezujem teleskop</string>
+  <string name="calibrated">Teleskop kalibriran</string>
+  <string name="move">Premakni</string>
+  <string name="track">Sledi</string>
+  <string name="calibrate">Kalibriraj</string>
+
 </resources>

@@ -32,7 +32,9 @@ public class C
   static final int ST_NOT_CONNECTED = 10;
   static final int ST_CONNECTED     = 12;
 
-  public static AstroObject curObj = null;
+  static AstroObject curObj = null;
+  static String calObj = "Polaris";
+  static String calConstellation = "UrsaMajor";
 }
 
 

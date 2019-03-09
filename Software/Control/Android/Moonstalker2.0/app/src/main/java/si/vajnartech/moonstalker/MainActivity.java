@@ -27,6 +27,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
+import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
+
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
   MyFragment currentFragment = null;
@@ -45,7 +48,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onClick(View view)
       {
-        connect();
+        if (TelescopeStatus.get() == ST_NOT_CAL)
+        {
+          Snackbar.make(view, tx(R.string.calibrated), Snackbar.LENGTH_LONG)
+              .setAction("Calibrated", null).show();
+        }
+        else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
+          connect();
       }
     });
 
@@ -184,13 +193,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // Handle navigation view item clicks here.
     int id = item.getItemId();
 
-    if (id == R.id.nav_camera) {
-      // Handle the camera action
-    } else if (id == R.id.nav_gallery) {
+    if (id == R.id.move) {
+      setFragment("move", MoveFragment.class, new Bundle());
+    } else if (id == R.id.track) {
 
-    } else if (id == R.id.nav_slideshow) {
-
-    } else if (id == R.id.nav_manage) {
+    } else if (id == R.id.calibrate) {
 
     } else if (id == R.id.nav_share) {
 
