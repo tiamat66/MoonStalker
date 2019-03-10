@@ -72,15 +72,15 @@ volatile uint16_t pulse_timings_num = sizeof(pulse_timings)/sizeof(uint16_t);
 void setup()
 {
   /* Open bluetooth serial port */
-  Serial.begin(115200);
-  while (!Serial)
+  Serial1.begin(115200);
+  while (!Serial1)
   {
     ; // Wait for serial port to connect
   }
-  Serial.println("<INFO System start>");
-  Serial.print("<INFO pulse_timings_num: ");
-  Serial.print(pulse_timings_num);
-  Serial.println(" >");
+  Serial1.println("<INFO System start>");
+  Serial1.print("<INFO pulse_timings_num: ");
+  Serial1.print(pulse_timings_num);
+  Serial1.println(" >");
   
   initialize_pins();
   initialize_timer1();
@@ -93,24 +93,24 @@ void loop()
   static int num_recv_char = 0;
   char incoming_char = 0;
 
-  if (Serial.available() > 0)
+  if (Serial1.available() > 0)
   {
     if (num_recv_char == 64)
     {
-      Serial.println(F("<FATAL_ERROR RCV_BUFFER_OVERFLOW>"));
+      Serial1.println(F("<FATAL_ERROR RCV_BUFFER_OVERFLOW>"));
     }
-    incoming_char = Serial.read();
+    incoming_char = Serial1.read();
     // ignore newline characters
-    if (incoming_char != 10)
+    if ((incoming_char != 10) && (incoming_char != 13))
     {
       command_buffer[num_recv_char] = incoming_char;
       command_buffer[num_recv_char + 1] = 0;
       num_recv_char++;
       if (incoming_char == '>')
       {
-        Serial.print("<INFO Handling command: ");
-        Serial.print(command_buffer);
-        Serial.println(">");
+        Serial1.print("<INFO Handling command: ");
+        Serial1.print(command_buffer);
+        Serial1.println(">");
         handle_incoming_command(command_buffer);
 
         // clear command buffer, NULL terminate
@@ -259,7 +259,7 @@ void handle_incoming_command(char *command_buff)
     interrupts();
     if ((x_remain > 0) || (y_remain > 0))
     {
-      Serial.println("<NOT_RDY>");
+      Serial1.println("<NOT_RDY>");
       return;
     }
     x_str = strtok(NULL, " ");
@@ -267,11 +267,11 @@ void handle_incoming_command(char *command_buff)
 
     x = atoi(x_str);
     y = atoi(y_str);
-    Serial.print("<MV_ACK ");
-    Serial.print(x);
-    Serial.print(" ");
-    Serial.print(y);
-    Serial.println(">");
+    Serial1.print("<MV_ACK ");
+    Serial1.print(x);
+    Serial1.print(" ");
+    Serial1.print(y);
+    Serial1.println(">");
 
     // Set direction for horiz and vert
     if (x < 0)
@@ -305,9 +305,9 @@ void handle_incoming_command(char *command_buff)
   else if (!strcmp(cmd, "BTRY?"))
   {
     int volt_mv = get_battery_voltage();
-    Serial.print("<BTRY ");
-    Serial.print(volt_mv);
-    Serial.println(" mV>");
+    Serial1.print("<BTRY ");
+    Serial1.print(volt_mv);
+    Serial1.println(" mV>");
   }
   else if (!strcmp(cmd, "MVST?"))
   {
@@ -321,12 +321,12 @@ void handle_incoming_command(char *command_buff)
     {
       strcpy(ret_msg, "<RDY>");
     }
-    Serial.println(ret_msg);
+    Serial1.println(ret_msg);
   }
   else if (!strcmp(cmd, "SYS_CHK"))
   {
     system_check();
-    Serial.println("Would execute system check");
+    Serial1.println("Would execute system check");
   }
   else if (!strcmp(cmd, "DEBUG"))
   {
@@ -337,11 +337,11 @@ void handle_incoming_command(char *command_buff)
     x = horiz_steps_remain;
     y = vert_steps_remain;
     interrupts();
-    Serial.print("<MV_REMAIN X: ");
-    Serial.print(x);
-    Serial.print(" Y: ");
-    Serial.print(y);
-    Serial.println(">");
+    Serial1.print("<MV_REMAIN X: ");
+    Serial1.print(x);
+    Serial1.print(" Y: ");
+    Serial1.print(y);
+    Serial1.println(">");
   }
   else if (!strcmp(cmd, "STOP"))
   {
@@ -349,7 +349,7 @@ void handle_incoming_command(char *command_buff)
     horiz_steps_remain = 0;
     vert_steps_remain = 0;
     interrupts();
-    Serial.println("<STOP_ACK>");
+    Serial1.println("<STOP_ACK>");
   }
 }
 
@@ -364,7 +364,7 @@ void system_check()
 
   if (battery_volt_mv < BATTERY_LOW_LIMIT_MV)
   {
-    Serial.println("<ALARM_LOW_BTRY>");
+    Serial1.println("<ALARM_LOW_BTRY>");
   }
 
   // check drv fault pins
@@ -373,12 +373,12 @@ void system_check()
 
   if (horiz_fault == LOW)
   {
-    Serial.println("<ALARM_DRV_HORIZ_FAULT>");
+    Serial1.println("<ALARM_DRV_HORIZ_FAULT>");
   }
 
   if (vert_fault == LOW)
   {
-    Serial.println("<ALARM_DRV_VERT_FAULT>");
+    Serial1.println("<ALARM_DRV_VERT_FAULT>");
   }
 }
 
@@ -412,8 +412,8 @@ void initialize_timer1()
   OCR1A = initial_ocr1a;
 
   interrupts();
-  Serial.print("Initial ocr1a: ");
-  Serial.println(initial_ocr1a);
+  Serial1.print("Initial ocr1a: ");
+  Serial1.println(initial_ocr1a);
 }
 
 
@@ -440,8 +440,8 @@ void initialize_timer3()
   OCR3A = initial_ocr3a;
 
   interrupts();
-  Serial.print("Initial ocr3a: ");
-  Serial.println(initial_ocr3a);
+  Serial1.print("Initial ocr3a: ");
+  Serial1.println(initial_ocr3a);
 }
 
 
