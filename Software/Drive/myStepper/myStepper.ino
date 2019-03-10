@@ -212,9 +212,9 @@ int get_battery_voltage()
 
   value = analogRead(battery_voltage_pin);
   // Convert read 10 bit value to 0-5000 mV and
-  // multiply with the voltage divider 1k and 3.3k
-  // voltage_mv = value * (5000 * 4.3)/ 1023;
-  voltage_mv = value * 21;
+  // multiply with the voltage divider 5088R and 14k93
+  // voltage_mv = value * (5000 * ((5088 + 14930)/5088)/ 1023;
+  voltage_mv = value * 19229 / 1000;
 
   return voltage_mv;
 }
