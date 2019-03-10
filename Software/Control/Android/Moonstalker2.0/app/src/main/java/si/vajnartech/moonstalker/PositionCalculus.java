@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -18,35 +19,39 @@ import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
+import static si.vajnartech.moonstalker.C.DEF_LATITUDE;
+import static si.vajnartech.moonstalker.C.DEF_LONGITUDE;
 import static si.vajnartech.moonstalker.C.MINIMUM_DISTANCE;
 import static si.vajnartech.moonstalker.C.MINIMUM_TIME;
 import static si.vajnartech.moonstalker.C.TAG;
 
 public class PositionCalculus implements LocationListener
 {
-  double ra;
-  double dec;
-  double az;
-  double h;
+  private double ra;
+  private double dec;
+  double az = -1.0;
+  double h = -1.0;
 
-  Location curLocation;
+  Location curLocation = new Location("GPS");
 
   PositionCalculus(MainActivity act)
   {
     enableGPSService(act);
   }
 
-  void set(AstroObject obj)
+  void setPosition(AstroObject obj)
   {
     this.ra = obj.ra;
     this.dec = obj.dec;
     raDec2AltAz();
   }
 
-  void set(double ra, double dec)
+  void setPosition(double ra, double dec)
   {
     this.ra = ra;
     this.dec = dec;
+    curLocation.setLatitude(DEF_LATITUDE);
+    curLocation.setLongitude(DEF_LONGITUDE);
     raDec2AltAz();
   }
 
@@ -81,7 +86,7 @@ public class PositionCalculus implements LocationListener
     ra = toDegrees(RA);
   }
 
-  void raDec2AltAz()
+  private void raDec2AltAz()
   {
     Log.i(TAG, "RA=" + convertDec2Hour(ra));
     Log.i(TAG, "DEC=" + convertDec2Hour(dec));
@@ -90,6 +95,8 @@ public class PositionCalculus implements LocationListener
     double DEC = dec;
     double LAT = curLocation.getLatitude();
     double LON = curLocation.getLongitude();
+    Log.i(TAG, "RA=" + convertDec2Hour(ra));
+    Log.i(TAG, "DEC=" + convertDec2Hour(dec));
     double LST = LST(LON);
     double HA  = LST - RA;
     if (HA < 0.0) HA += 360.0;
@@ -130,6 +137,7 @@ public class PositionCalculus implements LocationListener
     return (System.currentTimeMillis() - y2k) / 86400000;
   }
 
+  @SuppressLint("DefaultLocale")
   private static String convertDec2Hour(double num)
   {
     long   hours = (long) num;
@@ -141,7 +149,7 @@ public class PositionCalculus implements LocationListener
     return String.format("%d %d\' %.2f\"", hours, minutes, seconds);
   }
 
-  static double convertHour2Dec(double h, double min, double s)
+  private static double convertHour2Dec(double h, double min, double s)
   {
     if (h < 0.0)
       return (h - (min / 60.0) - (s / 3600.0));
@@ -189,7 +197,8 @@ public class PositionCalculus implements LocationListener
   @Override
   public void onLocationChanged(Location location)
   {
-    curLocation = location;
+    // TODO:
+    //curLocation = location;
   }
 
   @Override

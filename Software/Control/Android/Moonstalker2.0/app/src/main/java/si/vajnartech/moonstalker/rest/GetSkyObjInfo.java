@@ -1,17 +1,14 @@
 package si.vajnartech.moonstalker.rest;
 
 
-import si.vajnartech.moonstalker.MainActivity;
-
 @SuppressWarnings("FieldCanBeLocal")
 public abstract class GetSkyObjInfo
 {
   protected String       name;
-  protected MainActivity act;
-  protected Object       adapter;
+  Object adapter;
 
 
-  GetSkyObjInfo(String name, MainActivity act, String URL)
+  GetSkyObjInfo(String name, String URL)
   {
     HTTP.GetCompleteEvent ce = new HTTP.GetCompleteEvent()
     {
@@ -21,11 +18,10 @@ public abstract class GetSkyObjInfo
       }
     };
     this.name = name;
-    this.act = act;
     new HTTP(URL + name, ce).executeOnExecutor(TPE.THREAD_POOL_EXECUTOR);
   }
 
-  GetSkyObjInfo(MainActivity act, String URL)
+  GetSkyObjInfo(String URL)
   {
     HTTP.GetCompleteEvent ce = new HTTP.GetCompleteEvent()
     {
@@ -34,7 +30,6 @@ public abstract class GetSkyObjInfo
         process(data);
       }
     };
-    this.act = act;
     new HTTP(URL, ce).executeOnExecutor(TPE.THREAD_POOL_EXECUTOR);
   }
 
@@ -58,25 +53,6 @@ public abstract class GetSkyObjInfo
       this.txt = txt;
       this.start = start;
     }
-
-//    String parse()
-//    {
-//      String u = txt.replaceAll("\\s+", "");
-//      String s = start.replaceAll("\\s+", "");
-//
-//      if (end != null) {
-//        String e = end.replaceAll("\\s+", "");
-//        if (u.contains(s) && u.contains(e)) {
-//          return u.substring(u.indexOf(s), u.indexOf(e));
-//        }
-//      } else {
-//        if (u.contains(s))
-//          return u.substring(u.indexOf(s), u.length());
-//      }
-//      return "";
-//    }
-
-
   }
 }
 

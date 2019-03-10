@@ -27,12 +27,16 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import si.vajnartech.moonstalker.rest.GetStarInfo;
+
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
+import static si.vajnartech.moonstalker.C.ST_READY;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
   MyFragment currentFragment = null;
+  Control ctrl;
 
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -50,8 +54,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       {
         if (TelescopeStatus.get() == ST_NOT_CAL)
         {
-          Snackbar.make(view, tx(R.string.calibrated), Snackbar.LENGTH_LONG)
-              .setAction("Calibrated", null).show();
+          Snackbar.make(view, tx(R.string.calibrated), Snackbar.LENGTH_LONG).setAction("Calibrated", null).show();
+          ctrl.calibrate();
+        }
+        else if (TelescopeStatus.get() == ST_READY)
+        {
+          ctrl.move();
         }
         else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
           connect();
@@ -80,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         promptToCalibration();
       }
     });
+    // init current astro object
+    new GetStarInfo(C.calObj);
   }
 
   private void connect()
@@ -146,7 +156,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     {
       public void run()
       {
-        new Control(MainActivity.this).init();
+        ctrl = new Control(MainActivity.this);
+        ctrl.init();
       }
     });
   }

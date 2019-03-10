@@ -13,6 +13,9 @@ public class C
   static final int MINIMUM_TIME = 10000;  // 10s
   static final int MINIMUM_DISTANCE = 50; // 50m
 
+  static final double DEF_LONGITUDE = 13.82;
+  static final double DEF_LATITUDE = 46.45;
+
   // Named of paired BT device which acts like telescope
   static final String SERVER_NAME = "Zoran Robič Tablca";
 
@@ -32,7 +35,7 @@ public class C
   static final int ST_NOT_CONNECTED = 10;
   static final int ST_CONNECTED     = 12;
 
-  static AstroObject curObj = null;
+  public static AstroObject curObj = null;
   static String calObj = "Polaris";
   static String calConstellation = "UrsaMajor";
 }

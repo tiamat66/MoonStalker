@@ -9,9 +9,9 @@ import static si.vajnartech.moonstalker.C.TAG;
 
 public class GetConstellationInfo extends GetSkyObjInfo
 {
-  public GetConstellationInfo(MainActivity act, Object adapter)
+  public GetConstellationInfo(Object adapter)
   {
-    super(act, "http://www.astro.wisc.edu/~dolan/constellations/constellation_list.html");
+    super("http://www.astro.wisc.edu/~dolan/constellations/constellation_list.html");
     this.adapter = adapter;
   }
 

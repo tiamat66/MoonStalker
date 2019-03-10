@@ -2,13 +2,16 @@ package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.TextView;
 
+import java.text.DecimalFormat;
 import java.util.Comparator;
 
 import si.vajnartech.moonstalker.rest.GetConstellationInfo;
@@ -19,8 +22,8 @@ import static si.vajnartech.moonstalker.C.calObj;
 
 public class MoveFragment extends MyFragment
 {
-  private  Spinner                    skyObjects;
-  private  Spinner                    constellations;
+  private  Spinner                  skyObjects;
+  private  Spinner                  constellations;
   public ArrayAdapter<CharSequence> skyObjAdapter;
   public ArrayAdapter<CharSequence> constellationAdapter;
 
@@ -32,6 +35,7 @@ public class MoveFragment extends MyFragment
     constellations = res.findViewById(R.id.spinner2);
     initAstroObjDatabase();
     initAstroObjDropDown();
+    setPositionString((TextView) container.findViewById(R.id.position));
     return res;
   }
 
@@ -39,7 +43,7 @@ public class MoveFragment extends MyFragment
   {
     if (sp == null) return;
     String name = sp.getItemAtPosition(position).toString();
-    new GetStarInfo(name, act);
+    new GetStarInfo(name);
   }
 
   private void initAstroObjDropDown()
@@ -89,6 +93,20 @@ public class MoveFragment extends MyFragment
         return (charSequence.toString().charAt(0) - t1.toString().charAt(0));
       }
     });
-    new GetConstellationInfo(act, constellationAdapter);
+    new GetConstellationInfo(constellationAdapter);
+  }
+
+  private String formatPositionString(double azimuth, double height)
+  {
+    DecimalFormat df = new DecimalFormat("###.##");
+    String        az = "A:" + df.format(azimuth);
+    String        h  = "H:" + df.format(height);
+
+    return (az + "|" + h);
+  }
+
+  private void setPositionString(TextView txt)
+  {
+    txt.setText(formatPositionString(act.ctrl.az, act.ctrl.h));
   }
 }

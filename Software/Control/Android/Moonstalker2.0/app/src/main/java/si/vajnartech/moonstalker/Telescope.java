@@ -8,6 +8,8 @@ import android.util.Log;
 
 import java.text.DecimalFormat;
 
+import si.vajnartech.moonstalker.rest.GetStarInfo;
+
 import static si.vajnartech.moonstalker.C.K;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_READY;
@@ -36,12 +38,9 @@ public abstract class Telescope extends PositionCalculus
 
   void calibrate()
   {
-    // Calibration object is now the first item from sky objects list
-    set(curObj);
-    // setPosition();
+    setPosition(curObj);
     TelescopeStatus.set(ST_READY);
-    // act.curentFragment.sb.getConstellations().setEnabled(true);
-    // act.curentFragment.sb.getSkyObjects().setEnabled(true);
+    Log.i(TAG, "Calibration object is " + curObj);
   }
 
   private void move(int hSteps, int vSteps)
@@ -54,11 +53,11 @@ public abstract class Telescope extends PositionCalculus
 
   private void move(double ra, double dec)
   {
-    set(ra, dec);
+    setPosition(ra, dec);
     move();
   }
 
-  private void move()
+  void move()
   {
     double dif_az;
     double dif_hi;

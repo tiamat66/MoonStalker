@@ -2,15 +2,18 @@ package si.vajnartech.moonstalker.rest;
 
 import android.util.Log;
 
-import si.vajnartech.moonstalker.MainActivity;
+import si.vajnartech.moonstalker.AstroObject;
+import si.vajnartech.moonstalker.C;
 
 import static si.vajnartech.moonstalker.C.TAG;
+import static si.vajnartech.moonstalker.PositionCalculus.getDecFromString;
+import static si.vajnartech.moonstalker.PositionCalculus.getRaFromString;
 
 public class GetStarInfo extends GetSkyObjInfo
 {
-  public GetStarInfo(String name, MainActivity act)
+  public GetStarInfo(String name)
   {
-    super(name, act, "http://www.stellar-database.com/Scripts/search_star.exe?Name=");
+    super(name, "http://www.stellar-database.com/Scripts/search_star.exe?Name=");
   }
 
   @Override
@@ -21,9 +24,30 @@ public class GetStarInfo extends GetSkyObjInfo
       return;
     res = parse(data, "Right Ascension and Declination: ", " (epoch 2000.0)");
     Log.i(TAG, "GetSkyObjInfo: " + data);
+
     if (res.isEmpty())
       return;
+
+    // parse ra and dec from string
+    // RightAscension and Declination:</B>2h31m48.704s,+89&deg;15'50.72"
+    // TODO: Napolni podatke za zvezde, zaenkrat je tu samo Severnica ki je current object
+    String a = "RightAscensionandDeclination:</B>";
+    String b = "s,";
+    String c = "s,";
     Log.i(TAG, "GetSkyObjInfo: " + res);
+
+
+    String j1 = res.substring(a.length(), res.indexOf(b));
+    String j2 = res.substring(res.indexOf(c) + 2,
+                              res.length()).replaceAll("&deg;", "d");
+    double i1 = getRaFromString(j1);
+    double i2 = getDecFromString(j2);
+    C.curObj = new AstroObject(name, i1, i2, j1, j2);
+
+    int q1 = parse1(data, "Proper names:");
+    Log.i(TAG, "obj: " + C.curObj);
+    res = parse1(data, q1 + "</B>".length() + name.length(), "<BR>");
+    Log.i(TAG, "result: " + res);
   }
 
   @Override
@@ -39,9 +63,23 @@ public class GetStarInfo extends GetSkyObjInfo
       }
     } else {
       if (u.contains(s))
-        return u.substring(u.indexOf(s));
+        return u.substring(u.indexOf(s), u.length());
     }
     return "";
+  }
+
+  private int parse1(String txt, String start)
+  {
+    String u = txt.replaceAll("\\s+", "");
+    String s = start.replaceAll("\\s+", "");
+    return u.indexOf(s) + s.length();
+  }
+
+  private String parse1(String txt, int start, String end)
+  {
+    String u = txt.replaceAll("\\s+", "");
+    String e = end.replaceAll("\\s+", "");
+    return u.substring(start, u.indexOf(e));
   }
 
   @Override
