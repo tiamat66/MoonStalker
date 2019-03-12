@@ -43,6 +43,8 @@ public class PositionCalculus implements LocationListener
   {
     this.ra = obj.ra;
     this.dec = obj.dec;
+    curLocation.setLatitude(DEF_LATITUDE);
+    curLocation.setLongitude(DEF_LONGITUDE);
     raDec2AltAz();
   }
 
@@ -95,8 +97,8 @@ public class PositionCalculus implements LocationListener
     double DEC = dec;
     double LAT = curLocation.getLatitude();
     double LON = curLocation.getLongitude();
-    Log.i(TAG, "RA=" + convertDec2Hour(ra));
-    Log.i(TAG, "DEC=" + convertDec2Hour(dec));
+    Log.i(TAG, "LON=" + convertDec2Hour(LON));
+    Log.i(TAG, "LAT=" + convertDec2Hour(LAT));
     double LST = LST(LON);
     double HA  = LST - RA;
     if (HA < 0.0) HA += 360.0;

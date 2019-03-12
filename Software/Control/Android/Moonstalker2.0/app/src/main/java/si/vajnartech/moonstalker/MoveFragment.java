@@ -102,7 +102,7 @@ public class MoveFragment extends MyFragment
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
-    return (az + "|" + h);
+    return (az + " | " + h);
   }
 
   private void setPositionString(TextView txt)

@@ -29,6 +29,6 @@
     android:layout_gravity="bottom|end"
     android:layout_margin="@dimen/fab_margin"
     app:backgroundTint="@color/colorAccent"
-    app:srcCompat="@drawable/ic_menu_manage" />
+    app:srcCompat="@android:drawable/checkbox_on_background" />
 
 </android.support.design.widget.CoordinatorLayout>

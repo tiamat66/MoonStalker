@@ -48,8 +48,6 @@ class BlueTooth extends AsyncTask<String, Void, Void>
         act.startActivityForResult(enableBtIntent, 1);
       }
     }
-    btInterface.progressOn();
-    executeOnExecutor(THREAD_POOL_EXECUTOR);
   }
 
   private boolean getPairedDevices(String url)
@@ -80,6 +78,7 @@ class BlueTooth extends AsyncTask<String, Void, Void>
 
   private void connect()
   {
+    btInterface.progressOn();
     try {
       socket = pairedDevice.createRfcommSocketToServiceRecord(C.token);
     } catch (IOException e) {

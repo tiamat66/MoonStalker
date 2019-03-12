@@ -29,6 +29,7 @@ import android.widget.Toast;
 
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
+import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
@@ -56,13 +57,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         {
           Snackbar.make(view, tx(R.string.calibrated), Snackbar.LENGTH_LONG).setAction("Calibrated", null).show();
           ctrl.calibrate();
+          setFragment("move", MoveFragment.class, new Bundle());
         }
         else if (TelescopeStatus.get() == ST_READY)
         {
           ctrl.move();
         }
         else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
-          connect();
+          connect(true);
       }
     });
 
@@ -77,24 +79,63 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // start state machine
     new StatusSM(new Nucleus() {
-      @Override public void initTelescope()
+      @Override
+      public void initTelescope()
       {
         initControl();
       }
 
-      @Override public void calibrateTelescope()
+      @Override
+      public void calibrateTelescope()
       {
         setFragment("manual control", ManualFragment.class, new Bundle());
         promptToCalibration();
       }
+
+      @Override
+      public void updateStatus()
+      {
+        runOnUiThread(new Runnable() {
+          @Override
+          public void run()
+          {
+            TextView tv = findViewById(R.id.position);
+            if (TelescopeStatus.get() == ST_READY)
+              tv.setBackgroundColor(getResources().getColor(R.color.colorOk));
+            else if (TelescopeStatus.get() == ST_NOT_CAL)
+            {
+              tv.setBackgroundColor(getResources().getColor(R.color.colorError));
+              tv.setText(tx(R.string.not_calibrated));
+            }
+            else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
+            {
+              tv.setBackgroundColor(getResources().getColor(R.color.colorError));
+              tv.setText(tx(R.string.not_connected));
+            }
+          }
+        });
+      }
+
+      @Override
+      public void startProgress(String aa)
+      {
+        pOn(ProgressType.INITIALIZING);
+      }
+
+      @Override
+      public void stopProgress()
+      {
+        pOff();
+      }
     });
     // init current astro object
     new GetStarInfo(C.calObj);
+    connect(false);
   }
 
-  private void connect()
+  private void connect(boolean exe)
   {
-    new BlueTooth(C.SERVER_NAME, this, new BTInterface()
+    BlueTooth b = new BlueTooth(C.SERVER_NAME, this, new BTInterface()
     {
       @Override
       public void showMessage(String msg)
@@ -117,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void progressOn()
       {
-        pOn();
+        pOn(ProgressType.CONNECTING);
       }
 
       @Override
@@ -138,6 +179,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
       }
     });
+
+    if (exe)
+      b.executeOnExecutor(THREAD_POOL_EXECUTOR);
   }
 
   private void promptToCalibration()
@@ -262,6 +306,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   public enum ProgressType
   {
     CONNECTING,
+    INITIALIZING,
   }
 
   /*
@@ -288,6 +333,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     lp_loading.gravity = Gravity.CENTER;
     if (type == ProgressType.CONNECTING)
       loadingText.setText(tx(R.string.connecting));
+    else if (type == ProgressType.INITIALIZING)
+      loadingText.setText(tx(R.string.connecting));
+
     loadingText.setTextColor(getResources().getColor(R.color.colorAccent));
     loadingText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
     loadingText.setLayoutParams(lp_loading);
@@ -312,9 +360,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   }
 
-  public void pOn()
+  public void pOn(ProgressType type)
   {
-    progressOn(ProgressType.CONNECTING);
+    progressOn(type);
   }
 
 
