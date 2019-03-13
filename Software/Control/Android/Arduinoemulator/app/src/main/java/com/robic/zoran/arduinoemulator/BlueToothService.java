@@ -298,6 +298,12 @@ class BlueToothService
 
     private void processMessage(String msg)
     {
+      if (msg.contains("MV")) {
+        Log.i(TAG, "Process MOVE message from Client");
+        move();
+        return;
+      }
+
       switch (msg) {
       case "<ST?>":
         Log.i(TAG, "Process STATUS message from Client");
@@ -307,9 +313,6 @@ class BlueToothService
         Log.i(TAG, "Process BTRY message from Client");
         btryRes();
         break;
-      case "<MV>":
-        Log.i(TAG, "Process MOVE message from Client");
-        move();
       default:
         Log.i(TAG, "processMessage in ProcessMsg: Unknown op code");
       }
@@ -349,7 +352,7 @@ class BlueToothService
       {
         write("<RDY>");
       }
-    }, 1000);
+    }, 5000);
   }
 
   private void btryRes()
