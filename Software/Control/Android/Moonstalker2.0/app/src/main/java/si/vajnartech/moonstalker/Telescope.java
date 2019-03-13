@@ -39,6 +39,7 @@ public abstract class Telescope extends PositionCalculus
   void calibrate()
   {
     setPosition(curObj);
+    raDec2AltAz();
     TelescopeStatus.set(ST_READY);
     Log.i(TAG, "Calibration object is " + curObj);
   }
@@ -51,26 +52,26 @@ public abstract class Telescope extends PositionCalculus
     mv(hSteps, vSteps);
   }
 
-  private void move(double ra, double dec)
+  void move(AstroObject obj)
   {
-    setPosition(ra, dec);
+    setPosition(obj);
     move();
   }
 
-  void move()
+  private void move()
   {
     double dif_az;
     double dif_hi;
     double azimuth_tmp;
     double height_tmp;
-    int    cur_h_steps;
-    int    cur_v_steps;
-    Bundle bundle = new Bundle();
+    int cur_h_steps;
+    int cur_v_steps;
+ //   Bundle bundle = new Bundle();
 
     azimuth_tmp = az;
     height_tmp = h;
 
-
+    raDec2AltAz();
     dif_az = az - azimuth_tmp;
     dif_hi = h - height_tmp;
 
@@ -82,11 +83,12 @@ public abstract class Telescope extends PositionCalculus
     if (Math.abs(cur_h_steps) >= PRECISION || Math.abs(cur_v_steps) >= PRECISION) {
       hSteps -= cur_h_steps;
       vSteps -= cur_v_steps;
-      if (h <= H_NEGATIVE) {
-        bundle.putString("arg1", "Negative altitude");
-        inMsgProcess(ERROR, bundle);
-      } else
-        mv(cur_h_steps, cur_v_steps);
+//      if (h <= H_NEGATIVE) {
+//        bundle.putString("arg1",
+//                         act.getResources().getString(R.string.e_alt_neg));
+//        act.getCtr().inMsgProcess(Control.ERROR, bundle);
+//      } else
+      mv(cur_h_steps, cur_v_steps);
     }
   }
 

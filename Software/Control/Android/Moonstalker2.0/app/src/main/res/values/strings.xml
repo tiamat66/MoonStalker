@@ -8,6 +8,7 @@
   <string name="action_settings">Settings</string>
   <string name="calibration_ntfy">Manually move telescope to calibration object and confirm.</string>
   <string name="connecting">Connecting</string>
+  <string name="moving">Moving</string>
   <string name="initializing">Initializing</string>
   <string name="calibrated">Calibrated</string>
   <string name="move">Move</string>

@@ -4,6 +4,7 @@ import android.util.Log;
 import android.widget.TextView;
 
 import static si.vajnartech.moonstalker.C.ST_CONNECTED;
+import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
@@ -16,7 +17,7 @@ interface Nucleus
 
   void updateStatus();
 
-  void startProgress(String aa);
+  void startProgress(MainActivity.ProgressType pt);
 
   void stopProgress();
 }
@@ -42,7 +43,7 @@ public class StatusSM extends Thread
   {
     while (r) {
       try {
-        sleep(3000);
+        sleep(1000);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -53,7 +54,7 @@ public class StatusSM extends Thread
         continue;
       if (prevStatus == ST_NOT_CONNECTED && TelescopeStatus.get() == ST_CONNECTED) {
         Log.i("STATUS", "init telescope");
-        inf.startProgress("initializing");
+        inf.startProgress(MainActivity.ProgressType.INITIALIZING);
         inf.initTelescope();
         prevStatus = ST_CONNECTED;
         inf.updateStatus();
@@ -66,6 +67,12 @@ public class StatusSM extends Thread
       } else if (prevStatus == ST_NOT_CAL && TelescopeStatus.get() == ST_READY) {
         prevStatus = ST_READY;
         inf.updateStatus();
+      } else if (prevStatus == ST_READY && TelescopeStatus.get() == ST_MOVING) {
+        prevStatus = ST_MOVING;
+        inf.startProgress(MainActivity.ProgressType.MOVING);
+      } else if (prevStatus == ST_MOVING && TelescopeStatus.get() == ST_READY) {
+        prevStatus = ST_READY;
+        inf.stopProgress();
       }
     }
   }

@@ -29,8 +29,8 @@ public class PositionCalculus implements LocationListener
 {
   private double ra;
   private double dec;
-  double az = -1.0;
-  double h = -1.0;
+  double az = 0;
+  double h = 0;
 
   Location curLocation = new Location("GPS");
 
@@ -45,7 +45,6 @@ public class PositionCalculus implements LocationListener
     this.dec = obj.dec;
     curLocation.setLatitude(DEF_LATITUDE);
     curLocation.setLongitude(DEF_LONGITUDE);
-    raDec2AltAz();
   }
 
   void setPosition(double ra, double dec)
@@ -88,7 +87,7 @@ public class PositionCalculus implements LocationListener
     ra = toDegrees(RA);
   }
 
-  private void raDec2AltAz()
+  void raDec2AltAz()
   {
     Log.i(TAG, "RA=" + convertDec2Hour(ra));
     Log.i(TAG, "DEC=" + convertDec2Hour(dec));

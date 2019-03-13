@@ -46,8 +46,7 @@ public class Control extends Telescope
   @Override
   void mv(int hSteps, int vSteps)
   {
-    if (TelescopeStatus.get() != ST_TRACING)
-      TelescopeStatus.set(ST_MOVING);
+    TelescopeStatus.set(ST_MOVING);
     outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
   }
 

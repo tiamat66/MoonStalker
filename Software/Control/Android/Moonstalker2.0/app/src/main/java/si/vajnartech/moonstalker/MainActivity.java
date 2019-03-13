@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
         else if (TelescopeStatus.get() == ST_READY)
         {
-          ctrl.move();
+          ctrl.move(C.curObj);
         }
         else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
           connect(true);
@@ -117,9 +117,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
 
       @Override
-      public void startProgress(String aa)
+      public void startProgress(ProgressType pt)
       {
-        pOn(ProgressType.INITIALIZING);
+        pOn(pt);
       }
 
       @Override
@@ -307,6 +307,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   {
     CONNECTING,
     INITIALIZING,
+    MOVING
   }
 
   /*
@@ -334,7 +335,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     if (type == ProgressType.CONNECTING)
       loadingText.setText(tx(R.string.connecting));
     else if (type == ProgressType.INITIALIZING)
-      loadingText.setText(tx(R.string.connecting));
+      loadingText.setText(tx(R.string.initializing));
+    else if (type == ProgressType.MOVING)
+      loadingText.setText(tx(R.string.moving));
 
     loadingText.setTextColor(getResources().getColor(R.color.colorAccent));
     loadingText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
