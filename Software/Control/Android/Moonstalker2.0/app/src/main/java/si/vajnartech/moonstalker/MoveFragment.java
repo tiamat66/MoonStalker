@@ -2,7 +2,6 @@ package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,13 +18,15 @@ import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static si.vajnartech.moonstalker.C.calConstellation;
 import static si.vajnartech.moonstalker.C.calObj;
+import static si.vajnartech.moonstalker.C.curObj;
 
 public class MoveFragment extends MyFragment
 {
   private  Spinner                  skyObjects;
   private  Spinner                  constellations;
-  public ArrayAdapter<CharSequence> skyObjAdapter;
-  public ArrayAdapter<CharSequence> constellationAdapter;
+
+  static private ArrayAdapter<CharSequence> skyObjAdapter;
+  static private ArrayAdapter<CharSequence> constellationAdapter;
 
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -33,7 +34,6 @@ public class MoveFragment extends MyFragment
     View res = inflater.inflate(R.layout.frag_move, container, false);
     skyObjects = res.findViewById(R.id.spinner1);
     constellations = res.findViewById(R.id.spinner2);
-    initAstroObjDatabase();
     initAstroObjDropDown();
     setPositionString((TextView) container.findViewById(R.id.position));
     return res;
@@ -76,9 +76,9 @@ public class MoveFragment extends MyFragment
     constellations.setSelection(constellationAdapter.getPosition(calConstellation));
   }
 
-  private void initAstroObjDatabase()
+  static void initAstroObjDatabase(MainActivity ctx)
   {
-    skyObjAdapter = ArrayAdapter.createFromResource(act, R.array.sky_objects, android.R.layout.simple_spinner_item);
+    skyObjAdapter = ArrayAdapter.createFromResource(ctx, R.array.sky_objects, android.R.layout.simple_spinner_item);
     skyObjAdapter.sort(new Comparator<CharSequence>() {
       @Override public int compare(CharSequence charSequence, CharSequence t1)
       {
@@ -86,7 +86,7 @@ public class MoveFragment extends MyFragment
       }
     });
 
-    constellationAdapter = new ArrayAdapter<>(act, android.R.layout.simple_spinner_item);
+    constellationAdapter = new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_item);
     constellationAdapter.sort(new Comparator<CharSequence>() {
       @Override public int compare(CharSequence charSequence, CharSequence t1)
       {
@@ -102,7 +102,7 @@ public class MoveFragment extends MyFragment
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
-    return (az + " | " + h);
+    return String.format("%s\n%s | %s", curObj.name, az, h);
   }
 
   private void setPositionString(TextView txt)
