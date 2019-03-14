@@ -77,6 +77,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     NavigationView navigationView = findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
 
+    // init astro database
+    MoveFragment.initAstroObjDatabase(this);
+
     // start state machine
     new StatusSM(new Nucleus() {
       @Override
@@ -100,8 +103,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           public void run()
           {
             TextView tv = findViewById(R.id.position);
-            if (TelescopeStatus.get() == ST_READY)
+            if (TelescopeStatus.get() == ST_READY) {
               tv.setBackgroundColor(getResources().getColor(R.color.colorOk));
+              refreshCurrentFragment();
+            }
             else if (TelescopeStatus.get() == ST_NOT_CAL)
             {
               tv.setBackgroundColor(getResources().getColor(R.color.colorError));
@@ -411,6 +416,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
     transaction.replace(R.id.content, currentFragment);
     transaction.addToBackStack(null);
+    transaction.commit();
+  }
+
+  public void refreshCurrentFragment()
+  {
+    MyFragment       f           = currentFragment;
+    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+    transaction.detach(f);
+    transaction.commit();
+
+    transaction = getSupportFragmentManager().beginTransaction();
+    transaction.attach(f);
     transaction.commit();
   }
 }

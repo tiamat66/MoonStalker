@@ -12,11 +12,13 @@
 
   <ImageView
     android:id="@+id/logo"
-    android:layout_width="352dp"
+    android:layout_width="0dp"
     android:layout_height="0dp"
     android:layout_marginStart="16dp"
-    android:layout_marginBottom="356dp"
+    android:layout_marginEnd="27dp"
+    android:layout_marginBottom="355dp"
     app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="@+id/position"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/position"
     app:srcCompat="@drawable/moonstalker_logo"
@@ -24,14 +26,19 @@
 
   <TextView
     android:id="@+id/position"
-    android:layout_width="379dp"
-    android:layout_height="45dp"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="3dp"
+    android:layout_marginEnd="16dp"
     android:background="@color/colorError"
     android:text=""
     android:textSize="24sp"
     android:textStyle="bold"
     android:visibility="visible"
-    tools:layout_editor_absoluteX="16dp"
-    tools:layout_editor_absoluteY="3dp" />
+    app:layout_constraintBottom_toTopOf="@+id/logo"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

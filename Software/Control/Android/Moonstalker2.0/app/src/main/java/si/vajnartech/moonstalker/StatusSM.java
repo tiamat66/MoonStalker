@@ -73,6 +73,7 @@ public class StatusSM extends Thread
       } else if (prevStatus == ST_MOVING && TelescopeStatus.get() == ST_READY) {
         prevStatus = ST_READY;
         inf.stopProgress();
+        inf.updateStatus();
       }
     }
   }
