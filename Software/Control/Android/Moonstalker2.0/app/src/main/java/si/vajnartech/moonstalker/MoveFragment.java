@@ -2,7 +2,6 @@ package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,14 +16,12 @@ import si.vajnartech.moonstalker.rest.GetConstellationInfo;
 import si.vajnartech.moonstalker.rest.GetSkyObjInfo;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
-import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 
 public class MoveFragment extends MyFragment
 {
   private Spinner skyObjects;
-  //private Spinner constellations;
 
   static private ArrayAdapter<CharSequence> skyObjAdapter;
   static private ArrayAdapter<CharSequence> constellationAdapter;
@@ -34,7 +31,6 @@ public class MoveFragment extends MyFragment
   {
     View res = inflater.inflate(R.layout.frag_move, container, false);
     skyObjects = res.findViewById(R.id.spinner1);
-    //constellations = res.findViewById(R.id.spinner2);
     initAstroObjDropDown();
     setPositionString();
     return res;
@@ -80,7 +76,6 @@ public class MoveFragment extends MyFragment
   static int getCFromStar()
   {
     String buf = C.curConstellation.toLowerCase();
-    Log.i(TAG, "......." + buf);
     for (int i = 0; i < constellationAdapter.getCount(); i++) {
       String str = constellationAdapter.getItem(i).toString().toLowerCase();
       if (buf.contains(str))
