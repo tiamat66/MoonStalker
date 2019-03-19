@@ -10,9 +10,10 @@ import static si.vajnartech.moonstalker.C.curConstellation;
 import static si.vajnartech.moonstalker.PositionCalculus.getDecFromString;
 import static si.vajnartech.moonstalker.PositionCalculus.getRaFromString;
 
-public class GetStarInfo extends GetSkyObjInfo
+@SuppressWarnings("SameParameterValue") public class GetStarInfo extends GetSkyObjInfo
 {
   private SkyInterface skyInterface;
+
   public GetStarInfo(String name, SkyInterface i)
   {
     super(name, "http://www.stellar-database.com/Scripts/search_star.exe?Name=");
@@ -31,9 +32,7 @@ public class GetStarInfo extends GetSkyObjInfo
     if (res.isEmpty())
       return;
 
-    // parse ra and dec from string
     // RightAscension and Declination:</B>2h31m48.704s,+89&deg;15'50.72"
-    // TODO: Napolni podatke za zvezde, zaenkrat je tu samo Severnica ki je current object
     String a = "RightAscensionandDeclination:</B>";
     String b = "s,";
     String c = "s,";
@@ -41,8 +40,7 @@ public class GetStarInfo extends GetSkyObjInfo
 
 
     String j1 = res.substring(a.length(), res.indexOf(b));
-    String j2 = res.substring(res.indexOf(c) + 2,
-                              res.length()).replaceAll("&deg;", "d");
+    String j2 = res.substring(res.indexOf(c) + 2).replaceAll("&deg;", "d");
     double i1 = getRaFromString(j1);
     double i2 = getDecFromString(j2);
     C.curObj = new AstroObject(name, i1, i2, j1, j2);
@@ -67,13 +65,11 @@ public class GetStarInfo extends GetSkyObjInfo
 
     if (end != null) {
       String e = end.replaceAll("\\s+", "");
-      if (u.contains(s) && u.contains(e)) {
+      if (u.contains(s) && u.contains(e))
         return u.substring(u.indexOf(s), u.indexOf(e));
-      }
-    } else {
+    } else
       if (u.contains(s))
-        return u.substring(u.indexOf(s), u.length());
-    }
+        return u.substring(u.indexOf(s));
     return "";
   }
 

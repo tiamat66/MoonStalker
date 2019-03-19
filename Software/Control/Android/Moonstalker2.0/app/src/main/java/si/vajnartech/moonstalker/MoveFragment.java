@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import java.text.DecimalFormat;
 import java.util.Comparator;
@@ -24,8 +23,8 @@ import static si.vajnartech.moonstalker.C.curObj;
 
 public class MoveFragment extends MyFragment
 {
-  private  Spinner                  skyObjects;
-  private  Spinner                  constellations;
+  private Spinner skyObjects;
+  //private Spinner constellations;
 
   static private ArrayAdapter<CharSequence> skyObjAdapter;
   static private ArrayAdapter<CharSequence> constellationAdapter;
@@ -35,7 +34,7 @@ public class MoveFragment extends MyFragment
   {
     View res = inflater.inflate(R.layout.frag_move, container, false);
     skyObjects = res.findViewById(R.id.spinner1);
-    constellations = res.findViewById(R.id.spinner2);
+    //constellations = res.findViewById(R.id.spinner2);
     initAstroObjDropDown();
     setPositionString();
     return res;
@@ -45,11 +44,14 @@ public class MoveFragment extends MyFragment
   {
     if (sp == null) return;
     String name = sp.getItemAtPosition(position).toString();
-    new GetStarInfo(name, new GetSkyObjInfo.SkyInterface() {
+    new GetStarInfo(name, new GetSkyObjInfo.SkyInterface()
+    {
+      @SuppressWarnings("ConstantConditions")
       @Override
       public void updateConstellation()
       {
-        getCFromStar();
+        C.calConstellation = constellationAdapter.getItem(getCFromStar()).toString();
+        setPositionString();
       }
     });
   }
@@ -57,12 +59,11 @@ public class MoveFragment extends MyFragment
   private void initAstroObjDropDown()
   {
     skyObjects.setAdapter(skyObjAdapter);
-    constellations.setAdapter(constellationAdapter);
 
     skyObjects.setSelection(skyObjAdapter.getPosition(calObj));
-    constellations.setSelection(getCFromStar());
 
-    skyObjects.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+    skyObjects.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+    {
       @Override
       public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
       {
@@ -73,34 +74,27 @@ public class MoveFragment extends MyFragment
       public void onNothingSelected(AdapterView<?> adapterView)
       {}
     });
-    constellations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-      @Override
-      public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
-      {}
-
-      @Override
-      public void onNothingSelected(AdapterView<?> adapterView)
-      {}
-    });
-
   }
 
+  @SuppressWarnings("ConstantConditions")
   static int getCFromStar()
   {
-    Log.i(TAG, "......." + C.curConstellation);
-    for (int i=0; i<constellationAdapter.getCount(); i++)
-    {
+    String buf = C.curConstellation.toLowerCase();
+    Log.i(TAG, "......." + buf);
+    for (int i = 0; i < constellationAdapter.getCount(); i++) {
       String str = constellationAdapter.getItem(i).toString().toLowerCase();
-      if (C.curConstellation.toLowerCase().contains(str))
+      if (buf.contains(str))
         return i;
     }
+
     return 0;
   }
 
   static void initAstroObjDatabase(MainActivity ctx)
   {
     skyObjAdapter = ArrayAdapter.createFromResource(ctx, R.array.sky_objects, android.R.layout.simple_spinner_item);
-    skyObjAdapter.sort(new Comparator<CharSequence>() {
+    skyObjAdapter.sort(new Comparator<CharSequence>()
+    {
       @Override public int compare(CharSequence charSequence, CharSequence t1)
       {
         return (charSequence.toString().charAt(0) - t1.toString().charAt(0));
@@ -108,7 +102,8 @@ public class MoveFragment extends MyFragment
     });
 
     constellationAdapter = new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_item);
-    constellationAdapter.sort(new Comparator<CharSequence>() {
+    constellationAdapter.sort(new Comparator<CharSequence>()
+    {
       @Override public int compare(CharSequence charSequence, CharSequence t1)
       {
         return (charSequence.toString().charAt(0) - t1.toString().charAt(0));
@@ -123,7 +118,7 @@ public class MoveFragment extends MyFragment
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
-    return String.format("%s\n%s | %s", curObj.name, az, h);
+    return String.format("%s (%s)\n%s | %s", curObj.name, C.calConstellation, az, h);
   }
 
   private void setPositionString()

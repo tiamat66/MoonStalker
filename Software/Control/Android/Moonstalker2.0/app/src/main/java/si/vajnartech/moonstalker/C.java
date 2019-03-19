@@ -38,7 +38,7 @@ public class C
   public static AstroObject curObj = null;
   public static String curConstellation = "";
   static String calObj = "Polaris";
-  static String calConstellation = "UrsaMajor";
+  static String calConstellation = "Ursa Major";
 }
 
 
