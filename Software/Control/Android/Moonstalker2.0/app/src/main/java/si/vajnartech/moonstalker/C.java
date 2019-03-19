@@ -36,6 +36,7 @@ public class C
   static final int ST_CONNECTED     = 12;
 
   public static AstroObject curObj = null;
+  public static String curConstellation = "";
   static String calObj = "Polaris";
   static String calConstellation = "UrsaMajor";
 }

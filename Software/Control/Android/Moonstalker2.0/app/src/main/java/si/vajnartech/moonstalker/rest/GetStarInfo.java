@@ -6,14 +6,17 @@ import si.vajnartech.moonstalker.AstroObject;
 import si.vajnartech.moonstalker.C;
 
 import static si.vajnartech.moonstalker.C.TAG;
+import static si.vajnartech.moonstalker.C.curConstellation;
 import static si.vajnartech.moonstalker.PositionCalculus.getDecFromString;
 import static si.vajnartech.moonstalker.PositionCalculus.getRaFromString;
 
 public class GetStarInfo extends GetSkyObjInfo
 {
-  public GetStarInfo(String name)
+  private SkyInterface skyInterface;
+  public GetStarInfo(String name, SkyInterface i)
   {
     super(name, "http://www.stellar-database.com/Scripts/search_star.exe?Name=");
+    skyInterface = i;
   }
 
   @Override
@@ -47,7 +50,13 @@ public class GetStarInfo extends GetSkyObjInfo
     int q1 = parse1(data, "Proper names:");
     Log.i(TAG, "obj: " + C.curObj);
     res = parse1(data, q1 + "</B>".length() + name.length(), "<BR>");
+    String[] result = res.split(",");
     Log.i(TAG, "result: " + res);
+
+    curConstellation = result.length >= 3 ? result[2] : result[1];
+    Log.i(TAG, "current constalation = " + curConstellation);
+    if (skyInterface != null)
+      skyInterface.updateConstellation();
   }
 
   @Override

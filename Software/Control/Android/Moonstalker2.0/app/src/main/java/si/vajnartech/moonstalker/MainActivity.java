@@ -39,6 +39,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   MyFragment currentFragment = null;
   Control ctrl;
 
+  TerminalWindow terminal;
+
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
@@ -77,6 +79,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     NavigationView navigationView = findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
 
+    // init terminal window
+    terminal = new TerminalWindow(this);
+
     // init astro database
     MoveFragment.initAstroObjDatabase(this);
 
@@ -89,33 +94,25 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
 
       @Override
-      public void calibrateTelescope()
-      {
-        setFragment("manual control", ManualFragment.class, new Bundle());
-        promptToCalibration();
-      }
-
-      @Override
       public void updateStatus()
       {
         runOnUiThread(new Runnable() {
           @Override
           public void run()
           {
-            TextView tv = findViewById(R.id.position);
             if (TelescopeStatus.get() == ST_READY) {
-              tv.setBackgroundColor(getResources().getColor(R.color.colorOk));
+              terminal.setBackgroundColor(getResources().getColor(R.color.colorOk));
               refreshCurrentFragment();
             }
             else if (TelescopeStatus.get() == ST_NOT_CAL)
             {
-              tv.setBackgroundColor(getResources().getColor(R.color.colorError));
-              tv.setText(tx(R.string.not_calibrated));
+              terminal.setBackgroundColor(getResources().getColor(R.color.colorError));
+              terminal.setText(tx(R.string.not_calibrated));
             }
             else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
             {
-              tv.setBackgroundColor(getResources().getColor(R.color.colorError));
-              tv.setText(tx(R.string.not_connected));
+              terminal.setBackgroundColor(getResources().getColor(R.color.colorError));
+              terminal.setText(tx(R.string.not_connected));
             }
           }
         });
@@ -134,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
     });
     // init current astro object
-    new GetStarInfo(C.calObj);
+    new GetStarInfo(C.calObj, null);
     connect(false);
   }
 
@@ -258,7 +255,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     } else if (id == R.id.track) {
 
     } else if (id == R.id.calibrate) {
-
+      setFragment("manual control", ManualFragment.class, new Bundle());
+      promptToCalibration();
     } else if (id == R.id.nav_share) {
 
     } else if (id == R.id.nav_send) {

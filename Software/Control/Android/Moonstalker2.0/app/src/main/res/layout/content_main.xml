@@ -18,14 +18,14 @@
     android:layout_marginEnd="27dp"
     android:layout_marginBottom="355dp"
     app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintEnd_toEndOf="@+id/position"
+    app:layout_constraintEnd_toEndOf="@+id/msg_window"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/position"
+    app:layout_constraintTop_toBottomOf="@+id/msg_window"
     app:srcCompat="@drawable/moonstalker_logo"
     tools:ignore="ContentDescription,VectorDrawableCompat" />
 
   <TextView
-    android:id="@+id/position"
+    android:id="@+id/msg_window"
     android:layout_width="0dp"
     android:layout_height="0dp"
     android:layout_marginStart="16dp"

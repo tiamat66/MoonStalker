@@ -13,8 +13,6 @@ interface Nucleus
 {
   void initTelescope();
 
-  void calibrateTelescope();
-
   void updateStatus();
 
   void startProgress(MainActivity.ProgressType pt);
@@ -59,8 +57,6 @@ public class StatusSM extends Thread
         prevStatus = ST_CONNECTED;
         inf.updateStatus();
       } else if (prevStatus == ST_CONNECTED && TelescopeStatus.get() == ST_NOT_CAL) {
-        Log.i("STATUS", "prompt to calibrate");
-        inf.calibrateTelescope();
         prevStatus = ST_NOT_CAL;
         inf.updateStatus();
         inf.stopProgress();

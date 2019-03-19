@@ -3,13 +3,11 @@ package si.vajnartech.moonstalker.rest;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 
-import si.vajnartech.moonstalker.MainActivity;
-
 import static si.vajnartech.moonstalker.C.TAG;
 
-public class GetConstellationInfo extends GetSkyObjInfo
+public class GetConstellationInfo extends GetSkyObjInfo<CharSequence>
 {
-  public GetConstellationInfo(Object adapter)
+  public GetConstellationInfo(ArrayAdapter<CharSequence> adapter)
   {
     super("http://www.astro.wisc.edu/~dolan/constellations/constellation_list.html");
     this.adapter = adapter;
@@ -32,7 +30,6 @@ public class GetConstellationInfo extends GetSkyObjInfo
   {
     int                        lastIndex = 0;
     String                     enci;
-    ArrayAdapter<CharSequence> a         = (ArrayAdapter<CharSequence>) adapter;
 
     while (lastIndex != -1) {
 
@@ -44,7 +41,7 @@ public class GetConstellationInfo extends GetSkyObjInfo
 
         Log.i(TAG, enci.substring(enci.indexOf('>') + 1, enci.indexOf('<')));
         String j = enci.substring(enci.indexOf('>') + 1, enci.indexOf('<'));
-        a.add(j.replaceAll("\\s+", ""));
+        adapter.add(j.replaceAll("\\s+", ""));
       }
     }
     return null;

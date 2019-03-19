@@ -2,6 +2,7 @@ package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +15,10 @@ import java.text.DecimalFormat;
 import java.util.Comparator;
 
 import si.vajnartech.moonstalker.rest.GetConstellationInfo;
+import si.vajnartech.moonstalker.rest.GetSkyObjInfo;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
-import static si.vajnartech.moonstalker.C.calConstellation;
+import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 
@@ -35,7 +37,7 @@ public class MoveFragment extends MyFragment
     skyObjects = res.findViewById(R.id.spinner1);
     constellations = res.findViewById(R.id.spinner2);
     initAstroObjDropDown();
-    setPositionString((TextView) container.findViewById(R.id.position));
+    setPositionString();
     return res;
   }
 
@@ -43,12 +45,23 @@ public class MoveFragment extends MyFragment
   {
     if (sp == null) return;
     String name = sp.getItemAtPosition(position).toString();
-    new GetStarInfo(name);
+    new GetStarInfo(name, new GetSkyObjInfo.SkyInterface() {
+      @Override
+      public void updateConstellation()
+      {
+        getCFromStar();
+      }
+    });
   }
 
   private void initAstroObjDropDown()
   {
     skyObjects.setAdapter(skyObjAdapter);
+    constellations.setAdapter(constellationAdapter);
+
+    skyObjects.setSelection(skyObjAdapter.getPosition(calObj));
+    constellations.setSelection(getCFromStar());
+
     skyObjects.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
       @Override
       public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
@@ -60,9 +73,6 @@ public class MoveFragment extends MyFragment
       public void onNothingSelected(AdapterView<?> adapterView)
       {}
     });
-    skyObjects.setSelection(skyObjAdapter.getPosition(calObj));
-
-    constellations.setAdapter(constellationAdapter);
     constellations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
       @Override
       public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
@@ -72,8 +82,19 @@ public class MoveFragment extends MyFragment
       public void onNothingSelected(AdapterView<?> adapterView)
       {}
     });
-    constellationAdapter.getPosition(calConstellation);
-    constellations.setSelection(constellationAdapter.getPosition(calConstellation));
+
+  }
+
+  static int getCFromStar()
+  {
+    Log.i(TAG, "......." + C.curConstellation);
+    for (int i=0; i<constellationAdapter.getCount(); i++)
+    {
+      String str = constellationAdapter.getItem(i).toString().toLowerCase();
+      if (C.curConstellation.toLowerCase().contains(str))
+        return i;
+    }
+    return 0;
   }
 
   static void initAstroObjDatabase(MainActivity ctx)
@@ -105,8 +126,8 @@ public class MoveFragment extends MyFragment
     return String.format("%s\n%s | %s", curObj.name, az, h);
   }
 
-  private void setPositionString(TextView txt)
+  private void setPositionString()
   {
-    txt.setText(formatPositionString(act.ctrl.az, act.ctrl.h));
+    act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h));
   }
 }

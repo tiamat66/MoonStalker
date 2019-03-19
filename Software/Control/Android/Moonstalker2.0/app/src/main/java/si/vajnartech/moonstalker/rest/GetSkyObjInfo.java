@@ -1,11 +1,20 @@
 package si.vajnartech.moonstalker.rest;
 
 
+import android.widget.ArrayAdapter;
+
 @SuppressWarnings("FieldCanBeLocal")
-public abstract class GetSkyObjInfo
+public abstract class GetSkyObjInfo<T>
 {
-  protected String       name;
-  Object adapter;
+  // Interface for manipulating with Sky Data
+  public interface SkyInterface
+  {
+    void updateConstellation();
+  }
+
+  protected String name;
+
+  ArrayAdapter<T> adapter;
 
 
   GetSkyObjInfo(String name, String URL)
