@@ -12,6 +12,8 @@ final class OpCodes
   static final String INIT    = "INIT";
 
   // out messages
+  static final String MOVE_START  = "MVS";
+  static final String MOVE_STOP   = "MVE";
   static final String MOVE        = "MV";
   static final String GET_STATUS  = "ST?";
   static final String GET_BATTERY = "BTRY?";

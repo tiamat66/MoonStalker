@@ -7,46 +7,105 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import static si.vajnartech.moonstalker.C.ST_READY;
+
 public class ManualFragment extends MyFragment implements View.OnTouchListener
 {
   float dX, dY;
+  D dK = new D();
 
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
     View res = inflater.inflate(R.layout.frag_manual, container, false);
     res.findViewById(R.id.key_pad);
-
+    res.setOnTouchListener(this);
     return res;
   }
 
+  C.Directions d = C.Directions.NONE;
+
   @Override
-  public boolean onTouch(View v, MotionEvent event)
+  public boolean onTouch(View view, MotionEvent event)
   {
     double rx, ry;
 
     switch (event.getAction()) {
-    case MotionEvent.ACTION_MOVE:
-      rx = event.getRawX();
-      ry = event.getRawY();
-      break;
     case MotionEvent.ACTION_DOWN:
-      dX = v.getX() - event.getRawX();
-      dY = v.getY() - event.getRawY();
+      dX = view.getX() - event.getRawX();
+      dY = view.getY() - event.getRawY();
       rx = event.getRawX();
       ry = event.getRawY();
-      //dK.up(new R2Double(rx, ry));
-      v.performClick();
+      dK.up(new D(rx, ry));
+      view.performClick();
+      break;
+    case MotionEvent.ACTION_MOVE:
+      if (TelescopeStatus.get() == ST_READY) {
+        rx = event.getRawX();
+        ry = event.getRawY();
+        dK.up(new D(rx, ry));
+        dK.is(dK.mul(new D(1.0, -1.0))); // negate y part of point
+        if (dK.getDirection() != C.Directions.NONE) {
+          d = dK.getDirection();
+          act.ctrl.moveStart(d);
+        }
+      }
       break;
     case MotionEvent.ACTION_UP:
-      rx = event.getRawX();
-      ry = event.getRawY();
-      // dK.up(new R2Double(rx, ry));
-      // dK.is(dK.mul(new R2Double(1.0, -1.0))); // negate y part of point
+      d = C.Directions.NONE;
+      act.ctrl.moveStop();
+      break;
     default:
       return false;
     }
     return true;
+  }
+}
+
+class D
+{
+  private static final double thrs = 5;
+  private double q_x1, q_x2;
+  private double x1, x2;
+
+  D()
+  {
+    x1 = x2 = q_x1 = q_x2 = 0.0;
+  }
+
+  D(double x1, double x2)
+  {
+    this.x1 = x1;
+    this.x2 = x2;
+    q_x1 = q_x2 = 0.0;
+  }
+
+  void up(D v)
+  {
+    D res = new D(v.x1 - q_x1, v.x2 - q_x2);
+    q_x1 = v.x1;
+    q_x2 = v.x2;
+    is(res);
+  }
+
+  void is(D val)
+  {
+    x1 = val.x1;
+    x2 = val.x2;
+  }
+
+  D mul(D val)
+  {
+    return new D(x1 * val.x1, x2 * val.x2);
+  }
+
+  C.Directions getDirection()
+  {
+    if (x2 > thrs) return C.Directions.UP;
+    if (x2 < -thrs) return C.Directions.DOWN;
+    if (x1 < -thrs) return C.Directions.LEFT;
+    if (x1 > thrs) return C.Directions.RIGHT;
+    return C.Directions.NONE;
   }
 }
 

@@ -21,6 +21,8 @@ import static si.vajnartech.moonstalker.OpCodes.GET_STATUS;
 import static si.vajnartech.moonstalker.OpCodes.INIT;
 import static si.vajnartech.moonstalker.OpCodes.IN_MSG;
 import static si.vajnartech.moonstalker.OpCodes.MOVE;
+import static si.vajnartech.moonstalker.OpCodes.MOVE_START;
+import static si.vajnartech.moonstalker.OpCodes.MOVE_STOP;
 import static si.vajnartech.moonstalker.OpCodes.READY;
 
 interface ControlInterface
@@ -41,6 +43,18 @@ public class Control extends Telescope
     inMessageHandler = new InMessageHandler();
     isSocketFree = true;
     processor = new CommandProcessor(this);
+  }
+
+  void moveStart(C.Directions direction)
+  {
+    Log.i(TAG, "ROCNI PREMIK=" + direction);
+    TelescopeStatus.set(ST_MOVING);
+    outMessageProcess(MOVE_START, Integer.toString(direction.getValue()), "");
+  }
+
+  void moveStop()
+  {
+    outMessageProcess(MOVE_STOP, "", "");
   }
 
   @Override

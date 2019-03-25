@@ -36,10 +36,31 @@ public class C
   static final int ST_CONNECTED     = 12;
   static final int ST_CALIBRATING   = 13;
 
-  public static AstroObject curObj = null;
+  // Moving directions
+  public enum Directions
+  {
+    UP(1),
+    DOWN(2),
+    LEFT(3),
+    RIGHT(4),
+    NONE(5);
+
+    private final int value;
+    Directions(int value)
+    {
+      this.value = value;
+    }
+
+    public int getValue()
+    {
+      return value;
+    }
+  }
+
   public static String curConstellation = "";
   static String calObj = "Polaris";
   static String calConstellation = "Ursa Major";
+  public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
 }
 
 

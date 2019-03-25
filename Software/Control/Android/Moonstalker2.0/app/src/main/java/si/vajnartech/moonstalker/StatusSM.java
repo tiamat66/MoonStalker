@@ -1,7 +1,6 @@
 package si.vajnartech.moonstalker;
 
 import android.util.Log;
-import android.widget.TextView;
 
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_CONNECTED;
@@ -51,6 +50,7 @@ public class StatusSM extends Thread
 
       if (TelescopeStatus.get() == prevStatus)
         continue;
+
       if (prevStatus == ST_NOT_CONNECTED && TelescopeStatus.get() == ST_CONNECTED) {
         Log.i("STATUS", "init telescope");
         inf.startProgress(MainActivity.ProgressType.INITIALIZING);
@@ -71,13 +71,10 @@ public class StatusSM extends Thread
         prevStatus = ST_READY;
         inf.stopProgress();
         inf.updateStatus();
-      }
-      else if (prevStatus == ST_NOT_CAL && TelescopeStatus.get() == ST_CALIBRATING) {
+      } else if (prevStatus == ST_NOT_CAL && TelescopeStatus.get() == ST_CALIBRATING) {
         prevStatus = ST_CALIBRATING;
         inf.updateStatus();
-      }
-      else if(prevStatus == ST_CALIBRATING && TelescopeStatus.get() == ST_READY)
-      {
+      } else if(prevStatus == ST_CALIBRATING && TelescopeStatus.get() == ST_READY) {
         prevStatus = ST_READY;
         inf.updateStatus();
       }

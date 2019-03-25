@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 {
   MyFragment currentFragment = null;
   Control ctrl;
+  Menu menu;
 
   TerminalWindow terminal;
 
@@ -84,6 +85,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     NavigationView navigationView = findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
 
+    menu = navigationView.getMenu();
+    menu.findItem(R.id.move).setEnabled(false);
+    menu.findItem(R.id.track).setEnabled(false);
+    menu.findItem(R.id.calibrate).setEnabled(false);
+    menu.findItem(R.id.manual).setEnabled(false);
+
     setFragment("main", MainFragment.class, new Bundle());
 
     // init terminal window
@@ -119,7 +126,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             else if (TelescopeStatus.get() == ST_NOT_CAL)
             {
               getSupportActionBar().setTitle(R.string.not_calibrated);
-              getSupportActionBar().setIcon(R.drawable.ic_error_s);
+              getSupportActionBar().setIcon(R.drawable.ic_cal_s);
+              menu.findItem(R.id.calibrate).setEnabled(true);
+              menu.findItem(R.id.manual).setEnabled(true);
+              menu.findItem(R.id.connect).setEnabled(false);
             }
             else if (TelescopeStatus.get() == ST_CALIBRATING)
             {
@@ -255,7 +265,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     return super.onOptionsItemSelected(item);
   }
 
-  @SuppressWarnings("StatementWithEmptyBody")
   @Override
   public boolean onNavigationItemSelected(@NonNull MenuItem item)
   {
@@ -284,6 +293,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     } else if (id == R.id.connect) {
       if (TelescopeStatus.get() == ST_NOT_CONNECTED)
         connect(true);
+    } else if (id == R.id.manual) {
+      setFragment("move", MoveFragment.class, new Bundle());
+      setFragment("manual control", ManualFragment.class, new Bundle());
+      TelescopeStatus.set(ST_READY);
     }
 
     DrawerLayout drawer = findViewById(R.id.drawer_layout);
