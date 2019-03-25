@@ -8,14 +8,22 @@
   <string name="action_settings">Settings</string>
   <string name="calibration_ntfy">Manually move telescope to calibration object and confirm.</string>
   <string name="connecting">Connecting</string>
+  <string name="connected">connected</string>
   <string name="moving">Moving</string>
   <string name="initializing">Initializing</string>
   <string name="calibrated">Calibrated</string>
   <string name="move">Move</string>
+  <string name="manual">Manual</string>
   <string name="track">Track</string>
   <string name="calibrate">Calibrate</string>
   <string name="not_connected">not connected</string>
   <string name="not_calibrated">not calibrated</string>
+  <string name="calibrating">calibration</string>
+  <string name="ready">ready</string>
+  <string name="warning">Warning</string>
+  <string name="connection_failed">Connection failed</string>
+  <string name="connect">Connect</string>
+  <string name="communicate">Communicate</string>
 
   <string-array name="sky_objects">
     <item>Polaris</item>

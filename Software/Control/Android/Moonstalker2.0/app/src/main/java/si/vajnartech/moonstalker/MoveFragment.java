@@ -16,7 +16,6 @@ import si.vajnartech.moonstalker.rest.GetConstellationInfo;
 import si.vajnartech.moonstalker.rest.GetSkyObjInfo;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
-import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 
 public class MoveFragment extends MyFragment
@@ -30,7 +29,9 @@ public class MoveFragment extends MyFragment
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
     View res = inflater.inflate(R.layout.frag_move, container, false);
-    skyObjects = res.findViewById(R.id.spinner1);
+    skyObjects = act.findViewById(R.id.sky_object);
+    skyObjects.setVisibility(View.VISIBLE);
+    act.terminal.show();
     initAstroObjDropDown();
     setPositionString();
     return res;
@@ -46,7 +47,7 @@ public class MoveFragment extends MyFragment
       @Override
       public void updateConstellation()
       {
-        C.calConstellation = constellationAdapter.getItem(getCFromStar()).toString();
+        C.calConstellation = getCFromStar();
         setPositionString();
       }
     });
@@ -56,7 +57,7 @@ public class MoveFragment extends MyFragment
   {
     skyObjects.setAdapter(skyObjAdapter);
 
-    skyObjects.setSelection(skyObjAdapter.getPosition(calObj));
+    skyObjects.setSelection(skyObjAdapter.getPosition(curObj.name));
 
     skyObjects.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
     {
@@ -73,16 +74,22 @@ public class MoveFragment extends MyFragment
   }
 
   @SuppressWarnings("ConstantConditions")
-  static int getCFromStar()
+  static String getCFromStar()
   {
+    int i;
     String buf = C.curConstellation.toLowerCase();
-    for (int i = 0; i < constellationAdapter.getCount(); i++) {
-      String str = constellationAdapter.getItem(i).toString().toLowerCase();
-      if (buf.contains(str))
-        return i;
-    }
+    if (buf.equals("1UrsaeMinoris".toLowerCase()))
+      return("Ursa Minor");
+    if (buf.contains("16Bo".toLowerCase()))
+      return("Bootes");
 
-    return 0;
+    for (i = 0; i < constellationAdapter.getCount(); i++) {
+      String str = constellationAdapter.getItem(i).toString().toLowerCase();
+      if (buf.contains(str)) break;
+    }
+    if (i == constellationAdapter.getCount())
+      return "Error";
+    return constellationAdapter.getItem(i).toString();
   }
 
   static void initAstroObjDatabase(MainActivity ctx)

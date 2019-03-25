@@ -30,10 +30,13 @@ import android.widget.Toast;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
+import static si.vajnartech.moonstalker.C.ST_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
 
+@SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
   MyFragment currentFragment = null;
@@ -48,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     setContentView(R.layout.activity_main);
     Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
+    getSupportActionBar().setTitle(R.string.not_connected);
+    getSupportActionBar().setIcon(R.drawable.ic_error_s);
 
     FloatingActionButton fab = findViewById(R.id.fab);
     fab.setOnClickListener(new View.OnClickListener()
@@ -55,18 +60,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onClick(View view)
       {
+        if (currentFragment instanceof MainFragment && TelescopeStatus.get() == ST_READY) return;
         if (TelescopeStatus.get() == ST_NOT_CAL)
-        {
-          Snackbar.make(view, tx(R.string.calibrated), Snackbar.LENGTH_LONG).setAction("Calibrated", null).show();
-          ctrl.calibrate();
-          setFragment("move", MoveFragment.class, new Bundle());
-        }
+          Snackbar.make(view, tx(R.string.not_calibrated), Snackbar.LENGTH_LONG).setAction("Calibrated", null).show();
         else if (TelescopeStatus.get() == ST_READY)
-        {
           ctrl.move(C.curObj);
-        }
         else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
-          connect(true);
+          Snackbar.make(view, tx(R.string.not_connected), Snackbar.LENGTH_LONG).setAction("Connected", null).show();
+        else if (TelescopeStatus.get() == ST_CALIBRATING)
+        {
+          ctrl.calibrate();
+          setFragment("main", MainFragment.class, new Bundle());
+        }
       }
     });
 
@@ -78,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     NavigationView navigationView = findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
+
+    setFragment("main", MainFragment.class, new Bundle());
 
     // init terminal window
     terminal = new TerminalWindow(this);
@@ -100,19 +107,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           @Override
           public void run()
           {
-            if (TelescopeStatus.get() == ST_READY) {
-              terminal.setBackgroundColor(getResources().getColor(R.color.colorOk));
+            if (TelescopeStatus.get() == ST_CONNECTED)
+            {
+              getSupportActionBar().setTitle(R.string.connected);
+            }
+            else if (TelescopeStatus.get() == ST_READY) {
               refreshCurrentFragment();
+              getSupportActionBar().setTitle(R.string.ready);
+              getSupportActionBar().setIcon(R.drawable.ic_ok_s);
             }
             else if (TelescopeStatus.get() == ST_NOT_CAL)
             {
-              terminal.setBackgroundColor(getResources().getColor(R.color.colorError));
-              terminal.setText(tx(R.string.not_calibrated));
+              getSupportActionBar().setTitle(R.string.not_calibrated);
+              getSupportActionBar().setIcon(R.drawable.ic_error_s);
             }
-            else if (TelescopeStatus.get() == ST_NOT_CONNECTED)
+            else if (TelescopeStatus.get() == ST_CALIBRATING)
             {
-              terminal.setBackgroundColor(getResources().getColor(R.color.colorError));
-              terminal.setText(tx(R.string.not_connected));
+              getSupportActionBar().setTitle(R.string.calibrating);
+              getSupportActionBar().setIcon(R.drawable.ic_cal_s);
             }
           }
         });
@@ -139,12 +151,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   {
     BlueTooth b = new BlueTooth(C.SERVER_NAME, this, new BTInterface()
     {
-      @Override
-      public void showMessage(String msg)
-      {
-        myMessage(msg);
-      }
-
       @Override
       public void exit(String msg)
       {
@@ -176,9 +182,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         {
           public void run()
           {
-            Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, tx(R.string.connected), Toast.LENGTH_SHORT).show();
           }
         });
+      }
+
+      @Override
+      public void onError()
+      {
+        myMessage(tx(R.string.connection_failed));
       }
     });
 
@@ -251,16 +263,27 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     int id = item.getItemId();
 
     if (id == R.id.move) {
-      setFragment("move", MoveFragment.class, new Bundle());
+      if (TelescopeStatus.get() != ST_READY)
+        Snackbar.make(currentFragment.getView(), tx(R.string.not_calibrated), Snackbar.LENGTH_LONG)
+            .setAction("Calibrated", null).show();
+      else
+        setFragment("move", MoveFragment.class, new Bundle());
     } else if (id == R.id.track) {
-
+      if (TelescopeStatus.get() != ST_READY)
+        Snackbar.make(currentFragment.getView(), tx(R.string.not_calibrated), Snackbar.LENGTH_LONG)
+            .setAction("Calibrated", null).show();
+      else
+        setFragment("move", MoveFragment.class, new Bundle());
     } else if (id == R.id.calibrate) {
-      setFragment("manual control", ManualFragment.class, new Bundle());
-      promptToCalibration();
-    } else if (id == R.id.nav_share) {
-
-    } else if (id == R.id.nav_send) {
-
+      if (TelescopeStatus.get() == ST_NOT_CAL) {
+        TelescopeStatus.set(ST_CALIBRATING);
+        setFragment("move", MoveFragment.class, new Bundle());
+        setFragment("manual control", ManualFragment.class, new Bundle());
+        promptToCalibration();
+      }
+    } else if (id == R.id.connect) {
+      if (TelescopeStatus.get() == ST_NOT_CONNECTED)
+        connect(true);
     }
 
     DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -276,7 +299,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       {
 
         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle("Alert");
+        alertDialog.setTitle(tx(R.string.warning));
         alertDialog.setMessage(msg);
         alertDialog.setButton(
             AlertDialog.BUTTON_NEUTRAL, "OK",
@@ -313,9 +336,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     MOVING
   }
 
-  /*
-  type: 0 - Connecting
-   */
   public void progressOn(ProgressType type)
   {
     ProgressBar progress = new ProgressBar(this);
@@ -352,7 +372,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     ll_progress.addView(progress, lp_progress);
     ll_progress.addView(loadingText, lp_loading);
     final FrameLayout.LayoutParams lp_ll = new FrameLayout.LayoutParams(
-        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
     );
     lp_ll.gravity = Gravity.CENTER;
     ll_progress.setLayoutParams(lp_ll);
@@ -363,14 +383,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         ((ConstraintLayout) findViewById(R.id.content)).addView(ll_progress, lp_ll);
       }
     });
-
   }
 
   public void pOn(ProgressType type)
   {
     progressOn(type);
   }
-
 
   public void pOff()
   {

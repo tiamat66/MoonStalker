@@ -12,33 +12,44 @@
 
   <ImageView
     android:id="@+id/logo"
-    android:layout_width="0dp"
+    android:layout_width="352dp"
     android:layout_height="0dp"
     android:layout_marginStart="16dp"
-    android:layout_marginEnd="27dp"
-    android:layout_marginBottom="355dp"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintEnd_toEndOf="@+id/msg_window"
+    android:layout_marginTop="16dp"
+    android:layout_marginBottom="42dp"
+    app:layout_constraintBottom_toTopOf="@+id/msg_window"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/msg_window"
+    app:layout_constraintTop_toTopOf="parent"
     app:srcCompat="@drawable/moonstalker_logo"
     tools:ignore="ContentDescription,VectorDrawableCompat" />
 
   <TextView
     android:id="@+id/msg_window"
     android:layout_width="0dp"
-    android:layout_height="0dp"
+    android:layout_height="wrap_content"
     android:layout_marginStart="16dp"
-    android:layout_marginTop="3dp"
     android:layout_marginEnd="16dp"
-    android:background="@color/colorError"
+    android:background="@color/colorPrimary"
     android:text=""
     android:textSize="24sp"
     android:textStyle="bold"
-    android:visibility="visible"
-    app:layout_constraintBottom_toTopOf="@+id/logo"
+    android:visibility="gone"
+    app:layout_constraintBottom_toTopOf="@+id/sky_object"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent" />
+    app:layout_constraintTop_toBottomOf="@+id/logo" />
+
+  <Spinner
+    android:id="@+id/sky_object"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="320dp"
+    android:visibility="gone"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/msg_window" />
 
 </android.support.constraint.ConstraintLayout>

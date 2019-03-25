@@ -34,6 +34,7 @@ public class C
   static final int ST_NOT_CAL =  9;
   static final int ST_NOT_CONNECTED = 10;
   static final int ST_CONNECTED     = 12;
+  static final int ST_CALIBRATING   = 13;
 
   public static AstroObject curObj = null;
   public static String curConstellation = "";

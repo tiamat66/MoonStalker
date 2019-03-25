@@ -15,11 +15,11 @@ import static si.vajnartech.moonstalker.C.TAG;
 
 interface BTInterface
 {
-  void showMessage(String msg);
   void exit(String msg);
   void progressOn();
   void progressOff();
   void onOk();
+  void onError();
 }
 
 class BlueTooth extends AsyncTask<String, Void, Void>
@@ -94,9 +94,9 @@ class BlueTooth extends AsyncTask<String, Void, Void>
       btInterface.onOk();
     } catch (IOException connectException) {
       connectException.printStackTrace();
+      btInterface.onError();
       try {
         Log.i(TAG, "Connection refused=" + socket);
-        btInterface.showMessage("Connection refused");
         btInterface.progressOff();
         socket.close();
       } catch (IOException ignored) { }

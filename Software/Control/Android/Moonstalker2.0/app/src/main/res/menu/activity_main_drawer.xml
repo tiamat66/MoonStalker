@@ -8,26 +8,29 @@
       android:id="@+id/move"
       android:icon="@drawable/ic_menu_camera"
       android:title="@string/move" />
-    <item
-      android:id="@+id/calibrate"
-      android:icon="@drawable/ic_menu_gallery"
-      android:title="@string/calibrate" />
+
     <item
       android:id="@+id/track"
       android:icon="@drawable/ic_menu_slideshow"
       android:title="@string/track" />
+
+    <item
+      android:id="@+id/manual"
+      android:icon="@drawable/ic_menu_slideshow"
+      android:title="@string/manual" />
+
   </group>
 
-  <item android:title="Communicate">
+  <item android:title="@string/communicate">
     <menu>
       <item
-        android:id="@+id/nav_share"
-        android:icon="@drawable/ic_menu_share"
-        android:title="Share" />
+        android:id="@+id/connect"
+        android:icon="@drawable/ic_menu_slideshow"
+        android:title="@string/connect" />
       <item
-        android:id="@+id/nav_send"
-        android:icon="@drawable/ic_menu_send"
-        android:title="Send" />
+        android:id="@+id/calibrate"
+        android:icon="@drawable/ic_menu_gallery"
+        android:title="@string/calibrate" />
     </menu>
   </item>
 
