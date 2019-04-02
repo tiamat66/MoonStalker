@@ -11,6 +11,7 @@ final class TelescopeStatus
 {
   private static float  btryVoltage = -1;
   private static int status = -1;
+  private static int mode = -1;
   private static String error = "";
 
   static void setBatteryVoltage(float voltage)
@@ -24,6 +25,16 @@ final class TelescopeStatus
   static float getBtryVoltage()
   {
     return btryVoltage;
+  }
+
+  static void setMode(int m)
+  {
+    mode = m;
+  }
+
+  static int getMode()
+  {
+    return mode;
   }
 
   static void set(int st)

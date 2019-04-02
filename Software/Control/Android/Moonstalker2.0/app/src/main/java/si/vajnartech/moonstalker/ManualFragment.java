@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 
 import static si.vajnartech.moonstalker.C.ST_READY;
 
-public class ManualFragment extends MyFragment implements View.OnTouchListener
+public class ManualFragment extends MyFragment
 {
   float dX, dY;
   D dK = new D();
@@ -19,47 +19,46 @@ public class ManualFragment extends MyFragment implements View.OnTouchListener
   {
     View res = inflater.inflate(R.layout.frag_manual, container, false);
     res.findViewById(R.id.key_pad);
-    res.setOnTouchListener(this);
+    res.setOnTouchListener(new View.OnTouchListener() {
+      @Override public boolean onTouch(View view, MotionEvent event)
+      {
+        double rx, ry;
+
+        switch (event.getAction()) {
+        case MotionEvent.ACTION_DOWN:
+          dX = view.getX() - event.getRawX();
+          dY = view.getY() - event.getRawY();
+          rx = event.getRawX();
+          ry = event.getRawY();
+          dK.up(new D(rx, ry));
+          view.performClick();
+          break;
+        case MotionEvent.ACTION_MOVE:
+          if (TelescopeStatus.get() == ST_READY) {
+            rx = event.getRawX();
+            ry = event.getRawY();
+            dK.up(new D(rx, ry));
+            dK.is(dK.mul(new D(1.0, -1.0))); // negate y part of point
+            if (dK.getDirection() != C.Directions.NONE) {
+              d = dK.getDirection();
+              act.ctrl.moveStart(d);
+            }
+          }
+          break;
+        case MotionEvent.ACTION_UP:
+          d = C.Directions.NONE;
+          act.ctrl.moveStop();
+          break;
+        default:
+          return false;
+        }
+        return true;
+      }
+    });
     return res;
   }
 
   C.Directions d = C.Directions.NONE;
-
-  @Override
-  public boolean onTouch(View view, MotionEvent event)
-  {
-    double rx, ry;
-
-    switch (event.getAction()) {
-    case MotionEvent.ACTION_DOWN:
-      dX = view.getX() - event.getRawX();
-      dY = view.getY() - event.getRawY();
-      rx = event.getRawX();
-      ry = event.getRawY();
-      dK.up(new D(rx, ry));
-      view.performClick();
-      break;
-    case MotionEvent.ACTION_MOVE:
-      if (TelescopeStatus.get() == ST_READY) {
-        rx = event.getRawX();
-        ry = event.getRawY();
-        dK.up(new D(rx, ry));
-        dK.is(dK.mul(new D(1.0, -1.0))); // negate y part of point
-        if (dK.getDirection() != C.Directions.NONE) {
-          d = dK.getDirection();
-          act.ctrl.moveStart(d);
-        }
-      }
-      break;
-    case MotionEvent.ACTION_UP:
-      d = C.Directions.NONE;
-      act.ctrl.moveStop();
-      break;
-    default:
-      return false;
-    }
-    return true;
-  }
 }
 
 class D

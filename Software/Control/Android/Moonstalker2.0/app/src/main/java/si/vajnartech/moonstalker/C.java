@@ -35,6 +35,9 @@ public class C
   static final int ST_NOT_CONNECTED = 10;
   static final int ST_CONNECTED     = 12;
   static final int ST_CALIBRATING   = 13;
+  static final int ST_MANUAL   = 14;
+  static final int ST_MOVING_E = 15;
+  static final int ST_MOVING_S = 16;
 
   // Moving directions
   public enum Directions

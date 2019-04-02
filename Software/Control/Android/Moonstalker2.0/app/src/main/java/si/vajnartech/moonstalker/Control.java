@@ -9,10 +9,11 @@ import android.util.Log;
 import java.util.LinkedList;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.ST_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
-import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
+import static si.vajnartech.moonstalker.C.ST_MOVING_E;
+import static si.vajnartech.moonstalker.C.ST_MOVING_S;
 import static si.vajnartech.moonstalker.C.ST_READY;
-import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.OpCodes.BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.ERROR;
@@ -47,13 +48,13 @@ public class Control extends Telescope
 
   void moveStart(C.Directions direction)
   {
-    Log.i(TAG, "ROCNI PREMIK=" + direction);
-    TelescopeStatus.set(ST_MOVING);
+    TelescopeStatus.set(ST_MOVING_S);
     outMessageProcess(MOVE_START, Integer.toString(direction.getValue()), "");
   }
 
   void moveStop()
   {
+    TelescopeStatus.set(ST_MOVING_E);
     outMessageProcess(MOVE_STOP, "", "");
   }
 
@@ -187,16 +188,16 @@ public class Control extends Telescope
   private void processReady()
   {
     Log.i(TAG, "processReady in Control");
-    switch (TelescopeStatus.get()) {
-    case ST_NOT_CAL:
-      break;
-    case ST_MOVING:
-    case ST_READY:
+    if (TelescopeStatus.get() == ST_CONNECTED)
+    {
       TelescopeStatus.set(ST_READY);
-      break;
-    case ST_TRACING:
-      TelescopeStatus.set(ST_TRACING);
-      break;
+      TelescopeStatus.setMode(ST_READY);
+    } else if (TelescopeStatus.get() == ST_MOVING)
+    {
+      TelescopeStatus.set(ST_READY);
+    } else if (TelescopeStatus.get() == ST_MOVING_E)
+    {
+      TelescopeStatus.set(ST_READY);
     }
   }
 

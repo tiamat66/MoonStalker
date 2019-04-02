@@ -119,7 +119,6 @@ public abstract class Telescope extends PositionCalculus
   void init()
   {
     inMsgProcess(INIT, new Bundle());
-    TelescopeStatus.set(ST_NOT_CAL);
   }
 
   @SuppressLint("HandlerLeak")
