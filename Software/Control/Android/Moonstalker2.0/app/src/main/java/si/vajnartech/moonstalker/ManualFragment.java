@@ -7,7 +7,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
+import static si.vajnartech.moonstalker.C.ST_MOVING;
+import static si.vajnartech.moonstalker.C.ST_MOVING_E;
 import static si.vajnartech.moonstalker.C.ST_READY;
+import static si.vajnartech.moonstalker.C.curObj;
 
 public class ManualFragment extends MyFragment
 {
@@ -19,10 +23,23 @@ public class ManualFragment extends MyFragment
   {
     View res = inflater.inflate(R.layout.frag_manual, container, false);
     res.findViewById(R.id.key_pad);
+    act.findViewById(R.id.sky_object).setVisibility(View.GONE);
+    act.findViewById(R.id.logo).setVisibility(View.GONE);
+    if (TelescopeStatus.getMode() == ST_CALIBRATING) {
+      act.terminal.setText(String.format(act.tx(R.string.to_calibrate), curObj.name));
+      act.terminal.show();
+    }
+    else
+      act.terminal.hide();
+
     res.setOnTouchListener(new View.OnTouchListener() {
       @Override public boolean onTouch(View view, MotionEvent event)
       {
         double rx, ry;
+        // deactivate touch-screen while moving
+        if(TelescopeStatus.get() == ST_MOVING ||
+           TelescopeStatus.get() == ST_MOVING_E)
+          return true;
 
         switch (event.getAction()) {
         case MotionEvent.ACTION_DOWN:

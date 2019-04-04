@@ -4,6 +4,8 @@ import android.util.Log;
 
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_CONNECTED;
+import static si.vajnartech.moonstalker.C.ST_MANUAL;
+import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_MOVING_S;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
@@ -55,7 +57,15 @@ public class StatusSM extends Thread
       if (TelescopeStatus.get() == prevStatus && TelescopeStatus.getMode() == prevMode)
         continue;
 
-      if (prevMode == ST_READY && TelescopeStatus.getMode() == ST_CALIBRATING) {
+      if (prevMode == ST_CALIBRATING && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
+        prevMode = TelescopeStatus.getMode();
+        inf.updateStatus();
+      }
+      else if (prevMode == ST_READY && TelescopeStatus.getMode() == ST_MANUAL) {
+        prevMode = TelescopeStatus.getMode();
+        inf.updateStatus();
+      }
+      else if (prevMode == ST_READY && TelescopeStatus.getMode() == ST_CALIBRATING) {
         prevMode = ST_CALIBRATING;
         inf.updateStatus();
       } else if (prevStatus == ST_NOT_CONNECTED && TelescopeStatus.get() == ST_CONNECTED) {
@@ -81,8 +91,8 @@ public class StatusSM extends Thread
       } else if (prevStatus == ST_NOT_CAL && TelescopeStatus.get() == ST_CALIBRATING) {
         prevStatus = ST_CALIBRATING;
         inf.updateStatus();
-      } else if (prevStatus == ST_CALIBRATING && TelescopeStatus.get() == ST_READY) {
-        prevStatus = ST_READY;
+      } else if (prevMode == ST_CALIBRATING && TelescopeStatus.get() == ST_READY) {
+        prevStatus = TelescopeStatus.get();
         inf.updateStatus();
       }
     }

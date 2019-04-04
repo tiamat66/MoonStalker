@@ -12,44 +12,35 @@
 
   <ImageView
     android:id="@+id/logo"
-    android:layout_width="352dp"
-    android:layout_height="0dp"
-    android:layout_marginStart="16dp"
-    android:layout_marginTop="16dp"
-    android:layout_marginBottom="42dp"
-    app:layout_constraintBottom_toTopOf="@+id/msg_window"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent"
+    android:layout_width="354dp"
+    android:layout_height="351dp"
+    android:visibility="visible"
     app:srcCompat="@drawable/moonstalker_logo"
-    tools:ignore="ContentDescription,VectorDrawableCompat" />
+    tools:ignore="ContentDescription,VectorDrawableCompat"
+    tools:layout_editor_absoluteX="29dp"
+    tools:layout_editor_absoluteY="249dp" />
 
   <TextView
     android:id="@+id/msg_window"
-    android:layout_width="0dp"
+    android:layout_width="379dp"
     android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
+    android:layout_marginTop="8dp"
     android:background="@color/colorPrimary"
     android:text=""
+    android:textAlignment="center"
     android:textSize="24sp"
     android:textStyle="bold"
-    android:visibility="gone"
-    app:layout_constraintBottom_toTopOf="@+id/sky_object"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/logo" />
+    android:visibility="visible"
+    app:layout_constraintTop_toTopOf="parent"
+    tools:layout_editor_absoluteX="16dp" />
 
   <Spinner
     android:id="@+id/sky_object"
-    android:layout_width="0dp"
-    android:layout_height="0dp"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginBottom="320dp"
-    android:visibility="gone"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/msg_window" />
+    android:layout_width="395dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:visibility="visible"
+    app:layout_constraintTop_toBottomOf="@+id/msg_window"
+    tools:layout_editor_absoluteX="8dp" />
 
 </android.support.constraint.ConstraintLayout>

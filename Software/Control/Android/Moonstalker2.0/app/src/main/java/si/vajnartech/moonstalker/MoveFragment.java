@@ -32,6 +32,7 @@ public class MoveFragment extends MyFragment
     skyObjects = act.findViewById(R.id.sky_object);
     skyObjects.setVisibility(View.VISIBLE);
     act.terminal.show();
+    act.findViewById(R.id.logo).setVisibility(View.VISIBLE);
     initAstroObjDropDown();
     setPositionString();
     return res;

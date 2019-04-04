@@ -29,7 +29,7 @@ final class TerminalWindow
     tv.setVisibility(View.VISIBLE);
   }
 
-  private void hide()
+  void hide()
   {
     tv.setVisibility(View.GONE);
   }

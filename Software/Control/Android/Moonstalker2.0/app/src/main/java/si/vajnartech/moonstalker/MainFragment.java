@@ -11,6 +11,10 @@ public class MainFragment extends MyFragment
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
-    return inflater.inflate(R.layout.content_main, container, false);
+    View res = inflater.inflate(R.layout.content_main, container, false);
+    res.findViewById(R.id.logo).setVisibility(View.VISIBLE);
+    res.findViewById(R.id.msg_window).setVisibility(View.GONE);
+    res.findViewById(R.id.sky_object).setVisibility(View.GONE);
+    return res;
   }
 }
