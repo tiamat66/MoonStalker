@@ -115,6 +115,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           public void run()
           {
             if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
+              terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+              ((MoveFragment) currentFragment).setPositionString();
               getSupportActionBar().setTitle(R.string.ready);
               getSupportActionBar().setIcon(R.drawable.ic_ok_s);
               menu.findItem(R.id.calibrate).setEnabled(false);

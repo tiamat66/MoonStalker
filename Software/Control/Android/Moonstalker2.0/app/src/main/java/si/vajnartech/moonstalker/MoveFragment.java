@@ -32,6 +32,7 @@ public class MoveFragment extends MyFragment
     skyObjects = act.findViewById(R.id.sky_object);
     skyObjects.setVisibility(View.VISIBLE);
     act.terminal.show();
+    act.terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
     act.findViewById(R.id.logo).setVisibility(View.VISIBLE);
     initAstroObjDropDown();
     setPositionString();
@@ -50,6 +51,8 @@ public class MoveFragment extends MyFragment
       {
         C.calConstellation = getCFromStar();
         setPositionString();
+        if (!curObj.name.equals(C.calObj))
+          act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent));
       }
     });
   }
@@ -124,7 +127,7 @@ public class MoveFragment extends MyFragment
     return String.format("%s (%s)\n%s | %s", curObj.name, C.calConstellation, az, h);
   }
 
-  private void setPositionString()
+  public void setPositionString()
   {
     act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h));
   }

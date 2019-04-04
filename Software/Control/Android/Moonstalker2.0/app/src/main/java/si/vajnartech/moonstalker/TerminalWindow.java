@@ -3,6 +3,7 @@ package si.vajnartech.moonstalker;
 import android.view.View;
 import android.widget.TextView;
 
+@SuppressWarnings("SameParameterValue")
 final class TerminalWindow
 {
   private TextView tv;
