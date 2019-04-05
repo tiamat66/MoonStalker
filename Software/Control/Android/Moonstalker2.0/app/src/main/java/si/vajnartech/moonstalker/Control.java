@@ -208,12 +208,6 @@ public class Control extends Telescope
     Log.i(TAG, "Release--------------------------------------------------------------------------");
     isSocketFree = true;
   }
-
-  @Override
-  boolean isLocked()
-  {
-    return !isSocketFree;
-  }
 }
 
 

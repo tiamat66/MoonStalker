@@ -62,8 +62,14 @@ public class StatusSM extends Thread
           TelescopeStatus.getMode() != ST_TRACING)
         continue;
 
-      if (prevMode == ST_TRACING && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
+      if (prevMode == ST_MOVE_TO_OBJECT && TelescopeStatus.getMode() == ST_MANUAL) {
         prevMode = TelescopeStatus.getMode();
+        inf.updateStatus();
+      }
+      else if (prevMode == ST_TRACING && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
+        prevMode = TelescopeStatus.getMode();
+        inf.updateStatus();
+        continue;
       }
       else if ((prevMode == ST_CALIBRATING || prevMode == ST_MOVE_TO_OBJECT) && TelescopeStatus.getMode() == ST_TRACING) {
         prevMode = TelescopeStatus.getMode();
