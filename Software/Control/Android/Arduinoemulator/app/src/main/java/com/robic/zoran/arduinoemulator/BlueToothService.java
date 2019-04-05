@@ -292,24 +292,27 @@ class BlueToothService
     Command(String msg)
     {
       super(msg);
-      Log.i(TAG, "COMAND = " + result.opCode);
-      processMessage();
+      Log.i(TAG, "COMAND = " + msg);
+      processMessage(msg);
     }
 
-    private void processMessage()
+    private void processMessage(String msg)
     {
-      switch (result.opCode) {
-      case OpCodes.ST:
+      if (msg.contains("MV")) {
+        Log.i(TAG, "Process MOVE message from Client");
+        move();
+        return;
+      }
+
+      switch (msg) {
+      case "<ST?>":
         Log.i(TAG, "Process STATUS message from Client");
         rdy();
         break;
-      case OpCodes.BTRY:
+      case "<BTRY?>":
         Log.i(TAG, "Process BTRY message from Client");
         btryRes();
         break;
-      case OpCodes.MOVE:
-        Log.i(TAG, "Process MOVE message from Client");
-        move();
       default:
         Log.i(TAG, "processMessage in ProcessMsg: Unknown op code");
       }
@@ -335,7 +338,7 @@ class BlueToothService
     {
       @Override public void run()
       {
-        write(Json.toJson(new Response(OpCodes.RDY)));
+        write("<RDY>");
       }
     }, 500);
   }
@@ -347,9 +350,9 @@ class BlueToothService
     {
       @Override public void run()
       {
-        write(Json.toJson(new Response(OpCodes.RDY)));
+        write("<RDY>");
       }
-    }, 1000);
+    }, 5000);
   }
 
   private void btryRes()
@@ -359,17 +362,9 @@ class BlueToothService
     {
       @Override public void run()
       {
-        write(Json.toJson(new Response(OpCodes.BTRY, "11.3")));
+        write("<BTRY 11.3>");
       }
     }, 700);
-  }
-
-  static class OpCodes
-  {
-    final static int ST   = 1;
-    final static int RDY  = 2;
-    final static int BTRY = 3;
-    final static int MOVE = 7;
   }
 }
 
