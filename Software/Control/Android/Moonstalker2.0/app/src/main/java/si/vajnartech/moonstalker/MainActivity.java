@@ -408,7 +408,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
               }
             });
         alertDialog.setButton(
-            AlertDialog.BUTTON_NEGATIVE, tx(R.string.cancel),
+            AlertDialog.BUTTON_NEGATIVE, tx(android.R.string.cancel),
             new DialogInterface.OnClickListener()
             {
               @Override

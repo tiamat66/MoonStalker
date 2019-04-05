@@ -9,6 +9,7 @@
   <string name="calibration_ntfy">Manually move telescope to calibration object and confirm.</string>
   <string name="connecting">Connecting</string>
   <string name="connected">connected</string>
+  <string name="tracing">tracking</string>
   <string name="moving">Moving</string>
   <string name="initializing">Initializing</string>
   <string name="calibrated">calibrated</string>
@@ -25,7 +26,6 @@
   <string name="connect">Connect</string>
   <string name="communicate">Communicate</string>
   <string name="to_calibrate">move to %s</string>
-  <string name="cancel">CANCEL</string>
   <string name="ok">OK</string>
   <string name="to_manual_move">You will cancel the calibration. Proceed?</string>
 

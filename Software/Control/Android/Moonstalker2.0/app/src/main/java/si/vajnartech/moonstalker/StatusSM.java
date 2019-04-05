@@ -11,6 +11,7 @@ import static si.vajnartech.moonstalker.C.ST_MOVING_S;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
+import static si.vajnartech.moonstalker.C.ST_TRACING;
 
 interface Nucleus
 {
@@ -21,6 +22,8 @@ interface Nucleus
   void startProgress(MainActivity.ProgressType pt);
 
   void stopProgress();
+
+  void move();
 }
 
 public class StatusSM extends Thread
@@ -54,10 +57,24 @@ public class StatusSM extends Thread
       Log.i("STATUS", "[prev, current]=" + prevStatus + "," + TelescopeStatus.get());
       Log.i("STATUS", "[prev, current]=" + prevMode + "," + TelescopeStatus.getMode());
 
-      if (TelescopeStatus.get() == prevStatus && TelescopeStatus.getMode() == prevMode)
+      if (TelescopeStatus.get() == prevStatus &&
+          TelescopeStatus.getMode() == prevMode &&
+          TelescopeStatus.getMode() != ST_TRACING)
         continue;
 
-      if (prevMode == ST_CALIBRATING && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
+      if (prevMode == ST_TRACING && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
+        prevMode = TelescopeStatus.getMode();
+      }
+      else if ((prevMode == ST_CALIBRATING || prevMode == ST_MOVE_TO_OBJECT) && TelescopeStatus.getMode() == ST_TRACING) {
+        prevMode = TelescopeStatus.getMode();
+        inf.updateStatus();
+        continue;
+      }
+      else if (prevMode == ST_MANUAL && TelescopeStatus.getMode() == ST_READY) {
+        prevMode = TelescopeStatus.getMode();
+        inf.updateStatus();
+      }
+      else if (prevMode == ST_CALIBRATING && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
         prevMode = TelescopeStatus.getMode();
         inf.updateStatus();
       }
@@ -69,7 +86,6 @@ public class StatusSM extends Thread
         prevMode = ST_CALIBRATING;
         inf.updateStatus();
       } else if (prevStatus == ST_NOT_CONNECTED && TelescopeStatus.get() == ST_CONNECTED) {
-        Log.i("STATUS", "init telescope");
         inf.startProgress(MainActivity.ProgressType.INITIALIZING);
         inf.initTelescope();
         prevStatus = ST_CONNECTED;
@@ -83,10 +99,12 @@ public class StatusSM extends Thread
         inf.updateStatus();
       } else if (prevStatus == ST_READY && (TelescopeStatus.get() == ST_MOVING || TelescopeStatus.get() == ST_MOVING_S)) {
         prevStatus = TelescopeStatus.get();
-        inf.startProgress(MainActivity.ProgressType.MOVING);
+        if (prevMode != ST_TRACING)
+          inf.startProgress(MainActivity.ProgressType.MOVING);
       } else if ((prevStatus == ST_MOVING || prevStatus == ST_MOVING_S) && TelescopeStatus.get() == ST_READY) {
         prevStatus = TelescopeStatus.get();
-        inf.stopProgress();
+        if (prevMode != ST_TRACING)
+          inf.stopProgress();
         inf.updateStatus();
       } else if (prevStatus == ST_NOT_CAL && TelescopeStatus.get() == ST_CALIBRATING) {
         prevStatus = ST_CALIBRATING;
@@ -95,6 +113,9 @@ public class StatusSM extends Thread
         prevStatus = TelescopeStatus.get();
         inf.updateStatus();
       }
+      // ##
+      if (prevMode == ST_TRACING)
+        inf.move();
     }
   }
 }

@@ -187,16 +187,13 @@ public class Control extends Telescope
 
   private void processReady()
   {
-    Log.i(TAG, "processReady in Control");
-    if (TelescopeStatus.get() == ST_CONNECTED)
-    {
+    Log.i(TAG, "processReady in Control = " + TelescopeStatus.get());
+    if (TelescopeStatus.get() == ST_CONNECTED) {
       TelescopeStatus.set(ST_READY);
       TelescopeStatus.setMode(ST_READY);
-    } else if (TelescopeStatus.get() == ST_MOVING)
-    {
+    } else if (TelescopeStatus.get() == ST_MOVING) {
       TelescopeStatus.set(ST_READY);
-    } else if (TelescopeStatus.get() == ST_MOVING_E)
-    {
+    } else if (TelescopeStatus.get() == ST_MOVING_E) {
       TelescopeStatus.set(ST_READY);
     }
   }

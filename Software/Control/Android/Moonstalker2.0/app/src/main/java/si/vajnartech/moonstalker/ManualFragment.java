@@ -22,7 +22,7 @@ public class ManualFragment extends MyFragment
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
     View res = inflater.inflate(R.layout.frag_manual, container, false);
-    res.findViewById(R.id.key_pad);
+    View kp = res.findViewById(R.id.key_pad);
     act.findViewById(R.id.sky_object).setVisibility(View.GONE);
     act.findViewById(R.id.logo).setVisibility(View.GONE);
     if (TelescopeStatus.getMode() == ST_CALIBRATING) {
@@ -32,7 +32,7 @@ public class ManualFragment extends MyFragment
     else
       act.terminal.hide();
 
-    res.setOnTouchListener(new View.OnTouchListener() {
+    kp.setOnTouchListener(new View.OnTouchListener() {
       @Override public boolean onTouch(View view, MotionEvent event)
       {
         double rx, ry;
