@@ -120,7 +120,7 @@ public class MoveFragment extends MyFragment
 
   private String formatPositionString(double azimuth, double height)
   {
-    DecimalFormat df = new DecimalFormat("###.##");
+    DecimalFormat df = new DecimalFormat("000.00");
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
