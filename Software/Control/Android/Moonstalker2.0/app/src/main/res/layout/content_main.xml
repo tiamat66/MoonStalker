@@ -43,4 +43,13 @@
     app:layout_constraintTop_toBottomOf="@+id/msg_window"
     tools:layout_editor_absoluteX="8dp" />
 
+  <Spinner
+    android:id="@+id/constelation"
+    android:layout_width="395dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="40dp"
+    android:visibility="visible"
+    app:layout_constraintTop_toBottomOf="@+id/msg_window"
+    tools:layout_editor_absoluteX="8dp" />
+
 </android.support.constraint.ConstraintLayout>
