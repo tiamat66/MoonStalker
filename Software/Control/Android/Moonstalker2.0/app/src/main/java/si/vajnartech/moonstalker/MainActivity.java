@@ -71,7 +71,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onClick(View view)
       {
-        if (TelescopeStatus.getMode() == ST_MANUAL) {
+        if (TelescopeStatus.get() == ST_NOT_CONNECTED) {
+          connect(true);
+        }
+        else if (TelescopeStatus.getMode() == ST_MANUAL) {
           update(ST_READY, ST_READY);
           setFragment("main", MainFragment.class, new Bundle());
         }
@@ -99,11 +102,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     navigationView.setNavigationItemSelectedListener(this);
 
     menu = navigationView.getMenu();
-    menu.findItem(R.id.move).setEnabled(false);
-    menu.findItem(R.id.track).setEnabled(false);
-    menu.findItem(R.id.calibrate).setEnabled(false);
-    menu.findItem(R.id.manual).setEnabled(false);
-
+    drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     setFragment("main", MainFragment.class, new Bundle());
 
     // init terminal window
@@ -122,7 +121,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
 
       @SuppressWarnings("SameParameterValue")
-      void update(Integer title, Integer icon, boolean ca, boolean ma, boolean tr, boolean mo, boolean co)
+      void update(Integer title, Integer icon, boolean ca, boolean ma, boolean tr, boolean mo)
       {
         if (title != null)
           getSupportActionBar().setTitle(title);
@@ -132,7 +131,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         menu.findItem(R.id.manual).setEnabled(ma);
         menu.findItem(R.id.track).setEnabled(tr);
         menu.findItem(R.id.move).setEnabled(mo);
-        menu.findItem(R.id.connect).setEnabled(co);
         drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
       }
 
@@ -158,19 +156,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
               terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent2));
               update(R.string.tracing, R.drawable.ic_mv_s);
             } else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
-              update(R.string.ready, R.drawable.ic_ok_s, false, true, true, false, false);
+              update(R.string.ready, R.drawable.ic_ok_s, false, true, true, false);
               terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
               if (currentFragment instanceof MoveFragment)
                 ((MoveFragment) currentFragment).setPositionString();
             } else if (TelescopeStatus.getMode() == ST_MANUAL) {
               update(R.string.ready, R.drawable.ic_ok_s);
             } else if (TelescopeStatus.getMode() == ST_CALIBRATED) {
-              update(R.string.calibrated, R.drawable.ic_ok_s, false, true, true, true, false);
+              update(R.string.calibrated, R.drawable.ic_ok_s, false, true, true, true);
             } else if (TelescopeStatus.getMode() == ST_CALIBRATING) {
               update(R.string.calibrating, R.drawable.ic_cal_s);
             } else if (TelescopeStatus.get() == ST_READY) {
               if (TelescopeStatus.getMode() != ST_TRACING)
-                update(R.string.ready, R.drawable.ic_ok_s, true, true, false, false, false);
+                update(R.string.ready, R.drawable.ic_ok_s, true, true, false, false);
             }
           }
         });
@@ -340,9 +338,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       TelescopeStatus.setMode(ST_CALIBRATING);
       setFragment("manual", ManualFragment.class, new Bundle());
       promptToCalibration();
-    } else if (id == R.id.connect) {
-      if (TelescopeStatus.get() == ST_NOT_CONNECTED)
-        connect(true);
     } else if (id == R.id.manual) {
       if (TelescopeStatus.getMode() != ST_CALIBRATED && TelescopeStatus.getMode() != ST_MOVE_TO_OBJECT) {
         setFragment("manual control", ManualFragment.class, new Bundle());

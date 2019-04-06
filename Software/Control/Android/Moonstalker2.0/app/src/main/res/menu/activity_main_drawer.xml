@@ -19,19 +19,11 @@
       android:icon="@drawable/ic_menu_slideshow"
       android:title="@string/manual" />
 
-  </group>
+    <item
+      android:id="@+id/calibrate"
+      android:icon="@drawable/ic_menu_gallery"
+      android:title="@string/calibrate" />
 
-  <item android:title="@string/communicate">
-    <menu>
-      <item
-        android:id="@+id/connect"
-        android:icon="@drawable/ic_menu_slideshow"
-        android:title="@string/connect" />
-      <item
-        android:id="@+id/calibrate"
-        android:icon="@drawable/ic_menu_gallery"
-        android:title="@string/calibrate" />
-    </menu>
-  </item>
+  </group>
 
 </menu>
