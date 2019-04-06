@@ -307,7 +307,7 @@ void handle_incoming_command(char *command_buff)
     int volt_mv = get_battery_voltage();
     Serial1.print("<BTRY ");
     Serial1.print(volt_mv);
-    Serial1.println(" mV>");
+    Serial1.println(">");
   }
   else if (!strcmp(cmd, "MVST?"))
   {
