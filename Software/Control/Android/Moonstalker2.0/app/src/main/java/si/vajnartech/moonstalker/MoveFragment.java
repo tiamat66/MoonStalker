@@ -16,6 +16,7 @@ import si.vajnartech.moonstalker.rest.GetConstellationInfo;
 import si.vajnartech.moonstalker.rest.GetSkyObjInfo;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
+import static si.vajnartech.moonstalker.C.calConstellation;
 import static si.vajnartech.moonstalker.C.curObj;
 
 public class MoveFragment extends MyFragment
@@ -52,11 +53,11 @@ public class MoveFragment extends MyFragment
       @Override
       public void updateConstellation()
       {
-        C.calConstellation = getCFromStar();
+        calConstellation = getCFromStar();
         setPositionString();
         if (!curObj.name.equals(C.calObj))
           act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent));
-        constellations.setSelection(constellationAdapter.getPosition(C.calConstellation));
+        constellations.setSelection(constellationAdapter.getPosition(calConstellation));
       }
     });
   }
@@ -64,6 +65,7 @@ public class MoveFragment extends MyFragment
   private void initConstellationObjDropDown()
   {
     constellations.setAdapter(constellationAdapter);
+    constellations.setSelection(constellationAdapter.getPosition(calConstellation));
     constellations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
     {
       @Override
@@ -79,9 +81,7 @@ public class MoveFragment extends MyFragment
   private void initAstroObjDropDown()
   {
     skyObjects.setAdapter(skyObjAdapter);
-
     skyObjects.setSelection(skyObjAdapter.getPosition(curObj.name));
-
     skyObjects.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
     {
       @Override
@@ -143,7 +143,7 @@ public class MoveFragment extends MyFragment
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
-    return String.format("%s (%s)\n%s | %s", curObj.name, C.calConstellation, az, h);
+    return String.format("%s (%s)\n%s | %s", curObj.name, calConstellation, az, h);
   }
 
   public void setPositionString()

@@ -28,6 +28,7 @@
   <string name="to_calibrate">move to %s</string>
   <string name="ok">OK</string>
   <string name="to_manual_move">You will cancel the calibration. Proceed?</string>
+  <string name="sett_device">Telescope device name</string>
 
   <string-array name="sky_objects">
     <item>Polaris</item>
