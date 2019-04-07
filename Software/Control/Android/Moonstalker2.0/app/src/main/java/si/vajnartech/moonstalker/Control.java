@@ -22,8 +22,10 @@ import static si.vajnartech.moonstalker.OpCodes.GET_STATUS;
 import static si.vajnartech.moonstalker.OpCodes.INIT;
 import static si.vajnartech.moonstalker.OpCodes.IN_MSG;
 import static si.vajnartech.moonstalker.OpCodes.MOVE;
+import static si.vajnartech.moonstalker.OpCodes.MOVE_ACK;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_START;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_STOP;
+import static si.vajnartech.moonstalker.OpCodes.NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.READY;
 
 interface ControlInterface
@@ -128,6 +130,12 @@ public class Control extends Telescope
         outMessageProcess(GET_STATUS, "", "");
         outMessageProcess(GET_BATTERY, "", "");
         break;
+      case NOT_READY:
+        processNotReady();
+        break;
+      case MOVE_ACK:
+        processMvAck();
+        break;
       default:
         return;
       }
@@ -165,12 +173,14 @@ public class Control extends Telescope
             if (!isSocketFree || instrBuffer.isEmpty()) continue;
             lock();
             new IOProcessor(instrBuffer.removeFirst(), new ControlInterface() {
-              @Override public void releaseSocket()
+              @Override
+              public void releaseSocket()
               {
                 release();
               }
 
-              @Override public void messageProcess(String msg, Bundle bundle)
+              @Override
+              public void messageProcess(String msg, Bundle bundle)
               {
                 inMsgProcess(msg, bundle);
               }
@@ -189,6 +199,7 @@ public class Control extends Telescope
   private void processReady()
   {
     Log.i(TAG, "processReady in Control = " + TelescopeStatus.get());
+    TelescopeStatus.unlock();
     if (TelescopeStatus.get() == ST_CONNECTED) {
       TelescopeStatus.set(ST_READY);
       TelescopeStatus.setMode(ST_READY);
@@ -197,6 +208,16 @@ public class Control extends Telescope
     } else if (TelescopeStatus.get() == ST_MOVING_E) {
       TelescopeStatus.set(ST_READY);
     }
+  }
+
+  private void processNotReady()
+  {
+    TelescopeStatus.lock();
+  }
+
+  private void processMvAck()
+  {
+    TelescopeStatus.lock();
   }
 
   private void lock()

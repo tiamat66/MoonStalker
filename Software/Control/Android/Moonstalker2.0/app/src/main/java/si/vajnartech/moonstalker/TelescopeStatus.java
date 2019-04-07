@@ -12,7 +12,23 @@ final class TelescopeStatus
   private static float  btryVoltage = -1;
   private static int status = -1;
   private static int mode = -1;
+  private static boolean lck = true;
   private static String error = "";
+
+  static void lock()
+  {
+    lck = true;
+  }
+
+  static void unlock()
+  {
+    lck = false;
+  }
+
+  static boolean locked()
+  {
+    return lck;
+  }
 
   static void setBatteryVoltage(float voltage)
   {

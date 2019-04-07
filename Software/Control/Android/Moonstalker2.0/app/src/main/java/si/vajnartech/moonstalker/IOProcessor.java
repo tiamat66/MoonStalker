@@ -11,6 +11,8 @@ import java.io.OutputStream;
 
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.OpCodes.BATTERY;
+import static si.vajnartech.moonstalker.OpCodes.MOVE_ACK;
+import static si.vajnartech.moonstalker.OpCodes.NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.READY;
 
 public class IOProcessor extends AsyncTask<String, Void, String>
@@ -88,6 +90,12 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     if (input.contains("<" + READY + ">")) {
       return new Instruction(READY);
     }
+    else if (input.contains("<" + NOT_READY)) {
+      return new Instruction(NOT_READY);
+    }
+    else if (input.contains("<" + MOVE_ACK)) {
+      return new Instruction(MOVE_ACK);
+    }
     else if (input.contains("<" + BATTERY)) {
       return new Instruction(BATTERY, input.substring(input.indexOf(BATTERY), input.length()-1).split(" ")[1]);
     }
@@ -108,6 +116,14 @@ public class IOProcessor extends AsyncTask<String, Void, String>
       Bundle b = new Bundle();
       b.putFloat("p1", Float.parseFloat(j.p1));
       ctrlInterface.messageProcess(j.opCode, b);
+      break;
+    case MOVE_ACK:
+      Log.i(TAG, "Processing MOVE_ACK");
+      ctrlInterface.messageProcess(j.opCode, new Bundle());
+      break;
+    case NOT_READY:
+      Log.i(TAG, "Processing NOT_READY");
+      ctrlInterface.messageProcess(j.opCode, new Bundle());
       break;
     default:
       try {

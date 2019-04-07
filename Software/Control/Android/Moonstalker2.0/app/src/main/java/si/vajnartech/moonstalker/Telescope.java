@@ -54,6 +54,11 @@ public abstract class Telescope extends PositionCalculus
     int    cur_h_steps;
     int    cur_v_steps;
 
+    if (TelescopeStatus.locked()) {
+      Log.i(TAG, "cannot execute move, telescope is locked");
+      return;
+    }
+
     azimuth_tmp = az;
     height_tmp = h;
 

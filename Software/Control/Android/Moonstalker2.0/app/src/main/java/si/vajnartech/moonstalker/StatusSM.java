@@ -56,6 +56,7 @@ public class StatusSM extends Thread
 
       Log.i("STATUS", "[prev, current]=" + prevStatus + "," + TelescopeStatus.get());
       Log.i("STATUS", "[prev, current]=" + prevMode + "," + TelescopeStatus.getMode());
+      Log.i("STATUS", "telescope lock =" + TelescopeStatus.locked());
 
       if (TelescopeStatus.get() == prevStatus &&
           TelescopeStatus.getMode() == prevMode &&
