@@ -83,9 +83,20 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     }
   }
 
+  private Instruction _parseInMsg(String input)
+  {
+    if (input.contains("<" + READY + ">")) {
+      return new Instruction(READY);
+    }
+    else if (input.contains("<" + BATTERY)) {
+      return new Instruction(BATTERY, input.substring(input.indexOf(BATTERY), input.length()-1).split(" ")[1]);
+    }
+    return new Instruction("");
+  }
+
   private void process(String instruction)
   {
-    Instruction j = new Instruction(instruction);
+    Instruction j = _parseInMsg(instruction);
 
     switch (j.opCode) {
     case READY:
@@ -99,7 +110,11 @@ public class IOProcessor extends AsyncTask<String, Void, String>
       ctrlInterface.messageProcess(j.opCode, b);
       break;
     default:
-      Log.i(TAG, "unknown response received");
+      try {
+        throw new Exception("Unknown response received: " + instruction);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
   }
 }

@@ -118,7 +118,8 @@ public class Control extends Telescope
         processReady();
         break;
       case BATTERY:
-        TelescopeStatus.setBatteryVoltage(parms.getFloat("p1"));
+        // TODO:
+        //TelescopeStatus.setBatteryVoltage(parms.getFloat("p1"));
         break;
       case ERROR:
         TelescopeStatus.setError(parms.getString("p1"));
