@@ -30,6 +30,7 @@ import android.widget.Toast;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_MANUAL;
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     getSupportActionBar().setTitle(R.string.not_connected);
     getSupportActionBar().setIcon(R.drawable.ic_error_s);
 
+    SharedPref.setDefault("device_name", SERVER_NAME);
     FloatingActionButton fab = findViewById(R.id.fab);
     fab.setOnClickListener(new View.OnClickListener()
     {
@@ -71,7 +73,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onClick(View view)
       {
-        if (TelescopeStatus.get() == ST_NOT_CONNECTED) {
+        if (currentFragment instanceof SettingsFragment) {
+          setFragment("main", MainFragment.class, new Bundle());
+        }
+        else if (TelescopeStatus.get() == ST_NOT_CONNECTED) {
           connect(true);
         }
         else if (TelescopeStatus.getMode() == ST_MANUAL) {
@@ -206,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   private void connect(boolean exe)
   {
-    BlueTooth b = new BlueTooth(C.SERVER_NAME, this, new BTInterface()
+    BlueTooth b = new BlueTooth(new SharedPref(this).getString("device_name"), this, new BTInterface()
     {
       @Override
       public void exit(String msg)
@@ -303,8 +308,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // as you specify a parent activity in AndroidManifest.xml.
     int id = item.getItemId();
 
-    //noinspection SimplifiableIfStatement
     if (id == R.id.action_settings) {
+      setFragment("settings", SettingsFragment.class, new Bundle());
       return true;
     }
 

@@ -44,7 +44,7 @@ public class Instruction
     if (!p1.isEmpty() && p2.isEmpty())
       return "<" + opCode + " " + p1 + ">";
     if (!p1.isEmpty())
-      return "<" + opCode + " " + p1 + "," + p2 + ">";
+      return "<" + opCode + " " + p1 + " " + p2 + ">";
     return "";
   }
 }
