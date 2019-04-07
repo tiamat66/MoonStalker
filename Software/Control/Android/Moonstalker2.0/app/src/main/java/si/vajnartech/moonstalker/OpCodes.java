@@ -11,6 +11,9 @@ final class OpCodes
   static final String ERROR   = "FATAL_ERROR";
   static final String INIT    = "INIT";
 
+  static final String NOT_READ    = "NOT_RDY";
+  static final String MOVE_ACK    = "NOT_RDY";
+
   // out messages
   static final String MOVE_START  = "MVS";
   static final String MOVE_STOP   = "MVE";

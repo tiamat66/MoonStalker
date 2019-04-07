@@ -118,17 +118,14 @@ public class Control extends Telescope
         processReady();
         break;
       case BATTERY:
-        // TODO: zacasno onemogoceno
-        // TelescopeStatus.setBatteryVoltage(parms.getFloat("p1"));
+        TelescopeStatus.setBatteryVoltage(parms.getFloat("p1"));
         break;
       case ERROR:
         TelescopeStatus.setError(parms.getString("p1"));
         break;
       case INIT:
-        //outMessageProcess(GET_STATUS, "", "");
-        //outMessageProcess(GET_BATTERY, "", "");
-        TelescopeStatus.setMode(ST_READY);
-        TelescopeStatus.set(ST_READY);
+        outMessageProcess(GET_STATUS, "", "");
+        outMessageProcess(GET_BATTERY, "", "");
         break;
       default:
         return;

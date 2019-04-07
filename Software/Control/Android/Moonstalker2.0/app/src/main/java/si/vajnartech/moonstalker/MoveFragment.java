@@ -21,6 +21,7 @@ import static si.vajnartech.moonstalker.C.curObj;
 public class MoveFragment extends MyFragment
 {
   private Spinner skyObjects;
+  private Spinner constellations;
 
   static private ArrayAdapter<CharSequence> skyObjAdapter;
   static private ArrayAdapter<CharSequence> constellationAdapter;
@@ -29,12 +30,14 @@ public class MoveFragment extends MyFragment
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
     View res = inflater.inflate(R.layout.frag_move, container, false);
+    constellations = act.findViewById(R.id.constelation);
     skyObjects = act.findViewById(R.id.sky_object);
     skyObjects.setVisibility(View.VISIBLE);
     act.terminal.show();
     act.terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
     act.findViewById(R.id.logo).setVisibility(View.VISIBLE);
     initAstroObjDropDown();
+    initConstellationObjDropDown();
     setPositionString();
     return res;
   }
@@ -53,7 +56,23 @@ public class MoveFragment extends MyFragment
         setPositionString();
         if (!curObj.name.equals(C.calObj))
           act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+        constellations.setSelection(constellationAdapter.getPosition(C.calConstellation));
       }
+    });
+  }
+
+  private void initConstellationObjDropDown()
+  {
+    constellations.setAdapter(constellationAdapter);
+    constellations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+    {
+      @Override
+      public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
+      {}
+
+      @Override
+      public void onNothingSelected(AdapterView<?> adapterView)
+      {}
     });
   }
 
@@ -120,7 +139,7 @@ public class MoveFragment extends MyFragment
 
   private String formatPositionString(double azimuth, double height)
   {
-    DecimalFormat df = new DecimalFormat("###.##");
+    DecimalFormat df = new DecimalFormat("000.00");
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
