@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +31,24 @@ public class SettingsFragment extends MyFragment
       public void afterTextChanged(Editable s)
       {
         p.put("device_name", s.toString());
+      }
+    });
+
+    et = res.findViewById(R.id.calibration_object);
+    et.setText(p.getString("calibration_obj"));
+    et.addTextChangedListener(new TextWatcher() {
+      @Override
+      public void beforeTextChanged(CharSequence s, int start, int count, int after)
+      {}
+
+      @Override
+      public void onTextChanged(CharSequence s, int start, int before, int count)
+      {}
+
+      @Override
+      public void afterTextChanged(Editable s)
+      {
+        p.put("calibration_obj", s.toString());
       }
     });
     return res;
