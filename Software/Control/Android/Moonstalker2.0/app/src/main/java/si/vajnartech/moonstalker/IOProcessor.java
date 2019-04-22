@@ -79,7 +79,7 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     byte[] msgBuffer = message.getBytes();
     try {
       os.write(msgBuffer);
-      Log.i(TAG, "Message sent to Telescope Control: " + message);
+      ctrlInterface.dump("$ msg send: " + message + "\n");
     } catch (IOException e) {
       Log.i(TAG, "Error data send: " + e.getMessage());
     }
@@ -109,6 +109,7 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     switch (j.opCode) {
     case READY:
       Log.i(TAG, "processing RDY from response ");
+      ctrlInterface.dump("$ msg rcvd: READY\n");
       ctrlInterface.messageProcess(j.opCode, new Bundle());
       break;
     case BATTERY:

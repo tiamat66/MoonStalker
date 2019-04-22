@@ -32,6 +32,7 @@ interface ControlInterface
 {
   void releaseSocket();
   void messageProcess(String msg, Bundle bundle);
+  void dump(String str);
 }
 
 public class Control extends Telescope
@@ -45,7 +46,7 @@ public class Control extends Telescope
     super(act);
     inMessageHandler = new InMessageHandler();
     isSocketFree = true;
-    processor = new CommandProcessor(this);
+    processor = new CommandProcessor(this, act);
   }
 
   void moveStart(C.Directions direction)
@@ -147,10 +148,12 @@ public class Control extends Telescope
     LinkedList<Instruction> instrBuffer = new LinkedList<>();
     boolean                 r;
     Control                 ctrl;
+    MainActivity            ctx;
 
-    CommandProcessor(Control ctrl)
+    CommandProcessor(Control ctrl, MainActivity act)
     {
       this.ctrl = ctrl;
+      ctx = act;
       r = true;
       processorStart();
     }
@@ -181,6 +184,17 @@ public class Control extends Telescope
               public void messageProcess(String msg, Bundle bundle)
               {
                 inMsgProcess(msg, bundle);
+              }
+
+              @Override
+              public void dump(final String str)
+              {
+                ctx.runOnUiThread(new Runnable() {
+                  @Override public void run()
+                  {
+                    ctx.monitor.update(str);
+                  }
+                });
               }
             }).executeOnExecutor(THREAD_POOL_EXECUTOR);
           }

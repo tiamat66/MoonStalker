@@ -14,7 +14,7 @@ class Monitor extends PopupWindow
 
   Monitor(View ctxView)
   {
-    super(ctxView, 300, 300);
+    super(ctxView, 600, 300);
     tv = ctxView.findViewById(R.id.sys_monitor);
   }
 

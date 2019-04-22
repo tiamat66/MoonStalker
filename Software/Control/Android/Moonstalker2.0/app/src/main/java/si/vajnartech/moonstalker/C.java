@@ -68,6 +68,7 @@ public final class C
   public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
 
   static boolean monitoring = false;
+  static boolean mStatus = false;
 }
 
 
