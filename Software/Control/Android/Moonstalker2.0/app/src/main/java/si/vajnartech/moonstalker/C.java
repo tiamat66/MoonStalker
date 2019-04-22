@@ -67,7 +67,7 @@ public final class C
   static String calConstellation = "Ursa Major";
   public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
 
-  public static boolean monitoring = false;
+  static boolean monitoring = false;
 }
 
 

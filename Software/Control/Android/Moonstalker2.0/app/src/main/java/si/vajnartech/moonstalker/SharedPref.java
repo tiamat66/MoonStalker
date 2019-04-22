@@ -1,15 +1,18 @@
 package si.vajnartech.moonstalker;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 
+@SuppressWarnings({"ConstantConditions", "WeakerAccess", "UnusedReturnValue", "DeprecatedIsStillUsed", "deprecation"})
 public class SharedPref
 {
   private static final String                   PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
@@ -19,36 +22,37 @@ public class SharedPref
   static private       DefHash                  defaults                 = new DefHash();
   private static       SharedPreferences        defaultSharedPref        = null;
 
-  public SharedPref(Context context)
+  SharedPref(Context context)
   {
     this(
         defaultSharedPref != null ? defaultSharedPref : (defaultSharedPref = PreferenceManager.getDefaultSharedPreferences(
             context)));
   }
 
-  public SharedPref(SharedPreferences aPref)
+  private SharedPref(SharedPreferences aPref)
   {
     pref = aPref;
   }
 
-  public static void setDefault(String key, Object data) { defaults.put(key, data); }
+  static void setDefault(String key, Object data) { defaults.put(key, data); }
 
   public static Object getDefault(String key, Object def) { return defaults.get(key, def); }
 
-  public boolean getSettBool(String sName, boolean defVal)
+  private boolean getSettBool(String sName, boolean defVal)
   {
     if (sName.equals("notification_type") || sName.equals("widget_color"))
       return pref.getInt(sName, 1) > 0;
     return pref.getBoolean(sName, defVal);
   }
 
-  public void editBegin()
+  @SuppressLint("CommitPrefEdits")
+  private void editBegin()
   {
     if (++editLevel == 1)
       e = pref.edit();
   }
 
-  public void editCommit()
+  private void editCommit()
   {
     if (--editLevel == 0)
       e.commit();
@@ -104,7 +108,7 @@ public class SharedPref
     return res;
   }
 
-  public int getInt(String sName)
+  private int getInt(String sName)
   {
     try {
       return pref.getInt(sName, (int) defaults.get(sName, 0));
@@ -139,7 +143,7 @@ public class SharedPref
 
   public String getString(String sName)
   {
-    String res = "";
+    String res;
     try {
       res = pref.getString(sName, defaults.get(sName, "").toString());
       if (sName.contains("pass"))
@@ -258,12 +262,8 @@ public class SharedPref
     {
       StringBuilder decodedString = new StringBuilder();
       char[]        keyBuf        = SECRET_KEY.toCharArray();
-      byte[]        dec           = new byte[0];
-      try {
-        dec = android.util.Base64.decode(string.getBytes("UTF-8"), android.util.Base64.DEFAULT);
-      } catch (UnsupportedEncodingException e) {
-        e.printStackTrace();
-      }
+      byte[]        dec;
+      dec = android.util.Base64.decode(string.getBytes(StandardCharsets.UTF_8), android.util.Base64.DEFAULT);
       String decodedStr = new String(dec);
       char[] sBuf       = decodedStr.toCharArray();
       for (int i = 0; i < decodedStr.length(); i++) {

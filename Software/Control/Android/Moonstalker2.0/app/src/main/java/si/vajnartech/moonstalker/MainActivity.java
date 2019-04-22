@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.PorterDuff;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   TerminalWindow terminal;
   Monitor        monitor;
 
-  @Override
+  @SuppressLint("InflateParams") @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
