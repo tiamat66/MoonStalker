@@ -2,7 +2,7 @@ package si.vajnartech.moonstalker;
 
 import java.util.UUID;
 
-public class C
+public final class C
 {
   public static final String TAG = "IZAABELA";
 
@@ -17,8 +17,7 @@ public class C
   static final double DEF_LATITUDE = 46.45;
 
   // Named of paired BT device which acts like telescope
-  static final String SERVER_NAME = "MoonStalker";
-//  static final String SERVER_NAME = "Zoran Robič Tablca";
+  static final String SERVER_NAME = "Zoran Robič Tablca";
 
   // Mechanical characteristics
   private static final double MOTOR_STEPS_NUM      = 200.0;
@@ -67,6 +66,8 @@ public class C
   static String calObj = "Polaris";
   static String calConstellation = "Ursa Major";
   public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
+
+  public static boolean monitoring = false;
 }
 
 

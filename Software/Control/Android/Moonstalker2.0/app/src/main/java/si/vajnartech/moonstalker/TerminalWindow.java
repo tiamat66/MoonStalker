@@ -12,7 +12,6 @@ final class TerminalWindow
   {
     tv = act.findViewById(R.id.msg_window);
     hide();
-    act.findViewById(R.id.sky_object).setVisibility(View.GONE);
   }
 
   void setBackgroundColor(int color)

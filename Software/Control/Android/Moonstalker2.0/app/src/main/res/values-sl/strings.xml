@@ -5,7 +5,8 @@
   <string name="nav_header_title">Moonstalker</string>
   <string name="nav_header_subtitle">VajnarTech</string>
   <string name="nav_header_desc">Navigation header</string>
-  <string name="action_settings">Settings</string>
+  <string name="action_settings">Nastavitve</string>
+  <string name="action_monitor">Monitor</string>
   <string name="calibration_ntfy">Ročno premaknite teleskop na izhodiščni objekt, ter potrdite</string>
   <string name="connecting">Povezujem teleskop</string>
   <string name="connected">povezan</string>
@@ -28,6 +29,7 @@
   <string name="to_calibrate">premakni na %s</string>
   <string name="ok">OK</string>
   <string name="to_manual_move">Prekinil boš kalibracijo. Nadaljujem?</string>
-
+  <string name="sett_device">Ime naprave</string>
+  <string name="calibration_obj">Objekt za kalibracijo</string>
 
 </resources>

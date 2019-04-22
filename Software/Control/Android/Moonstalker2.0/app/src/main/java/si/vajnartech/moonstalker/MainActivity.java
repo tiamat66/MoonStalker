@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,6 +32,7 @@ import android.widget.Toast;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_MANUAL;
@@ -37,6 +40,7 @@ import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
+import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 
 @SuppressWarnings("ConstantConditions")
@@ -47,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   Menu       menu;
 
   TerminalWindow terminal;
+  Monitor        monitor;
 
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -58,6 +63,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     getSupportActionBar().setTitle(R.string.not_connected);
     getSupportActionBar().setIcon(R.drawable.ic_error_s);
 
+    SharedPref.setDefault("device_name", SERVER_NAME);
+    SharedPref.setDefault("calibration_obj", calObj);
     FloatingActionButton fab = findViewById(R.id.fab);
     fab.setOnClickListener(new View.OnClickListener()
     {
@@ -71,7 +78,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onClick(View view)
       {
-        if (TelescopeStatus.get() == ST_NOT_CONNECTED) {
+        if (currentFragment instanceof SettingsFragment) {
+          setFragment("main", MainFragment.class, new Bundle());
+        }
+        else if (TelescopeStatus.get() == ST_NOT_CONNECTED) {
           connect(true);
         }
         else if (TelescopeStatus.getMode() == ST_MANUAL) {
@@ -107,6 +117,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // init terminal window
     terminal = new TerminalWindow(this);
+    LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
+    monitor.update("$ ");
 
     // init astro database
     MoveFragment.initAstroObjDatabase(this);
@@ -198,6 +211,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           }
         });
       }
+
+      @Override
+      public void dump(final String str)
+      {
+        runOnUiThread(new Runnable() {
+          @Override public void run()
+          {
+            monitor.update(str);
+          }
+        });
+      }
     });
     // init current astro object
     new GetStarInfo(C.calObj, null);
@@ -206,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   private void connect(boolean exe)
   {
-    BlueTooth b = new BlueTooth(C.SERVER_NAME, this, new BTInterface()
+    BlueTooth b = new BlueTooth(new SharedPref(this).getString("device_name"), this, new BTInterface()
     {
       @Override
       public void exit(String msg)
@@ -303,8 +327,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // as you specify a parent activity in AndroidManifest.xml.
     int id = item.getItemId();
 
-    //noinspection SimplifiableIfStatement
     if (id == R.id.action_settings) {
+      setFragment("settings", SettingsFragment.class, new Bundle());
+      return true;
+    }
+    else if(id == R.id.action_monitor) {
+      if (!C.monitoring) {
+        C.monitoring = true;
+        monitor.showAtLocation(this.findViewById(R.id.content), Gravity.BOTTOM | Gravity.START, 0, 0);
+      }
+      else {
+        monitor.dismiss();
+        C.monitoring = false;
+      }
       return true;
     }
 
