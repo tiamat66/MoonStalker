@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   Menu       menu;
 
   TerminalWindow terminal;
+  Monitor        monitor;
 
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -114,6 +117,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // init terminal window
     terminal = new TerminalWindow(this);
+    LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
+    monitor.update("$ ");
 
     // init astro database
     MoveFragment.initAstroObjDatabase(this);
@@ -202,6 +208,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           @Override public void run()
           {
             ((MoveFragment) currentFragment).setPositionString();
+          }
+        });
+      }
+
+      @Override
+      public void dump(final String str)
+      {
+        runOnUiThread(new Runnable() {
+          @Override public void run()
+          {
+            monitor.update(str);
           }
         });
       }
@@ -312,6 +329,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     if (id == R.id.action_settings) {
       setFragment("settings", SettingsFragment.class, new Bundle());
+      return true;
+    }
+    else if(id == R.id.action_monitor) {
+      if (!C.monitoring) {
+        C.monitoring = true;
+        monitor.showAtLocation(this.findViewById(R.id.content), Gravity.BOTTOM | Gravity.START, 0, 0);
+      }
+      else {
+        monitor.dismiss();
+        C.monitoring = false;
+      }
       return true;
     }
 
