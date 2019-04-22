@@ -17,7 +17,7 @@ public final class C
   static final double DEF_LATITUDE = 46.45;
 
   // Named of paired BT device which acts like telescope
-  static final String SERVER_NAME = "Zoran Robič Tablca";
+  static final String SERVER_NAME = "MoonStalker";
 
   // Mechanical characteristics
   private static final double MOTOR_STEPS_NUM      = 200.0;
