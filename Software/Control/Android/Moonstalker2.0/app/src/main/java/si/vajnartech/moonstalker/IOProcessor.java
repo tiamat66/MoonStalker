@@ -66,6 +66,7 @@ public class IOProcessor extends AsyncTask<String, Void, String>
   {
     if (j != null) {
       Log.i(TAG, "on post execute OK");
+      ctrlInterface.dump("$ " + j + "\n");
       process(j);
     } else {
       Log.i(TAG, "on post execute ERROR");
@@ -115,7 +116,9 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     case BATTERY:
       Log.i(TAG, "processing BTRY from response with p1 = " + j.p1);
       Bundle b = new Bundle();
-      b.putFloat("p1", Float.parseFloat(j.p1));
+      int val = Integer.parseInt(j.p1);
+      b.putInt("p1", val);
+      ctrlInterface.dump("$ msg rcvd: BTRY " + val);
       ctrlInterface.messageProcess(j.opCode, b);
       break;
     case MOVE_ACK:

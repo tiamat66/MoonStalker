@@ -121,6 +121,7 @@ public class Control extends Telescope
         processReady();
         break;
       case BATTERY:
+        processBattery(parms.getInt("p1"));
         break;
       case ERROR:
         TelescopeStatus.setError(parms.getString("p1"));
@@ -230,6 +231,11 @@ public class Control extends Telescope
   private void processMvAck()
   {
     TelescopeStatus.lock();
+  }
+
+  private void processBattery(int val)
+  {
+    TelescopeStatus.setBatteryVoltage(val);
   }
 
   private void lock()
