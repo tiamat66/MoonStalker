@@ -362,7 +362,7 @@ class BlueToothService
     {
       @Override public void run()
       {
-        write("<BTRY 11.3>");
+        write("<BTRY 11300>");
       }
     }, 700);
   }
