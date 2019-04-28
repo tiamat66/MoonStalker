@@ -36,7 +36,6 @@ public class MoveFragment extends MyFragment
     skyObjects.setVisibility(View.VISIBLE);
     act.terminal.show();
     act.terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-    act.findViewById(R.id.logo).setVisibility(View.VISIBLE);
     initAstroObjDropDown();
     initConstellationObjDropDown();
     setPositionString();

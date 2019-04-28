@@ -31,5 +31,7 @@
   <string name="to_manual_move">Prekinil boš kalibracijo. Nadaljujem?</string>
   <string name="sett_device">Ime naprave</string>
   <string name="calibration_obj">Objekt za kalibracijo</string>
+  <string name="constellation">Ozvezdje</string>
+  <string name="sky_object_string">Nebesno telo</string>
 
 </resources>

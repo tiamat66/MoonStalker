@@ -11,7 +11,6 @@ final class TerminalWindow
   TerminalWindow(MainActivity act)
   {
     tv = act.findViewById(R.id.msg_window);
-    hide();
   }
 
   void setBackgroundColor(int color)

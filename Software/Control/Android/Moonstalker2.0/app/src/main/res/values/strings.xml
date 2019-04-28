@@ -31,6 +31,8 @@
   <string name="to_manual_move">You will cancel the calibration. Proceed?</string>
   <string name="sett_device">Telescope device name</string>
   <string name="calibration_obj">Calibration object</string>
+  <string name="constellation">Constellation</string>
+  <string name="sky_object_string">Sky object</string>
 
   <string-array name="sky_objects">
     <item>Polaris</item>

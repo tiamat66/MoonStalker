@@ -30,7 +30,7 @@ public class SelectFragment extends MyFragment
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
-    View res = inflater.inflate(R.layout.frag_panel, container, false);
+    View res = inflater.inflate(R.layout.frag_select, container, false);
     constellations = res.findViewById(R.id.constelation);
     skyObjects = res.findViewById(R.id.sky_object);
     //act.terminal.show();

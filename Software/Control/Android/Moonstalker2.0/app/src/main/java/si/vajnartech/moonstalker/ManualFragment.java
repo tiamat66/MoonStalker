@@ -24,7 +24,6 @@ public class ManualFragment extends MyFragment
     View res = inflater.inflate(R.layout.frag_manual, container, false);
     View kp = res.findViewById(R.id.key_pad);
     act.findViewById(R.id.sky_object).setVisibility(View.GONE);
-    act.findViewById(R.id.logo).setVisibility(View.GONE);
     if (TelescopeStatus.getMode() == ST_CALIBRATING) {
       act.terminal.setText(String.format(act.tx(R.string.to_calibrate), curObj.name));
       act.terminal.show();
