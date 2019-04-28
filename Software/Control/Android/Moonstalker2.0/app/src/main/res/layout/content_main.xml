@@ -10,46 +10,22 @@
   tools:context=".MainActivity"
   tools:showIn="@layout/app_bar_main">
 
-  <ImageView
-    android:id="@+id/logo"
-    android:layout_width="354dp"
-    android:layout_height="351dp"
-    android:visibility="visible"
-    app:srcCompat="@drawable/moonstalker_logo"
-    tools:ignore="ContentDescription,VectorDrawableCompat"
-    tools:layout_editor_absoluteX="29dp"
-    tools:layout_editor_absoluteY="249dp" />
-
   <TextView
     android:id="@+id/msg_window"
-    android:layout_width="379dp"
+    android:layout_width="0dp"
     android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="24dp"
+    android:layout_marginEnd="16dp"
     android:background="@color/colorPrimary"
+    android:fontFamily="serif-monospace"
     android:text=""
-    android:textAlignment="center"
-    android:textSize="24sp"
-    android:textStyle="bold"
+    android:textAlignment="viewStart"
+    android:textSize="18sp"
+    android:textStyle="normal"
     android:visibility="visible"
-    app:layout_constraintTop_toTopOf="parent"
-    tools:layout_editor_absoluteX="16dp" />
-
-  <Spinner
-    android:id="@+id/sky_object"
-    android:layout_width="395dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:visibility="visible"
-    app:layout_constraintTop_toBottomOf="@+id/msg_window"
-    tools:layout_editor_absoluteX="8dp" />
-
-  <Spinner
-    android:id="@+id/constelation"
-    android:layout_width="395dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="40dp"
-    android:visibility="visible"
-    app:layout_constraintTop_toBottomOf="@+id/msg_window"
-    tools:layout_editor_absoluteX="8dp" />
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
 
 </android.support.constraint.ConstraintLayout>
