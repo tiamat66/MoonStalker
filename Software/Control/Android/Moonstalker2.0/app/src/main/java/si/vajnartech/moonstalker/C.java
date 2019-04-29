@@ -69,6 +69,7 @@ public final class C
 
   static boolean monitoring = false;
   static boolean mStatus = false;
+  static String  curMessage = "";
 }
 
 

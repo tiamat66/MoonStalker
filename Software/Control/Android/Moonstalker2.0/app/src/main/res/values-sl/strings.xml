@@ -8,11 +8,11 @@
   <string name="action_settings">Nastavitve</string>
   <string name="action_monitor">Monitor</string>
   <string name="calibration_ntfy">Ročno premaknite teleskop na izhodiščni objekt, ter potrdite</string>
-  <string name="connecting">Povezujem teleskop</string>
+  <string name="connecting">povezujem</string>
   <string name="connected">povezan</string>
   <string name="tracing">sledim</string>
   <string name="moving">Premikam</string>
-  <string name="initializing">Inicializacija teleskopa</string>
+  <string name="initializing">inicializiram</string>
   <string name="calibrated">teleskop kalibriran</string>
   <string name="move">Premakni</string>
   <string name="manual">Ročno vodenje</string>
@@ -33,5 +33,6 @@
   <string name="calibration_obj">Objekt za kalibracijo</string>
   <string name="constellation">Ozvezdje</string>
   <string name="sky_object_string">Nebesno telo</string>
+  <string name="moonstalker">MoonStalker</string>
 
 </resources>

@@ -23,13 +23,12 @@ public class ManualFragment extends MyFragment
   {
     View res = inflater.inflate(R.layout.frag_manual, container, false);
     View kp = res.findViewById(R.id.key_pad);
-    act.findViewById(R.id.sky_object).setVisibility(View.GONE);
-    if (TelescopeStatus.getMode() == ST_CALIBRATING) {
-      act.terminal.setText(String.format(act.tx(R.string.to_calibrate), curObj.name));
-      act.terminal.show();
-    }
-    else
-      act.terminal.hide();
+//    if (TelescopeStatus.getMode() == ST_CALIBRATING) {
+//      act.terminal.setText(String.format(act.tx(R.string.to_calibrate), curObj.name));
+//      act.terminal.show();
+//    }
+//    else
+//      act.terminal.hide();
 
     kp.setOnTouchListener(new View.OnTouchListener() {
       @Override public boolean onTouch(View view, MotionEvent event)

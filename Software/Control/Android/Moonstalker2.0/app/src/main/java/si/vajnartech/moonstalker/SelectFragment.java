@@ -2,6 +2,7 @@ package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +24,7 @@ public class SelectFragment extends MyFragment
 {
   private Spinner skyObjects;
   private Spinner constellations;
+  private int myVar;
 
   static private ArrayAdapter<CharSequence> skyObjAdapter;
   static private ArrayAdapter<CharSequence> constellationAdapter;
@@ -33,12 +35,9 @@ public class SelectFragment extends MyFragment
     View res = inflater.inflate(R.layout.frag_select, container, false);
     constellations = res.findViewById(R.id.constelation);
     skyObjects = res.findViewById(R.id.sky_object);
-    //act.terminal.show();
-    //act.terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-    //act.findViewById(R.id.logo).setVisibility(View.VISIBLE);
     initAstroObjDropDown();
     initConstellationObjDropDown();
-    //setPositionString();
+    myVar = 1;
     return res;
   }
 
@@ -48,14 +47,13 @@ public class SelectFragment extends MyFragment
     String name = sp.getItemAtPosition(position).toString();
     new GetStarInfo(name, new GetSkyObjInfo.SkyInterface()
     {
-      @SuppressWarnings("ConstantConditions")
       @Override
       public void updateConstellation()
       {
         calConstellation = getCFromStar();
         setPositionString();
-        //if (!curObj.name.equals(C.calObj))
-        //  act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+        if (!curObj.name.equals(C.calObj))
+          act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent));
         constellations.setSelection(constellationAdapter.getPosition(calConstellation));
       }
     });
@@ -86,7 +84,10 @@ public class SelectFragment extends MyFragment
       @Override
       public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
       {
-        scanAstroLine(i, skyObjects);
+        if (myVar > 2)
+          scanAstroLine(i, skyObjects);
+        else
+          myVar++;
       }
 
       @Override
