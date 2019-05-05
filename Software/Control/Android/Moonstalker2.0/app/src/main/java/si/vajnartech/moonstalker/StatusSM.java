@@ -110,8 +110,8 @@ public class StatusSM extends Thread
         inf.updateStatus();
       } else if (prevStatus == ST_READY && (TelescopeStatus.get() == ST_MOVING || TelescopeStatus.get() == ST_MOVING_S)) {
         prevStatus = TelescopeStatus.get();
-        if (prevMode != ST_TRACING)
-          inf.startProgress(MainActivity.ProgressType.MOVING);
+        if (prevMode != ST_TRACING) {}
+          //inf.startProgress(MainActivity.ProgressType.MOVING);
       } else if ((prevStatus == ST_MOVING || prevStatus == ST_MOVING_S) && TelescopeStatus.get() == ST_READY) {
         prevStatus = TelescopeStatus.get();
         if (prevMode != ST_TRACING)

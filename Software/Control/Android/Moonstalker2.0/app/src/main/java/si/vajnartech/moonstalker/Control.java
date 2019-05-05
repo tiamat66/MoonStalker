@@ -9,6 +9,7 @@ import android.util.Log;
 import java.util.LinkedList;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static java.lang.Thread.sleep;
 import static si.vajnartech.moonstalker.C.ST_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_MOVING_E;
@@ -40,19 +41,57 @@ public class Control extends Telescope
   private              boolean isSocketFree;
   private InMessageHandler inMessageHandler;
   private CommandProcessor processor;
+  private MainActivity act;
+  int fakeA = 0;
+  int fakeH = 0;
+
 
   Control(MainActivity act)
   {
     super(act);
+    this.act = act;
     inMessageHandler = new InMessageHandler();
     isSocketFree = true;
     processor = new CommandProcessor(this, act);
   }
 
-  void moveStart(C.Directions direction)
+  void moveStart(final C.Directions direction)
   {
     TelescopeStatus.set(ST_MOVING_S);
     outMessageProcess(MOVE_START, Integer.toString(direction.getValue()), "");
+    new Thread(new Runnable() {
+      @Override public void run()
+      {
+        while(TelescopeStatus.get() == ST_MOVING_S) {
+          switch (direction) {
+          case UP:
+            fakeH++;
+            break;
+          case DOWN:
+            fakeH--;
+            break;
+          case LEFT:
+            fakeA--;
+            break;
+          case RIGHT:
+            fakeA++;
+            break;
+          }
+          try {
+            sleep(500);
+            act.runOnUiThread(new Runnable()
+            {
+              @Override public void run()
+              {
+                SelectFragment.setTelescopeLocationString(act, fakeA, fakeH);
+              }
+            });
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+    }).start();
   }
 
   void moveStop()
@@ -168,7 +207,7 @@ public class Control extends Telescope
         {
           while (r) {
             try {
-              Thread.sleep(1000);
+              sleep(1000);
             } catch (InterruptedException e) {
               e.printStackTrace();
             }

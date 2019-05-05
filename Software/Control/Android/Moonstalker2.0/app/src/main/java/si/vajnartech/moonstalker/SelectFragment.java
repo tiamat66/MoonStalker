@@ -2,7 +2,6 @@ package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -137,17 +136,24 @@ public class SelectFragment extends MyFragment
     new GetConstellationInfo(constellationAdapter);
   }
 
-  private String formatPositionString(double azimuth, double height)
+  private static String formatPositionString(double azimuth, double height, int mode)
   {
     DecimalFormat df = new DecimalFormat("000.00");
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
+    if (mode == 1)
+      return String.format("%s | %s", az, h);
     return String.format("%s (%s)\n%s | %s", curObj.name, calConstellation, az, h);
   }
 
   public void setPositionString()
   {
-    act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h));
+    act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h, 0));
+  }
+
+  public static void setTelescopeLocationString(MainActivity ctx, int a, int h)
+  {
+    ctx.terminal.setText(formatPositionString(a, h, 1));
   }
 }

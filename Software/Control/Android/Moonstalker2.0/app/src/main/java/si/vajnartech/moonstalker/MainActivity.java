@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // init astro database
     SelectFragment.initAstroObjDatabase(this);
-
+    final MainActivity ctx = this;
     // start state machine
     new StatusSM(new Nucleus()
     {
@@ -179,6 +179,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 ((SelectFragment) currentFragment).setPositionString();
             } else if (TelescopeStatus.getMode() == ST_MANUAL) {
               update(R.string.ready, R.drawable.ic_ok_s);
+              terminal.setText(tx(R.string.manual));
             } else if (TelescopeStatus.getMode() == ST_CALIBRATED) {
               update(R.string.calibrated, R.drawable.ic_ok_s, false, true, true, true);
             } else if (TelescopeStatus.getMode() == ST_CALIBRATING) {
