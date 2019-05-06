@@ -6,7 +6,7 @@ public final class C
 {
   public static final String TAG = "IZAABELA";
 
-  static final float TRSHLD_BTRY = 11.0f;
+  static final int TRSHLD_BTRY = 11000;  // milivolts
 
   static UUID token = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -68,6 +68,8 @@ public final class C
   public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
 
   static boolean monitoring = false;
+  static boolean mStatus = false;
+  static String  curMessage = "";
 }
 
 

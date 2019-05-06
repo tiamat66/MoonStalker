@@ -9,6 +9,7 @@ import android.util.Log;
 import java.util.LinkedList;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static java.lang.Thread.sleep;
 import static si.vajnartech.moonstalker.C.ST_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_MOVING_E;
@@ -32,26 +33,65 @@ interface ControlInterface
 {
   void releaseSocket();
   void messageProcess(String msg, Bundle bundle);
+  void dump(String str);
 }
 
 public class Control extends Telescope
 {
-  private              boolean isSocketFree;
+  private boolean          isSocketFree;
   private InMessageHandler inMessageHandler;
   private CommandProcessor processor;
+  private MainActivity     act;
+  private int              fakeA = 0;
+  private int              fakeH = 0;
+
 
   Control(MainActivity act)
   {
     super(act);
+    this.act = act;
     inMessageHandler = new InMessageHandler();
     isSocketFree = true;
-    processor = new CommandProcessor(this);
+    processor = new CommandProcessor(this, act);
   }
 
-  void moveStart(C.Directions direction)
+  void moveStart(final C.Directions direction)
   {
     TelescopeStatus.set(ST_MOVING_S);
     outMessageProcess(MOVE_START, Integer.toString(direction.getValue()), "");
+    new Thread(new Runnable() {
+      @Override public void run()
+      {
+        while(TelescopeStatus.get() == ST_MOVING_S) {
+          switch (direction) {
+          case UP:
+            fakeH++;
+            break;
+          case DOWN:
+            fakeH--;
+            break;
+          case LEFT:
+            fakeA--;
+            break;
+          case RIGHT:
+            fakeA++;
+            break;
+          }
+          try {
+            sleep(500);
+            act.runOnUiThread(new Runnable()
+            {
+              @Override public void run()
+              {
+                SelectFragment.setTelescopeLocationString(act, fakeA, fakeH);
+              }
+            });
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+    }).start();
   }
 
   void moveStop()
@@ -120,6 +160,7 @@ public class Control extends Telescope
         processReady();
         break;
       case BATTERY:
+        processBattery(parms.getInt("p1"));
         break;
       case ERROR:
         TelescopeStatus.setError(parms.getString("p1"));
@@ -147,10 +188,12 @@ public class Control extends Telescope
     LinkedList<Instruction> instrBuffer = new LinkedList<>();
     boolean                 r;
     Control                 ctrl;
+    MainActivity            ctx;
 
-    CommandProcessor(Control ctrl)
+    CommandProcessor(Control ctrl, MainActivity act)
     {
       this.ctrl = ctrl;
+      ctx = act;
       r = true;
       processorStart();
     }
@@ -164,7 +207,7 @@ public class Control extends Telescope
         {
           while (r) {
             try {
-              Thread.sleep(1000);
+              sleep(1000);
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
@@ -181,6 +224,17 @@ public class Control extends Telescope
               public void messageProcess(String msg, Bundle bundle)
               {
                 inMsgProcess(msg, bundle);
+              }
+
+              @Override
+              public void dump(final String str)
+              {
+                ctx.runOnUiThread(new Runnable() {
+                  @Override public void run()
+                  {
+                    ctx.monitor.update(str);
+                  }
+                });
               }
             }).executeOnExecutor(THREAD_POOL_EXECUTOR);
           }
@@ -216,6 +270,11 @@ public class Control extends Telescope
   private void processMvAck()
   {
     TelescopeStatus.lock();
+  }
+
+  private void processBattery(int val)
+  {
+    TelescopeStatus.setBatteryVoltage(val);
   }
 
   private void lock()

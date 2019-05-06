@@ -10,7 +10,8 @@ import static si.vajnartech.moonstalker.C.curConstellation;
 import static si.vajnartech.moonstalker.PositionCalculus.getDecFromString;
 import static si.vajnartech.moonstalker.PositionCalculus.getRaFromString;
 
-@SuppressWarnings("SameParameterValue") public class GetStarInfo extends GetSkyObjInfo
+@SuppressWarnings("SameParameterValue")
+public class GetStarInfo extends GetSkyObjInfo
 {
   private SkyInterface skyInterface;
 

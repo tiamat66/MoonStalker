@@ -19,10 +19,11 @@ import si.vajnartech.moonstalker.rest.GetStarInfo;
 import static si.vajnartech.moonstalker.C.calConstellation;
 import static si.vajnartech.moonstalker.C.curObj;
 
-public class MoveFragment extends MyFragment
+public class SelectFragment extends MyFragment
 {
   private Spinner skyObjects;
   private Spinner constellations;
+  private int myVar;
 
   static private ArrayAdapter<CharSequence> skyObjAdapter;
   static private ArrayAdapter<CharSequence> constellationAdapter;
@@ -30,16 +31,12 @@ public class MoveFragment extends MyFragment
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
-    View res = inflater.inflate(R.layout.frag_move, container, false);
-    constellations = act.findViewById(R.id.constelation);
-    skyObjects = act.findViewById(R.id.sky_object);
-    skyObjects.setVisibility(View.VISIBLE);
-    act.terminal.show();
-    act.terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-    act.findViewById(R.id.logo).setVisibility(View.VISIBLE);
+    View res = inflater.inflate(R.layout.frag_select, container, false);
+    constellations = res.findViewById(R.id.constelation);
+    skyObjects = res.findViewById(R.id.sky_object);
     initAstroObjDropDown();
     initConstellationObjDropDown();
-    setPositionString();
+    myVar = 1;
     return res;
   }
 
@@ -49,7 +46,6 @@ public class MoveFragment extends MyFragment
     String name = sp.getItemAtPosition(position).toString();
     new GetStarInfo(name, new GetSkyObjInfo.SkyInterface()
     {
-      @SuppressWarnings("ConstantConditions")
       @Override
       public void updateConstellation()
       {
@@ -87,7 +83,10 @@ public class MoveFragment extends MyFragment
       @Override
       public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
       {
-        scanAstroLine(i, skyObjects);
+        if (myVar > 2)
+          scanAstroLine(i, skyObjects);
+        else
+          myVar++;
       }
 
       @Override
@@ -137,17 +136,24 @@ public class MoveFragment extends MyFragment
     new GetConstellationInfo(constellationAdapter);
   }
 
-  private String formatPositionString(double azimuth, double height)
+  private static String formatPositionString(double azimuth, double height, int mode)
   {
     DecimalFormat df = new DecimalFormat("000.00");
     String        az = "A:" + df.format(azimuth);
     String        h  = "H:" + df.format(height);
 
+    if (mode == 1)
+      return String.format("%s | %s", az, h);
     return String.format("%s (%s)\n%s | %s", curObj.name, calConstellation, az, h);
   }
 
   public void setPositionString()
   {
-    act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h));
+    act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h, 0));
+  }
+
+  public static void setTelescopeLocationString(MainActivity ctx, int a, int h)
+  {
+    ctx.terminal.setText(formatPositionString(a, h, 1));
   }
 }

@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 public class MainFragment extends MyFragment
 {
@@ -12,9 +13,9 @@ public class MainFragment extends MyFragment
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
     View res = inflater.inflate(R.layout.content_main, container, false);
-    res.findViewById(R.id.logo).setVisibility(View.VISIBLE);
-    res.findViewById(R.id.msg_window).setVisibility(View.GONE);
-    res.findViewById(R.id.sky_object).setVisibility(View.GONE);
+    TextView tv = res.findViewById(R.id.msg_window);
+    tv.setVisibility(View.VISIBLE);
+    tv.setText(C.curMessage);
     return res;
   }
 }

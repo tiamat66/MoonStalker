@@ -25,6 +25,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -53,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   TerminalWindow terminal;
   Monitor        monitor;
+  ImageView      statusLight;
 
   @SuppressLint("InflateParams") @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -60,9 +62,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     Toolbar toolbar = findViewById(R.id.toolbar);
+    statusLight = findViewById(R.id.status_light);
     setSupportActionBar(toolbar);
-    getSupportActionBar().setTitle(R.string.not_connected);
-    getSupportActionBar().setIcon(R.drawable.ic_error_s);
+    getSupportActionBar().setTitle("");
+    C.curMessage = tx(R.string.not_connected);
 
     SharedPref.setDefault("device_name", SERVER_NAME);
     SharedPref.setDefault("calibration_obj", calObj);
@@ -123,8 +126,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     monitor.update("$ ");
 
     // init astro database
-    MoveFragment.initAstroObjDatabase(this);
-
+    SelectFragment.initAstroObjDatabase(this);
+    final MainActivity ctx = this;
     // start state machine
     new StatusSM(new Nucleus()
     {
@@ -138,9 +141,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       void update(Integer title, Integer icon, boolean ca, boolean ma, boolean tr, boolean mo)
       {
         if (title != null)
-          getSupportActionBar().setTitle(title);
+          terminal.setText(tx(title));
         if (icon != null)
-          getSupportActionBar().setIcon(icon);
+          statusLight.setImageDrawable(getResources().getDrawable(icon));
         menu.findItem(R.id.calibrate).setEnabled(ca);
         menu.findItem(R.id.manual).setEnabled(ma);
         menu.findItem(R.id.track).setEnabled(tr);
@@ -152,9 +155,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       void update(Integer title, Integer icon)
       {
         if (title != null)
-          getSupportActionBar().setTitle(title);
+          terminal.setText(tx(title));
         if (icon != null)
-          getSupportActionBar().setIcon(icon);
+          statusLight.setImageDrawable(getResources().getDrawable(icon));
         drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
       }
 
@@ -171,11 +174,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
               update(R.string.tracing, R.drawable.ic_mv_s);
             } else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
               update(R.string.ready, R.drawable.ic_ok_s, false, true, true, false);
-              terminal.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-              if (currentFragment instanceof MoveFragment)
-                ((MoveFragment) currentFragment).setPositionString();
+              terminal.setBackgroundColor(getResources().getColor(R.color.colorOk2));
+              if (currentFragment instanceof SelectFragment)
+                ((SelectFragment) currentFragment).setPositionString();
             } else if (TelescopeStatus.getMode() == ST_MANUAL) {
               update(R.string.ready, R.drawable.ic_ok_s);
+              terminal.setText(tx(R.string.manual));
             } else if (TelescopeStatus.getMode() == ST_CALIBRATED) {
               update(R.string.calibrated, R.drawable.ic_ok_s, false, true, true, true);
             } else if (TelescopeStatus.getMode() == ST_CALIBRATING) {
@@ -208,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         {
           @Override public void run()
           {
-            ((MoveFragment) currentFragment).setPositionString();
+            ((SelectFragment) currentFragment).setPositionString();
           }
         });
       }
@@ -358,7 +362,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             .setAction("Calibrated", null).show();
       else {
         TelescopeStatus.setMode(ST_MOVE_TO_OBJECT);
-        setFragment("move", MoveFragment.class, new Bundle());
+        setFragment("move", SelectFragment.class, new Bundle());
       }
     } else if (id == R.id.track) {
       if (TelescopeStatus.get() != ST_READY)
@@ -366,8 +370,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             .setAction("Calibrated", null).show();
       else {
         TelescopeStatus.setMode(ST_TRACING);
-        if (!(currentFragment instanceof MoveFragment)) {
-          setFragment("move", MoveFragment.class, new Bundle());
+        if (!(currentFragment instanceof SelectFragment)) {
+          setFragment("move", SelectFragment.class, new Bundle());
         }
       }
     } else if (id == R.id.calibrate) {
@@ -506,7 +510,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     ll_progress = new LinearLayout(this);
     ll_progress.setOrientation(LinearLayout.VERTICAL);
-    ll_progress.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+    ll_progress.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
     ll_progress.addView(progress, lp_progress);
     ll_progress.addView(loadingText, lp_loading);
     final FrameLayout.LayoutParams lp_ll = new FrameLayout.LayoutParams(

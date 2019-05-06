@@ -7,11 +7,12 @@ import android.widget.TextView;
 final class TerminalWindow
 {
   private TextView tv;
+  private MainActivity act;
 
   TerminalWindow(MainActivity act)
   {
+    this.act = act;
     tv = act.findViewById(R.id.msg_window);
-    hide();
   }
 
   void setBackgroundColor(int color)
@@ -21,16 +22,8 @@ final class TerminalWindow
 
   void setText(String msg)
   {
+    C.curMessage = msg;
+    act.refreshCurrentFragment();
     tv.setText(msg);
-  }
-
-  void show()
-  {
-    tv.setVisibility(View.VISIBLE);
-  }
-
-  void hide()
-  {
-    tv.setVisibility(View.GONE);
   }
 }

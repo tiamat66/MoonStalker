@@ -14,7 +14,7 @@ class Monitor extends PopupWindow
 
   Monitor(View ctxView)
   {
-    super(ctxView, 300, 300);
+    super(ctxView, 600, 300);
     tv = ctxView.findViewById(R.id.sys_monitor);
   }
 
@@ -23,7 +23,7 @@ class Monitor extends PopupWindow
     content.add(el);
     int           size = content.size();
     StringBuilder p    = new StringBuilder();
-    for (int i=5; i>0; i-- )
+    for (int i=7; i>0; i-- )
       p.append((size > i) ? content.get(size - (i + 1)) : "\n");
     p.append(content.isEmpty() ? "" : content.getLast());
     tv.setText(p.toString());

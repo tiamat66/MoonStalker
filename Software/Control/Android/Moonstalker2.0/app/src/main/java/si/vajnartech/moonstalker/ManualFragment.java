@@ -2,6 +2,7 @@ package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -23,14 +24,6 @@ public class ManualFragment extends MyFragment
   {
     View res = inflater.inflate(R.layout.frag_manual, container, false);
     View kp = res.findViewById(R.id.key_pad);
-    act.findViewById(R.id.sky_object).setVisibility(View.GONE);
-    act.findViewById(R.id.logo).setVisibility(View.GONE);
-    if (TelescopeStatus.getMode() == ST_CALIBRATING) {
-      act.terminal.setText(String.format(act.tx(R.string.to_calibrate), curObj.name));
-      act.terminal.show();
-    }
-    else
-      act.terminal.hide();
 
     kp.setOnTouchListener(new View.OnTouchListener() {
       @Override public boolean onTouch(View view, MotionEvent event)
