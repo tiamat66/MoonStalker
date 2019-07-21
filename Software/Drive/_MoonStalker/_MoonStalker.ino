@@ -35,9 +35,6 @@ const int horiz_fault_pin = 11;
 const int vert_fault_pin = 12;
 
 // global variables
-
-
-
 StepperController stepper_controller = StepperController(200);
 
 void setup()
@@ -131,27 +128,29 @@ void handle_incoming_command(char *command_buff)
   {
     char *x_str;
     char *y_str;
-    int x, y;
+    char *rpm_speed_str;
+    int x, y, rpm_speed;
     int x_remain, y_remain;
 
-    // check if we are still moving
-    noInterrupts();
-    // TODO - Do the correct thing here
-    interrupts();
-    if ((x_remain > 0) || (y_remain > 0))
+    
+    if (stepper_controller.get_running_mode() != RunningMode::IDLE_MODE)
     {
       Serial1.println("<NOT_RDY>");
       return;
     }
     x_str = strtok(NULL, " ");
     y_str = strtok(NULL, " ");
+    rpm_speed_str = strtok(NULL, " ");
 
     x = atoi(x_str);
     y = atoi(y_str);
+    rpm_speed = atoi(rpm_speed_str);
     Serial1.print("<MV_ACK ");
     Serial1.print(x);
     Serial1.print(" ");
     Serial1.print(y);
+    Serial1.print(" ");
+    Serial1.print(rpm_speed);
     Serial1.println(">");
 
     // Set direction for horiz and vert
@@ -179,6 +178,81 @@ void handle_incoming_command(char *command_buff)
     noInterrupts();
     // TODO - Do the correct thing here
     interrupts();
+  }
+  else if (!strcmp(cmd, "MVS"))
+  {
+    char *direction_str;
+    char *rpm_speed_str;
+    int   rpm_speed;
+
+    // We can't start free run move if we are
+    // in move mode. Previous free run mode can
+    // be modified with new parameters.
+    if (stepper_controller.get_running_mode() == RunningMode::MOVE_MODE)
+    {
+      Serial1.println("<NOT_RDY>");
+      return;
+    }
+    
+    direction_str = strtok(NULL, " ");
+    rpm_speed_str = strtok(NULL, " ");
+
+    rpm_speed = atoi(rpm_speed_str);
+    if (!strcmp(direction_str, "N"))
+    {
+      stepper_controller.free_run_start(0, StepperDirection::IGNORE, rpm_speed, StepperDirection::CW);
+    }
+    else if (!strcmp(direction_str, "S"))
+    {
+      stepper_controller.free_run_start(0, StepperDirection::IGNORE, rpm_speed, StepperDirection::CCW);
+    }
+    else if (!strcmp(direction_str, "W"))
+    {
+      stepper_controller.free_run_start(rpm_speed, StepperDirection::CW, 0, StepperDirection::IGNORE);
+    }
+    else if (!strcmp(direction_str, "E"))
+    {
+      stepper_controller.free_run_start(rpm_speed, StepperDirection::CCW, 0, StepperDirection::IGNORE);
+    }
+    else if (!strcmp(direction_str, "NW"))
+    {
+      stepper_controller.free_run_start(rpm_speed, StepperDirection::CW, rpm_speed, StepperDirection::CW);
+    }
+    else if (!strcmp(direction_str, "NE"))
+    {
+      stepper_controller.free_run_start(rpm_speed, StepperDirection::CCW, rpm_speed, StepperDirection::CW);
+    }
+    else if (!strcmp(direction_str, "SW"))
+    {
+      stepper_controller.free_run_start(rpm_speed, StepperDirection::CW, rpm_speed, StepperDirection::CCW);
+    }
+    else if (!strcmp(direction_str, "SE"))
+    {
+      stepper_controller.free_run_start(rpm_speed, StepperDirection::CCW, rpm_speed, StepperDirection::CCW);
+    }
+    else
+    {
+      Serial1.println("<ERROR UNKNOWN_DIRECTION>");
+      return;
+    }   
+    Serial1.print("<MVS_ACK ");
+    Serial1.print(direction_str);
+    Serial1.print(" ");
+    Serial1.print(rpm_speed);
+    Serial1.println(">");
+  }
+  else if (!strcmp(cmd, "MVE"))
+  {
+    if (stepper_controller.get_running_mode() != RunningMode::FREE_RUN_MODE)
+    {
+      Serial1.println("<NOT_RDY>");
+      return;
+    }
+    else
+    {
+      stepper_controller.free_run_stop();
+      Serial1.println("<MVE_ACK");
+    }
   }
   else if (!strcmp(cmd, "BTRY?"))
   {

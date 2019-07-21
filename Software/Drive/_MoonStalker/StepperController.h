@@ -11,7 +11,8 @@
 enum class StepperDirection
 {
   CW,
-  CCW
+  CCW,
+  IGNORE
 };
 
 enum class RunningMode
@@ -36,7 +37,7 @@ class StepperController
                       StepperDirection vert_direction);
  
   // Stop both motors
-  bool free_run_stop(void);
+  bool free_run_stop();
 
   // Move both steppers with the specified speed,
   // direction and number of steps
@@ -48,7 +49,7 @@ class StepperController
                      StepperDirection vert_direction,
                      int16_t vert_steps);
   // Return current running mode
-  RunningMode get_current_mode();
+  RunningMode get_running_mode();
 
   // methods for timer initialization
   void initialize_timer1();

@@ -15,7 +15,7 @@ StepperController::StepperController(int16_t steps_per_revolution)
   steps_per_revolution = steps_per_revolution;
 }
 
-RunningMode StepperController::get_current_mode()
+RunningMode StepperController::get_running_mode()
 {
   return running_mode;
 }
