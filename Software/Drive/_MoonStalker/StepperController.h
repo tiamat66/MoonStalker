@@ -7,7 +7,6 @@
 // specified number of steps.
 
 #include <stdint.h>
-#include <Arduino.h>
 
 enum class StepperDirection
 {
@@ -51,10 +50,13 @@ class StepperController
   // Return current running mode
   RunningMode get_current_mode();
 
+  // methods for timer initialization
+  void initialize_timer1();
+  void initialize_timer3();
   private:
   
   RunningMode running_mode;
   int16_t     steps_per_revolution;
-  String      error;
+  char        error[256];
 
 };
