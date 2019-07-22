@@ -25,7 +25,8 @@ bool StepperController::free_run_start(int16_t speed_horiz,
                                        int16_t speed_vert,
                                        StepperDirection vert_direction)
 {
-  running_mode = RunningMode::FREE_RUN_MODE;                   
+  running_mode = RunningMode::FREE_RUN_MODE;  
+                   
 }
  
 bool StepperController::free_run_stop(void)
@@ -70,6 +71,12 @@ void StepperController::initialize_timer1()
   Serial1.println(initial_ocr1a);
 }
 
+int16_t StepperController::calculate_ocr_reg_value(int16_t rpm_speed)
+{
+  // WRONG
+  // reg_value = (rpm_speed * steps_per_revolution) * 1000000 / (60 * 4)
+  reg_value = (rpm_speed * steps_per_revolution) * 12500 / 3;
+}
 
 void StepperController::initialize_timer3()
 {

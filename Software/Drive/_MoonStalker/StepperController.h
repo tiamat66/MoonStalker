@@ -48,6 +48,11 @@ class StepperController
                      int16_t speed_vert,
                      StepperDirection vert_direction,
                      int16_t vert_steps);
+
+  // calculation of ocr register value
+  // for pulse timing
+  int16_t calculate_ocr_reg_value(int16_t rpm_speed);
+  
   // Return current running mode
   RunningMode get_running_mode();
 

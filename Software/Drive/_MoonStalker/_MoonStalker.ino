@@ -126,11 +126,12 @@ void handle_incoming_command(char *command_buff)
   cmd = strtok(command, " ");
   if (!strcmp(cmd, "MV"))
   {
-    char *x_str;
-    char *y_str;
+    char *horiz_steps_str;
+    char *vert_steps_str;
     char *rpm_speed_str;
-    int x, y, rpm_speed;
-    int x_remain, y_remain;
+    int horiz_steps, vert_steps, rpm_speed;
+    StepperDirection horiz_direction;
+    StepperDirection vert_direction;
 
     
     if (stepper_controller.get_running_mode() != RunningMode::IDLE_MODE)
@@ -138,46 +139,45 @@ void handle_incoming_command(char *command_buff)
       Serial1.println("<NOT_RDY>");
       return;
     }
-    x_str = strtok(NULL, " ");
-    y_str = strtok(NULL, " ");
+    horiz_steps_str = strtok(NULL, " ");
+    vert_steps_str = strtok(NULL, " ");
     rpm_speed_str = strtok(NULL, " ");
 
-    x = atoi(x_str);
-    y = atoi(y_str);
+    horiz_steps = atoi(horiz_steps_str);
+    vert_steps = atoi(vert_steps_str);
     rpm_speed = atoi(rpm_speed_str);
     Serial1.print("<MV_ACK ");
-    Serial1.print(x);
+    Serial1.print(horiz_steps);
     Serial1.print(" ");
-    Serial1.print(y);
+    Serial1.print(vert_steps);
     Serial1.print(" ");
     Serial1.print(rpm_speed);
     Serial1.println(">");
 
-    // Set direction for horiz and vert
-    if (x < 0)
+    if (horiz_steps < 0)
     {
-      digitalWrite(horiz_direction_pin, HIGH);
-      x = -x;
+      horiz_steps = -horiz_steps;
+      horiz_direction = StepperDirection::CCW;
     }
     else
     {
-      digitalWrite(horiz_direction_pin, LOW);
+      horiz_direction = StepperDirection::CW;
     }
-    if (y < 0)
+    if (vert_steps < 0)
     {
-      digitalWrite(vert_direction_pin, HIGH);
-      y = -y;
+      vert_steps = -vert_steps;
+      vert_direction = StepperDirection::CCW;
     }
     else
     {
-      digitalWrite(vert_direction_pin, LOW);
-    }   
-    // Set step variables for
-    // the interrupt routine
-    // and initialize current values
-    noInterrupts();
-    // TODO - Do the correct thing here
-    interrupts();
+      vert_direction = StepperDirection::CW;
+    }
+    stepper_controller.move_steppers(rpm_speed,
+                                     horiz_direction,
+                                     horiz_steps,
+                                     rpm_speed,
+                                     vert_direction,
+                                     vert_steps);                                    
   }
   else if (!strcmp(cmd, "MVS"))
   {
@@ -347,7 +347,7 @@ void initialize_pins()
   pinMode(horiz_fault_pin, INPUT);
   pinMode(vert_fault_pin, INPUT);
 
-  pinMode(battery_voltage_pin, INPUT_PULLUP);
+  pinMode(battery_voltage_pin, INPUT);
 
   // set sleep pins
   digitalWrite(horiz_sleep_pin, HIGH);
