@@ -71,13 +71,6 @@ void StepperController::initialize_timer1()
   Serial1.println(initial_ocr1a);
 }
 
-int16_t StepperController::calculate_ocr_reg_value(int16_t rpm_speed)
-{
-  // WRONG
-  // reg_value = (rpm_speed * steps_per_revolution) * 1000000 / (60 * 4)
-  reg_value = (rpm_speed * steps_per_revolution) * 12500 / 3;
-}
-
 void StepperController::initialize_timer3()
 {
   uint16_t initial_ocr3a = 100;
@@ -103,6 +96,16 @@ void StepperController::initialize_timer3()
   interrupts();
   Serial1.print("Initial ocr3a: ");
   Serial1.println(initial_ocr3a);
+}
+
+// Calculates the ocrxa register value from rpm_speed and
+// steps_per_revolution. This is for 1/64 prescaler.
+int16_t StepperController::calculate_ocr_reg_value(int16_t rpm_speed)
+{
+  unsigned long reg_value;
+  
+  // reg_value = (60 * 1000000) / (rpm_speed * steps_per_revolution * 4)
+  reg_value = (15000000L / (rpm_speed * steps_per_revolution)); 
 }
 
 // interrupt routines that pull horiz
