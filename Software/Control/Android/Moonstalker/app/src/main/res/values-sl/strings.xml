@@ -1,0 +1,38 @@
+<resources>
+  <string name="app_name">Moonstalker</string>
+  <string name="navigation_drawer_open">Open navigation drawer</string>
+  <string name="navigation_drawer_close">Close navigation drawer</string>
+  <string name="nav_header_title">Moonstalker</string>
+  <string name="nav_header_subtitle">VajnarTech</string>
+  <string name="nav_header_desc">Navigation header</string>
+  <string name="action_settings">Nastavitve</string>
+  <string name="action_monitor">Monitor</string>
+  <string name="calibration_ntfy">Ročno premaknite teleskop na izhodiščni objekt, ter potrdite</string>
+  <string name="connecting">povezujem</string>
+  <string name="connected">povezan</string>
+  <string name="tracing">sledim</string>
+  <string name="moving">Premikam</string>
+  <string name="initializing">inicializiram</string>
+  <string name="calibrated">teleskop kalibriran</string>
+  <string name="move">Premakni</string>
+  <string name="manual">ročno vodenje</string>
+  <string name="track">Sledi</string>
+  <string name="calibrate">Kalibriraj</string>
+  <string name="not_connected"> brez povezave</string>
+  <string name="not_calibrated"> ni kalibriran</string>
+  <string name="calibrating">kalibracija</string>
+  <string name="ready">pripravljen</string>
+  <string name="warning">Opozorilo</string>
+  <string name="connection_failed">Ne morem se povezati s teleskopom</string>
+  <string name="connect">Poveži</string>
+  <string name="communicate">Komunikacija</string>
+  <string name="to_calibrate">premakni na %s</string>
+  <string name="ok">OK</string>
+  <string name="to_manual_move">Prekinil boš kalibracijo. Nadaljujem?</string>
+  <string name="sett_device">Ime naprave</string>
+  <string name="calibration_obj">Objekt za kalibracijo</string>
+  <string name="constellation">Ozvezdje</string>
+  <string name="sky_object_string">Nebesno telo</string>
+  <string name="moonstalker">MoonStalker</string>
+
+</resources>
