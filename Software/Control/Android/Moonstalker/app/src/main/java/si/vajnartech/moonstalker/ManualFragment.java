@@ -1,22 +1,19 @@
 package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
-import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_MOVING_E;
 import static si.vajnartech.moonstalker.C.ST_READY;
-import static si.vajnartech.moonstalker.C.curObj;
 
 public class ManualFragment extends MyFragment
 {
-  float dX, dY;
-  D dK = new D();
+  private float dX, dY;
+  private D dK = new D();
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -67,7 +64,7 @@ public class ManualFragment extends MyFragment
     return res;
   }
 
-  C.Directions d = C.Directions.NONE;
+  private C.Directions d = C.Directions.NONE;
 }
 
 class D
