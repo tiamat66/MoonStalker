@@ -1,0 +1,4 @@
+.idea/
+ServerMS/__pycache__/
+sky/__pycache__/
+sky/migrations/__pycache__/

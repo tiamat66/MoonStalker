@@ -32,6 +32,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
+import si.vajnartech.moonstalker.rest.GetSkyObjList;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
@@ -45,6 +46,8 @@ import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
+
+// V 'inicializiram' se zatakne
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -232,6 +235,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // init current astro object
     new GetStarInfo(C.calObj, null);
     connect(false);
+
+    new GetSkyObjList(3);
   }
 
   private void connect(boolean exe)

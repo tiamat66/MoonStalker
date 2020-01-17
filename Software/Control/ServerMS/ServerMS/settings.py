@@ -25,7 +25,10 @@ SECRET_KEY = '&ls^4y$6y*dt61im7z68=ws=74ch^mz53nm6r(a@w2@7lsu)$r'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '192.168.1.6',
+    '89.142.196.96',
+]
 
 
 # Application definition
@@ -37,6 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework.authtoken',
+    'rest_framework',
+    'sky',
 ]
 
 MIDDLEWARE = [
@@ -75,9 +81,13 @@ WSGI_APPLICATION = 'ServerMS.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'moonstalker',
+        'USER': 'vajnar',
+        'PASSWORD': 'vajnar',
+        'HOST': 'localhost',
+        'PORT': ''
+    },
 }
 
 

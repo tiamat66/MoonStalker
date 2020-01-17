@@ -13,6 +13,7 @@ public class SettingsFragment extends MyFragment
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
+    act.terminal.show(false);
     final SharedPref p = new SharedPref(act);
     View res = inflater.inflate(R.layout.frag_settings, container, false);
     EditText et = res.findViewById(R.id.device_name);

@@ -26,4 +26,12 @@ final class TerminalWindow
     act.refreshCurrentFragment();
     tv.setText(msg);
   }
+
+  void show(boolean sh)
+  {
+    if (sh)
+      tv.setVisibility(View.VISIBLE);
+    else
+      tv.setVisibility(View.GONE);
+  }
 }
