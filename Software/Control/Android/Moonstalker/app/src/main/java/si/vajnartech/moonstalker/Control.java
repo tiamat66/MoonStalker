@@ -10,24 +10,8 @@ import java.util.LinkedList;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static java.lang.Thread.sleep;
-import static si.vajnartech.moonstalker.C.ST_CONNECTED;
-import static si.vajnartech.moonstalker.C.ST_MOVING;
-import static si.vajnartech.moonstalker.C.ST_MOVING_E;
-import static si.vajnartech.moonstalker.C.ST_MOVING_S;
-import static si.vajnartech.moonstalker.C.ST_READY;
-import static si.vajnartech.moonstalker.C.TAG;
-import static si.vajnartech.moonstalker.OpCodes.BATTERY;
-import static si.vajnartech.moonstalker.OpCodes.ERROR;
-import static si.vajnartech.moonstalker.OpCodes.GET_BATTERY;
-import static si.vajnartech.moonstalker.OpCodes.GET_STATUS;
-import static si.vajnartech.moonstalker.OpCodes.INIT;
-import static si.vajnartech.moonstalker.OpCodes.IN_MSG;
-import static si.vajnartech.moonstalker.OpCodes.MOVE;
-import static si.vajnartech.moonstalker.OpCodes.MOVE_ACK;
-import static si.vajnartech.moonstalker.OpCodes.MOVE_START;
-import static si.vajnartech.moonstalker.OpCodes.MOVE_STOP;
-import static si.vajnartech.moonstalker.OpCodes.NOT_READY;
-import static si.vajnartech.moonstalker.OpCodes.READY;
+import static si.vajnartech.moonstalker.C.*;
+import static si.vajnartech.moonstalker.OpCodes.*;
 
 interface ControlInterface
 {
@@ -36,14 +20,22 @@ interface ControlInterface
   void dump(String str);
 }
 
-public class Control extends Telescope
+interface OutCommandInterface
 {
-  private              boolean isSocketFree;
+  void outMessageProcess(String opcode);
+  void outMessageProcess(String opcode, String p1);
+  void outMessageProcess(String opcode, String p1, String p2);
+  void outMessageProcess(String opcode, String p1, String p2, String p3);
+}
+
+public class Control extends Telescope implements OutCommandInterface
+{
+  private boolean          isSocketFree;
   private InMessageHandler inMessageHandler;
   private CommandProcessor processor;
-  private MainActivity act;
-  int fakeA = 0;
-  int fakeH = 0;
+  private MainActivity     act;
+  private int              fakeA = 0;
+  private int              fakeH = 0;
 
 
   Control(MainActivity act)
@@ -101,43 +93,41 @@ public class Control extends Telescope
   }
 
   @Override
-  void mv(int hSteps, int vSteps)
+  void mv(int hSteps, int vSteps, int speed)
   {
     TelescopeStatus.set(ST_MOVING);
     outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
   }
 
-  private void outMessageProcess(String opcode, String p1, String p2)
+  @Override
+  public void outMessageProcess(String opcode)
   {
-    Log.i(TAG, "outMessageProcess; socket=" + isSocketFree);
-    Instruction i;
-    if (p1.isEmpty() && p2.isEmpty())
-      i = new Instruction(opcode);
-    else if (!p1.isEmpty() && p2.isEmpty())
-      i = new Instruction(opcode, p1);
-    else
-      i = new Instruction(opcode, p1, p2);
-    processor.add(i);
+    processor.add(new Instruction(opcode));
+  }
+
+  @Override
+  public void outMessageProcess(String opcode, String p1)
+  {
+    processor.add(new Instruction(opcode, p1));
+  }
+
+  @Override
+  public void outMessageProcess(String opcode, String p1, String p2)
+  {
+    processor.add(new Instruction(opcode, p1, p2));
+  }
+
+  @Override
+  public void outMessageProcess(String opcode, String p1, String p2, String p3)
+  {
+    processor.add(new Instruction(opcode, p1, p2, p3));
   }
 
   @Override
   public void inMsgProcess(String opcode, Bundle params)
   {
     params.putString("opcode", opcode);
-    switch (opcode) {
-    case READY:
-      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
-      break;
-    case BATTERY:
-      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
-      break;
-    case ERROR:
-      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
-      break;
-    case INIT:
-      inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
-      break;
-    }
+    inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
   }
 
   @SuppressLint("HandlerLeak")

@@ -48,6 +48,8 @@ import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 
 // V 'inicializiram' se zatakne
+// kako dolociti max speed
+// preveri battery send/response
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener

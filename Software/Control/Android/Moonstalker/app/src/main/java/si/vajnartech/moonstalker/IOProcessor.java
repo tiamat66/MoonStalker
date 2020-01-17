@@ -114,9 +114,9 @@ public class IOProcessor extends AsyncTask<String, Void, String>
       ctrlInterface.messageProcess(j.opCode, new Bundle());
       break;
     case BATTERY:
-      Log.i(TAG, "processing BTRY from response with p1 = " + j.p1);
+      Log.i(TAG, "processing BTRY from response with p1 = " + j.parameters.get(0));
       Bundle b = new Bundle();
-      int val = Integer.parseInt(j.p1);
+      int val = Integer.parseInt(j.parameters.get(0));
       b.putInt("p1", val);
       ctrlInterface.dump("$ msg rcvd: BTRY " + val);
       ctrlInterface.messageProcess(j.opCode, b);

@@ -8,7 +8,7 @@ import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
-import static si.vajnartech.moonstalker.OpCodes.INIT;
+import static si.vajnartech.moonstalker.OpCodes.*;
 
 public abstract class Telescope extends PositionCalculus
 {
@@ -36,7 +36,7 @@ public abstract class Telescope extends PositionCalculus
     az += (vSteps * 360.0) / K;
     h += (hSteps * 360.0) / K;
     Log.i(TAG, "move");
-    mv(hSteps, vSteps);
+    mv(hSteps, vSteps, 500); // TODO kako dolociti max speed
   }
 
   void move(AstroObject obj)
@@ -74,7 +74,7 @@ public abstract class Telescope extends PositionCalculus
     if (Math.abs(cur_h_steps) >= PRECISION || Math.abs(cur_v_steps) >= PRECISION) {
       hSteps -= cur_h_steps;
       vSteps -= cur_v_steps;
-      mv(cur_h_steps, cur_v_steps);
+      mv(cur_h_steps, cur_v_steps, 500);
     }
   }
 
@@ -85,5 +85,5 @@ public abstract class Telescope extends PositionCalculus
 
   public abstract void inMsgProcess(String msg, Bundle bundle);
 
-  abstract void mv(int hSteps, int vSteps);
+  abstract void mv(int hSteps, int vSteps, int speed);
 }
