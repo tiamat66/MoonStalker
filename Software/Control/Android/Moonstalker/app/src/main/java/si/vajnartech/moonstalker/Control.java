@@ -50,7 +50,7 @@ public class Control extends Telescope implements OutCommandInterface
   void moveStart(final C.Directions direction)
   {
     TelescopeStatus.set(ST_MOVING_S);
-    outMessageProcess(MOVE_START, Integer.toString(direction.getValue()), "");
+    outMessageProcess(MOVE_START, Integer.toString(direction.getValue()));
     new Thread(new Runnable() {
       @Override public void run()
       {
@@ -89,7 +89,7 @@ public class Control extends Telescope implements OutCommandInterface
   void moveStop()
   {
     TelescopeStatus.set(ST_MOVING_E);
-    outMessageProcess(MOVE_STOP, "", "");
+    outMessageProcess(MOVE_STOP);
   }
 
   @Override
@@ -156,8 +156,8 @@ public class Control extends Telescope implements OutCommandInterface
         TelescopeStatus.setError(parms.getString("p1"));
         break;
       case INIT:
-        outMessageProcess(GET_STATUS, "", "");
-        outMessageProcess(GET_BATTERY, "", "");
+        outMessageProcess(GET_STATUS);
+        outMessageProcess(GET_BATTERY);
         break;
       case NOT_READY:
         processNotReady();

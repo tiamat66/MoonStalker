@@ -33,6 +33,7 @@ final class TelescopeStatus
   static void setBatteryVoltage(int voltage)
   {
     btryVoltage = voltage;
+    Log.i("IZAA", "Battery=" + btryVoltage);
   }
 
   static void setMode(int m)
