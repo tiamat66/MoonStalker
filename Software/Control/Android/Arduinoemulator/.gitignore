@@ -11,3 +11,9 @@
 /.idea/misc.xml
 /app/libs/
 .idea/gradle.xml
+app/build.gradle
+.idea/modules.xml
+.idea/dictionaries/
+.idea/modules.xml
+.idea/gradle.xml
+gradle/wrapper/gradle-wrapper.properties

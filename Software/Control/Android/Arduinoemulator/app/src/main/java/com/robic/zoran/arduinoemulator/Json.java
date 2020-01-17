@@ -19,7 +19,7 @@ public class Json
     }
   }
 
-  public static <T extends Object> T fromJson(String data, Class<T> cls)
+  public static <T> T fromJson(String data, Class<T> cls)
   {
     try {
       return mapper.readValue(data, cls);
@@ -28,7 +28,7 @@ public class Json
     }
   }
 
-  public static <T extends Object> T fromJson(BufferedReader data, Class<T> cls)
+  static <T> T fromJson(BufferedReader data, Class<T> cls)
   {
     try {
       return mapper.readValue(data, cls);
@@ -37,4 +37,3 @@ public class Json
     }
   }
 }
-

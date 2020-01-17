@@ -13,3 +13,5 @@
 /captures
 .externalNativeBuild
 .cxx
+.idea/dictionaries/
+.idea/misc.xml
