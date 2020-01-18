@@ -40,6 +40,7 @@ public final class C
   static final int ST_MOVING_S = 16;
   static final int ST_CALIBRATED   = 17;
   static final int ST_MOVE_TO_OBJECT = 18;
+  static final int ST_NOT_READY = 19;
 
   // Moving directions
   public enum Directions

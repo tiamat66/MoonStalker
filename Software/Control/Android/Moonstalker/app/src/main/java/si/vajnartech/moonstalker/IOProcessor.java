@@ -110,7 +110,6 @@ public class IOProcessor extends AsyncTask<String, Void, String>
     switch (j.opCode) {
     case READY:
       Log.i(TAG, "processing RDY from response ");
-      ctrlInterface.dump("$ msg rcvd: READY\n");
       ctrlInterface.messageProcess(j.opCode, new Bundle());
       break;
     case BATTERY:
@@ -118,7 +117,6 @@ public class IOProcessor extends AsyncTask<String, Void, String>
       Bundle b = new Bundle();
       int val = Integer.parseInt(j.parameters.get(0));
       b.putInt("p1", val);
-      ctrlInterface.dump("$ msg rcvd: BTRY " + val);
       ctrlInterface.messageProcess(j.opCode, b);
       break;
     case MOVE_ACK:
@@ -136,5 +134,6 @@ public class IOProcessor extends AsyncTask<String, Void, String>
         e.printStackTrace();
       }
     }
+    ctrlInterface.dump(String.format("$ msg rcvd: %s\n", j.opCode));
   }
 }

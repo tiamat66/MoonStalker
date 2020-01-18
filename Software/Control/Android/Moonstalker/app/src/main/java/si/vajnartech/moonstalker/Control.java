@@ -20,6 +20,7 @@ interface ControlInterface
   void dump(String str);
 }
 
+@SuppressWarnings("unused")
 interface OutCommandInterface
 {
   void outMessageProcess(String opcode);
@@ -201,7 +202,7 @@ public class Control extends Telescope implements OutCommandInterface
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
-            if (!isSocketFree || instrBuffer.isEmpty()) continue;
+            if (!isSocketFree || instrBuffer.isEmpty() || TelescopeStatus.locked()) continue;
             lock();
             new IOProcessor(instrBuffer.removeFirst(), new ControlInterface() {
               @Override
@@ -234,6 +235,7 @@ public class Control extends Telescope implements OutCommandInterface
 
     void add(Instruction i)
     {
+      if (TelescopeStatus.locked()) return;
       instrBuffer.addLast(i);
     }
   }
@@ -241,7 +243,6 @@ public class Control extends Telescope implements OutCommandInterface
   private void processReady()
   {
     Log.i(TAG, "processReady in Control = " + TelescopeStatus.get());
-    TelescopeStatus.unlock();
     if (TelescopeStatus.get() == ST_CONNECTED) {
       TelescopeStatus.set(ST_READY);
       TelescopeStatus.setMode(ST_READY);
@@ -254,12 +255,12 @@ public class Control extends Telescope implements OutCommandInterface
 
   private void processNotReady()
   {
-    TelescopeStatus.lock();
+    TelescopeStatus.set(ST_NOT_READY);
   }
 
   private void processMvAck()
   {
-    TelescopeStatus.lock();
+    TelescopeStatus.set(ST_NOT_READY); // TODO.
   }
 
   private void processBattery(int val)

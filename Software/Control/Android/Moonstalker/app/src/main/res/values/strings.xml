@@ -34,6 +34,7 @@
   <string name="constellation">Constellation</string>
   <string name="sky_object_string">Sky object</string>
   <string name="moonstalker">MoonStalker</string>
+  <string name="not_ready">busy</string>
 
   <string-array name="sky_objects">
     <item>Polaris</item>

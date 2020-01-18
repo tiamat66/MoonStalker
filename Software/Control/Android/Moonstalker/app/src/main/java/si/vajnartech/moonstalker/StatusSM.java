@@ -10,6 +10,7 @@ import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_MOVING_S;
 import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
+import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 
@@ -67,7 +68,18 @@ public class StatusSM extends Thread
           TelescopeStatus.getMode() != ST_TRACING)
         continue;
 
-      if (prevMode == ST_MOVE_TO_OBJECT && TelescopeStatus.getMode() == ST_MANUAL) {
+      if (prevStatus == ST_NOT_READY && TelescopeStatus.get() == ST_READY) {
+        prevStatus = TelescopeStatus.get();
+        TelescopeStatus.unlock();
+        inf.updateStatus();
+        continue;
+      }
+      else if (prevStatus != ST_NOT_READY && TelescopeStatus.get() == ST_NOT_READY) {
+        prevStatus = TelescopeStatus.get();
+        TelescopeStatus.lock();
+        inf.updateStatus();
+      }
+      else if (prevMode == ST_MOVE_TO_OBJECT && TelescopeStatus.getMode() == ST_MANUAL) {
         prevMode = TelescopeStatus.getMode();
         inf.updateStatus();
       }

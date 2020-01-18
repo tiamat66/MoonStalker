@@ -42,6 +42,7 @@ import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_MANUAL;
 import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
+import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
@@ -49,7 +50,7 @@ import static si.vajnartech.moonstalker.C.curObj;
 
 // V 'inicializiram' se zatakne
 // kako dolociti max speed
-// preveri battery send/response
+// delam na NOT_READY messagu
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -175,6 +176,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           @Override
           public void run()
           {
+            if (TelescopeStatus.get() == ST_NOT_READY)
+              update(R.string.not_ready, R.drawable.ic_error_s);
             if (TelescopeStatus.getMode() == ST_TRACING) {
               terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent2));
               update(R.string.tracing, R.drawable.ic_mv_s);

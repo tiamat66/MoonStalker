@@ -2,38 +2,38 @@ package si.vajnartech.moonstalker;
 
 import android.util.Log;
 
-import static si.vajnartech.moonstalker.C.ST_BTRY_LOW;
-import static si.vajnartech.moonstalker.C.ST_ERROR;
-import static si.vajnartech.moonstalker.C.TRSHLD_BTRY;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal", "unused"})
-final class TelescopeStatus
+import static si.vajnartech.moonstalker.C.*;
+
+@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final class TelescopeStatus
 {
-  private static int  btryVoltage = -1;
-  private static int status = -1;
-  private static int mode = -1;
-  private static boolean lck = true;
-  private static String error = "";
+  private static int    btryVoltage = -1;
+  private static int    status      = -1;
+  private static int    mode        = -1;
+  private static String error       = "";
+
+  private static AtomicBoolean lck = new AtomicBoolean(true);
 
   static void lock()
   {
-    lck = true;
+    lck.set(true);
   }
 
   static void unlock()
   {
-    lck = false;
+    lck.set(false);
   }
 
   static boolean locked()
   {
-    return lck;
+    return lck.get();
   }
 
   static void setBatteryVoltage(int voltage)
   {
     btryVoltage = voltage;
-    Log.i("IZAA", "Battery=" + btryVoltage);
+    Log.i(TAG, "Battery=" + btryVoltage);
   }
 
   static void setMode(int m)

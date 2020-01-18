@@ -34,5 +34,6 @@
   <string name="constellation">Ozvezdje</string>
   <string name="sky_object_string">Nebesno telo</string>
   <string name="moonstalker">MoonStalker</string>
+  <string name="not_ready">zaposlen</string>
 
 </resources>
