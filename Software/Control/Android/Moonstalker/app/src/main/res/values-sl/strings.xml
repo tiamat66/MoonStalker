@@ -23,7 +23,7 @@
   <string name="calibrating">kalibracija</string>
   <string name="ready">pripravljen</string>
   <string name="warning">Opozorilo</string>
-  <string name="connection_failed">Ne morem se povezati s teleskopom</string>
+  <string name="connection_failed">Ne morem se povezati s teleskopom. Preveri BlueTooth povezavo.</string>
   <string name="connect">Poveži</string>
   <string name="communicate">Komunikacija</string>
   <string name="to_calibrate">premakni na %s</string>
@@ -35,5 +35,6 @@
   <string name="sky_object_string">Nebesno telo</string>
   <string name="moonstalker">MoonStalker</string>
   <string name="not_ready">zaposlen</string>
+  <string name="msg_no_answer">Ni odgovora, preveri teleskop!</string>
 
 </resources>

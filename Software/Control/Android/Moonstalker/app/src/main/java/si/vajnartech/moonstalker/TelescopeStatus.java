@@ -6,14 +6,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static si.vajnartech.moonstalker.C.*;
 
-@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final class TelescopeStatus
+@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
+final class TelescopeStatus
 {
   private static int    btryVoltage = -1;
   private static int    status      = -1;
   private static int    mode        = -1;
   private static String error       = "";
 
-  private static AtomicBoolean lck = new AtomicBoolean(true);
+  private static AtomicBoolean lck = new AtomicBoolean(false);
 
   static void lock()
   {

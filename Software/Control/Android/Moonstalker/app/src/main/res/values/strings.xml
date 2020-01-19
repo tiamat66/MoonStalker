@@ -23,7 +23,7 @@
   <string name="calibrating">calibration</string>
   <string name="ready">ready</string>
   <string name="warning">Warning</string>
-  <string name="connection_failed">Connection failed</string>
+  <string name="connection_failed">Connection failed. Check the BlueTooth</string>
   <string name="connect">Connect</string>
   <string name="communicate">Communicate</string>
   <string name="to_calibrate">move to %s</string>
@@ -35,6 +35,7 @@
   <string name="sky_object_string">Sky object</string>
   <string name="moonstalker">MoonStalker</string>
   <string name="not_ready">busy</string>
+  <string name="msg_no_answer">No answer from telescope</string>
 
   <string-array name="sky_objects">
     <item>Polaris</item>

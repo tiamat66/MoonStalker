@@ -30,7 +30,7 @@ class BlueTooth extends AsyncTask<String, Void, Void>
   private BluetoothDevice  pairedDevice = null;
   private String url;
 
-  static BluetoothSocket socket;
+  static volatile BluetoothSocket socket;
 
   BlueTooth(String url, MainActivity act, BTInterface i)
   {
@@ -109,5 +109,16 @@ class BlueTooth extends AsyncTask<String, Void, Void>
     if (getPairedDevices(url))
       connect();
     return null;
+  }
+
+  static void disconnect()
+  {
+    if (socket != null) {
+      try {
+        socket.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 }

@@ -48,7 +48,6 @@ import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 
-// V 'inicializiram' se zatakne
 // kako dolociti max speed
 // delam na NOT_READY messagu
 
@@ -235,6 +234,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             monitor.update(str);
           }
         });
+      }
+
+      @Override
+      public void onNoAnswer()
+      {
+        myMessage(tx(R.string.msg_no_answer));
       }
     });
     // init current astro object

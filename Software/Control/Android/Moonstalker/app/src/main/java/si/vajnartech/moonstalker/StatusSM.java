@@ -2,6 +2,8 @@ package si.vajnartech.moonstalker;
 
 import android.util.Log;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_MANUAL;
@@ -27,20 +29,25 @@ interface Nucleus
   void move();
 
   void dump(String str);
+
+  void onNoAnswer();
 }
 
 public class StatusSM extends Thread
 {
+  int timeout = 1000;
+  int threshold = 10;
+
   private int     prevStatus;
   private int     prevMode;
   private boolean r;
   private Nucleus inf;
 
+  private AtomicInteger stucked = new AtomicInteger(0);
+
   StatusSM(Nucleus inf)
   {
-    prevStatus = ST_NOT_CONNECTED;
-    prevMode = ST_READY;
-    TelescopeStatus.set(ST_NOT_CONNECTED);
+    reset();
     this.inf = inf;
     r = true;
     start();
@@ -52,7 +59,7 @@ public class StatusSM extends Thread
   {
     while (r) {
       try {
-        sleep(1000);
+        sleep(timeout);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -63,8 +70,21 @@ public class StatusSM extends Thread
       if (C.mStatus)
         inf.dump("$ status=" + TelescopeStatus.get() + "\n");
 
-      if (TelescopeStatus.get() == prevStatus &&
-          TelescopeStatus.getMode() == prevMode &&
+      if (TelescopeStatus.get() == prevStatus) {
+        if (prevStatus == ST_CONNECTED) {
+          if (stucked.incrementAndGet() > threshold) {
+            stucked.set(0);
+            inf.stopProgress();
+            inf.onNoAnswer();
+            BlueTooth.disconnect();
+            reset();
+          }
+        }
+        continue;
+      }
+      stucked.set(0);
+
+      if (TelescopeStatus.getMode() == prevMode &&
           TelescopeStatus.getMode() != ST_TRACING)
         continue;
 
@@ -140,5 +160,13 @@ public class StatusSM extends Thread
       if (prevMode == ST_TRACING)
         inf.move();
     }
+  }
+
+  private void reset()
+  {
+    prevStatus = ST_NOT_CONNECTED;
+    prevMode = ST_READY;
+    TelescopeStatus.set(ST_NOT_CONNECTED);
+    TelescopeStatus.setMode(ST_READY);
   }
 }
