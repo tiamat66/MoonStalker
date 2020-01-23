@@ -48,6 +48,7 @@ import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 
+// daj statuse v enum
 // kako dolociti max speed
 // delam na NOT_READY messagu
 
@@ -223,6 +224,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             ((SelectFragment) currentFragment).setPositionString();
           }
         });
+      }
+
+      @Override
+      public void st()
+      {
+        ctrl.st();
       }
 
       @Override

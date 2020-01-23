@@ -16,20 +16,14 @@ import static si.vajnartech.moonstalker.OpCodes.*;
 interface ControlInterface
 {
   void releaseSocket();
+
   void messageProcess(String msg, Bundle bundle);
+
   void dump(String str);
 }
 
-@SuppressWarnings("unused")
-interface OutCommandInterface
-{
-  void outMessageProcess(String opcode);
-  void outMessageProcess(String opcode, String p1);
-  void outMessageProcess(String opcode, String p1, String p2);
-  void outMessageProcess(String opcode, String p1, String p2, String p3);
-}
-
-public class Control extends Telescope implements OutCommandInterface
+@SuppressWarnings("SameParameterValue")
+public class Control extends Telescope
 {
   private boolean          isSocketFree;
   private InMessageHandler inMessageHandler;
@@ -52,10 +46,11 @@ public class Control extends Telescope implements OutCommandInterface
   {
     TelescopeStatus.set(ST_MOVING_S);
     outMessageProcess(MOVE_START, Integer.toString(direction.getValue()));
-    new Thread(new Runnable() {
+    new Thread(new Runnable()
+    {
       @Override public void run()
       {
-        while(TelescopeStatus.get() == ST_MOVING_S) {
+        while (TelescopeStatus.get() == ST_MOVING_S) {
           switch (direction) {
           case UP:
             fakeH++;
@@ -101,24 +96,26 @@ public class Control extends Telescope implements OutCommandInterface
   }
 
   @Override
-  public void outMessageProcess(String opcode)
+  void st()
+  {
+    outMessageProcess(GET_STATUS);
+  }
+
+  private void outMessageProcess(String opcode)
   {
     processor.add(new Instruction(opcode));
   }
 
-  @Override
-  public void outMessageProcess(String opcode, String p1)
+  private void outMessageProcess(String opcode, String p1)
   {
     processor.add(new Instruction(opcode, p1));
   }
 
-  @Override
-  public void outMessageProcess(String opcode, String p1, String p2)
+  private void outMessageProcess(String opcode, String p1, String p2)
   {
     processor.add(new Instruction(opcode, p1, p2));
   }
 
-  @Override
   public void outMessageProcess(String opcode, String p1, String p2, String p3)
   {
     processor.add(new Instruction(opcode, p1, p2, p3));
@@ -140,7 +137,7 @@ public class Control extends Telescope implements OutCommandInterface
       if (message.what != IN_MSG)
         return;
 
-      Bundle parms = (Bundle) message.obj;
+      Bundle parms  = (Bundle) message.obj;
       String opcode = "";
       if (parms != null)
         opcode = (String) parms.get("opcode");
@@ -177,9 +174,10 @@ public class Control extends Telescope implements OutCommandInterface
   class CommandProcessor
   {
     LinkedList<Instruction> instrBuffer = new LinkedList<>();
-    boolean                 r;
-    Control                 ctrl;
-    MainActivity            ctx;
+
+    boolean      r;
+    Control      ctrl;
+    MainActivity ctx;
 
     CommandProcessor(Control ctrl, MainActivity act)
     {
@@ -204,7 +202,8 @@ public class Control extends Telescope implements OutCommandInterface
             }
             if (!isSocketFree || instrBuffer.isEmpty() || TelescopeStatus.locked()) continue;
             lock();
-            new IOProcessor(instrBuffer.removeFirst(), new ControlInterface() {
+            new IOProcessor(instrBuffer.removeFirst(), new ControlInterface()
+            {
               @Override
               public void releaseSocket()
               {
@@ -220,7 +219,8 @@ public class Control extends Telescope implements OutCommandInterface
               @Override
               public void dump(final String str)
               {
-                ctx.runOnUiThread(new Runnable() {
+                ctx.runOnUiThread(new Runnable()
+                {
                   @Override public void run()
                   {
                     ctx.monitor.update(str);
