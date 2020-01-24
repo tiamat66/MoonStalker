@@ -3,19 +3,7 @@ package si.vajnartech.moonstalker;
 import android.os.Bundle;
 import android.util.Log;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
-import static si.vajnartech.moonstalker.C.ST_CONNECTED;
-import static si.vajnartech.moonstalker.C.ST_MANUAL;
-import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
-import static si.vajnartech.moonstalker.C.ST_MOVING;
-import static si.vajnartech.moonstalker.C.ST_MOVING_S;
-import static si.vajnartech.moonstalker.C.ST_NOT_CAL;
-import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
-import static si.vajnartech.moonstalker.C.ST_NOT_READY;
-import static si.vajnartech.moonstalker.C.ST_READY;
-import static si.vajnartech.moonstalker.C.ST_TRACING;
+import static si.vajnartech.moonstalker.C.*;
 
 interface Nucleus
 {
@@ -71,6 +59,15 @@ public class StatusSM extends Thread
       }
     }, ST_CONNECTED, 10));
 
+    balls.add(new Ball(new Runnable() {
+      @Override public void run()
+      {
+        Log.i("STATUS", "Pohendlaj stuck v ST_NOT_READY");
+        TelescopeStatus.unlock();
+        inf.st();
+      }
+    }, ST_NOT_READY, 5));
+
     while (r) {
       try {
         sleep(timeout);
@@ -87,12 +84,14 @@ public class StatusSM extends Thread
           TelescopeStatus.get() != ST_READY &&
           TelescopeStatus.get() != ST_NOT_CONNECTED)
         balls.go(prevStatus);
-//      if (TelescopeStatus.get() != ST_NOT_READY) saveState();
 //      if (TelescopeStatus.getMode() == prevMode &&
 //          TelescopeStatus.getMode() != ST_TRACING)
 //        continue;
-      else
+      else {
+        balls.reset();
+        if (TelescopeStatus.get() != ST_NOT_READY) saveState();
         process();
+      }
     }
   }
 

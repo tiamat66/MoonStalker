@@ -6,53 +6,55 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
-import static si.vajnartech.moonstalker.C.ST_MOVING;
-import static si.vajnartech.moonstalker.C.ST_MOVING_E;
-import static si.vajnartech.moonstalker.C.ST_READY;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static si.vajnartech.moonstalker.C.*;
 
 public class ManualFragment extends MyFragment
 {
-  private float dX, dY;
-  private D dK = new D();
+  private Differential differential = new Differential();
+
+  private AtomicBoolean fingerOnScreen = new AtomicBoolean(false);
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
     View res = inflater.inflate(R.layout.frag_manual, container, false);
-    View kp = res.findViewById(R.id.key_pad);
+    View kp  = res.findViewById(R.id.key_pad);
 
-    kp.setOnTouchListener(new View.OnTouchListener() {
+    kp.setOnTouchListener(new View.OnTouchListener()
+    {
       @Override public boolean onTouch(View view, MotionEvent event)
       {
         double rx, ry;
-        // deactivate touch-screen while moving
-        if(TelescopeStatus.get() == ST_MOVING ||
-           TelescopeStatus.get() == ST_MOVING_E)
-          return true;
+//        // deactivate touch-screen while moving
+//        if (TelescopeStatus.get() == ST_MOVING ||
+//            TelescopeStatus.get() == ST_MOVING_E)
+//          return true;
 
         switch (event.getAction()) {
         case MotionEvent.ACTION_DOWN:
-          dX = view.getX() - event.getRawX();
-          dY = view.getY() - event.getRawY();
           rx = event.getRawX();
           ry = event.getRawY();
-          dK.up(new D(rx, ry));
+          differential.up(new Differential(rx, ry));
           view.performClick();
           break;
         case MotionEvent.ACTION_MOVE:
-          if (TelescopeStatus.get() == ST_READY) {
+          if (!fingerOnScreen.get()) {
             rx = event.getRawX();
             ry = event.getRawY();
-            dK.up(new D(rx, ry));
-            dK.is(dK.mul(new D(1.0, -1.0))); // negate y part of point
-            if (dK.getDirection() != C.Directions.NONE) {
-              d = dK.getDirection();
-              act.ctrl.moveStart(d);
+            differential.up(new Differential(rx, ry));
+            differential.is(differential.mul(new Differential(1.0, -1.0))); // negate y part of point
+            String direction = differential.getDirection();
+            if (!direction.equals(NONE)) {
+              fingerOnScreen.set(true);
+              act.ctrl.moveStart(direction);
             }
           }
           break;
         case MotionEvent.ACTION_UP:
-          d = C.Directions.NONE;
+          fingerOnScreen.set(false);
           act.ctrl.moveStop();
           break;
         default:
@@ -63,54 +65,60 @@ public class ManualFragment extends MyFragment
     });
     return res;
   }
-
-  private C.Directions d = C.Directions.NONE;
 }
 
-class D
+@SuppressWarnings("NullableProblems")
+class Differential
 {
-  private static final double thrs = 5;
+  private static final double thrs = 3.0;
+
   private double q_x1, q_x2;
   private double x1, x2;
 
-  D()
+  Differential()
   {
     x1 = x2 = q_x1 = q_x2 = 0.0;
   }
 
-  D(double x1, double x2)
+  Differential(double x1, double x2)
   {
     this.x1 = x1;
     this.x2 = x2;
     q_x1 = q_x2 = 0.0;
   }
 
-  void up(D v)
+  void up(Differential v)
   {
-    D res = new D(v.x1 - q_x1, v.x2 - q_x2);
+    Differential res = new Differential(v.x1 - q_x1, v.x2 - q_x2);
     q_x1 = v.x1;
     q_x2 = v.x2;
     is(res);
   }
 
-  void is(D val)
+  void is(Differential val)
   {
     x1 = val.x1;
     x2 = val.x2;
   }
 
-  D mul(D val)
+  Differential mul(Differential val)
   {
-    return new D(x1 * val.x1, x2 * val.x2);
+    return new Differential(x1 * val.x1, x2 * val.x2);
   }
 
-  C.Directions getDirection()
+  String getDirection()
   {
-    if (x2 > thrs) return C.Directions.UP;
-    if (x2 < -thrs) return C.Directions.DOWN;
-    if (x1 < -thrs) return C.Directions.LEFT;
-    if (x1 > thrs) return C.Directions.RIGHT;
-    return C.Directions.NONE;
+    if (x2 > thrs) return N;
+    if (x2 < -thrs) return S;
+    if (x1 < -thrs) return W;
+    if (x1 > thrs) return E;
+    return NONE;
+  }
+
+  @Override
+  public String toString()
+  {
+    return String.format(Locale.GERMAN, "x1=%f, x2=%f", x1, x2);
   }
 }
 

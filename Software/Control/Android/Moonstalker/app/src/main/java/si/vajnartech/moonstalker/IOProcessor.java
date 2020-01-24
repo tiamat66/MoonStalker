@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.OpCodes.BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_ACK;
+import static si.vajnartech.moonstalker.OpCodes.MVS_ACK;
 import static si.vajnartech.moonstalker.OpCodes.NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.READY;
 
@@ -88,18 +89,16 @@ public class IOProcessor extends AsyncTask<String, Void, String>
 
   private Instruction _parseInMsg(String input)
   {
-    if (input.contains("<" + READY + ">")) {
+    if (input.contains("<" + READY + ">"))
       return new Instruction(READY);
-    }
-    else if (input.contains("<" + NOT_READY)) {
+    else if (input.contains("<" + NOT_READY))
       return new Instruction(NOT_READY);
-    }
-    else if (input.contains("<" + MOVE_ACK)) {
+    else if (input.contains("<" + MOVE_ACK))
       return new Instruction(MOVE_ACK);
-    }
-    else if (input.contains("<" + BATTERY)) {
+    else if (input.contains("<" + BATTERY))
       return new Instruction(BATTERY, input.substring(input.indexOf(BATTERY), input.length()-1).split(" ")[1]);
-    }
+    else if (input.contains("<" + MVS_ACK))
+      return new Instruction(MVS_ACK);
     return new Instruction("");
   }
 

@@ -43,25 +43,35 @@ public final class C
   static final int ST_NOT_READY = 19;
 
   // Moving directions
-  public enum Directions
-  {
-    UP(1),
-    DOWN(2),
-    LEFT(3),
-    RIGHT(4),
-    NONE(5);
+  static final String N = "N";
+  static final String E = "E";
+  static final String S = "S";
+  static final String W = "W";
+  static final String NE = "NE";
+  static final String SE = "SE";
+  static final String SW = "SW";
+  static final String NW = "NW";
+  static final String NONE = "NONE";
 
-    private final int value;
-    Directions(int value)
-    {
-      this.value = value;
-    }
-
-    public int getValue()
-    {
-      return value;
-    }
-  }
+//  public enum Directions
+//  {
+//    UP(1),
+//    DOWN(2),
+//    LEFT(3),
+//    RIGHT(4),
+//    NONE(5);
+//
+//    private final int value;
+//    Directions(int value)
+//    {
+//      this.value = value;
+//    }
+//
+//    public int getValue()
+//    {
+//      return value;
+//    }
+//  }
 
   public static String curConstellation = "";
   static String calObj = "Polaris";

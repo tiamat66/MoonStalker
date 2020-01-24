@@ -10,7 +10,7 @@ final class Ball
   private int status;
   private int threshold;
 
-  private AtomicInteger stucked = new AtomicInteger(0);
+  AtomicInteger stucked = new AtomicInteger(0);
 
   Ball(Runnable ex, int st, int tr)
   {
@@ -33,5 +33,10 @@ class Balls extends ArrayList<Ball>
   void go(int status)
   {
     for (Ball b: this) b.update(status);
+  }
+
+  void reset()
+  {
+    for (Ball b: this) b.stucked.set(0);
   }
 }

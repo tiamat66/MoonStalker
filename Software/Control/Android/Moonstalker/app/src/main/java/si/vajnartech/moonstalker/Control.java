@@ -7,6 +7,7 @@ import android.os.Message;
 import android.util.Log;
 
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static java.lang.Thread.sleep;
@@ -25,12 +26,14 @@ interface ControlInterface
 @SuppressWarnings("SameParameterValue")
 public class Control extends Telescope
 {
-  private boolean          isSocketFree;
+  private AtomicBoolean isSocketFree;
+
   private InMessageHandler inMessageHandler;
   private CommandProcessor processor;
   private MainActivity     act;
-  private int              fakeA = 0;
-  private int              fakeH = 0;
+
+  private int fakeA = 0;
+  private int fakeH = 0;
 
 
   Control(MainActivity act)
@@ -38,31 +41,47 @@ public class Control extends Telescope
     super(act);
     this.act = act;
     inMessageHandler = new InMessageHandler();
-    isSocketFree = true;
+    isSocketFree = new AtomicBoolean(true);
     processor = new CommandProcessor(this, act);
   }
 
-  void moveStart(final C.Directions direction)
+  void moveStart(final String direction)
   {
     TelescopeStatus.set(ST_MOVING_S);
-    outMessageProcess(MOVE_START, Integer.toString(direction.getValue()));
+    outMessageProcess(MOVE_START, direction, "500");
     new Thread(new Runnable()
     {
       @Override public void run()
       {
         while (TelescopeStatus.get() == ST_MOVING_S) {
           switch (direction) {
-          case UP:
+          case "N":
             fakeH++;
             break;
-          case DOWN:
+          case "S":
             fakeH--;
             break;
-          case LEFT:
+          case "W":
             fakeA--;
             break;
-          case RIGHT:
+          case "E":
             fakeA++;
+            break;
+          case "NE":
+            fakeH++;
+            fakeA++;
+            break;
+          case "SE":
+            fakeH--;
+            fakeA++;
+            break;
+          case "SW":
+            fakeH--;
+            fakeA--;
+            break;
+          case "NW":
+            fakeH++;
+            fakeA--;
             break;
           }
           try {
@@ -155,7 +174,6 @@ public class Control extends Telescope
         break;
       case INIT:
         outMessageProcess(GET_STATUS);
-        outMessageProcess(GET_BATTERY);
         break;
       case NOT_READY:
         processNotReady();
@@ -163,8 +181,6 @@ public class Control extends Telescope
       case MOVE_ACK:
         processMvAck();
         break;
-      default:
-        return;
       }
 
       Log.i(TAG, "Get message and process it from Server: " + opcode);
@@ -200,7 +216,7 @@ public class Control extends Telescope
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
-            if (!isSocketFree || instrBuffer.isEmpty() || TelescopeStatus.locked()) continue;
+            if (!isSocketFree.get() || instrBuffer.isEmpty() || TelescopeStatus.locked()) continue;
             lock();
             new IOProcessor(instrBuffer.removeFirst(), new ControlInterface()
             {
@@ -270,13 +286,13 @@ public class Control extends Telescope
 
   private void lock()
   {
-    isSocketFree = false;
+    isSocketFree.set(false);
   }
 
   private void release()
   {
     Log.i(TAG, "Release--------------------------------------------------------------------------");
-    isSocketFree = true;
+    isSocketFree.set(true);
   }
 }
 

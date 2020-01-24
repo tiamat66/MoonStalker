@@ -47,10 +47,12 @@ import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
-
+// dodaj v rocne komande tudi diagonalne premike in lepso slikco s puscicami krog!!!!
+// ko je operabilen in naenkrat se prekine BT, connection lost
+// ko je operabilen in naenkrat dobi error
 // daj statuse v enum
 // kako dolociti max speed
-// delam na NOT_READY messagu
+// delam na MVS
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener

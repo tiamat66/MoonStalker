@@ -41,20 +41,20 @@ class BlueToothService
   private static final String BTRY_RES = "BTRY";
 
   // SDP UUID service
-  private static final UUID             MY_UUID                     = UUID.fromString(
+  private static final UUID                    MY_UUID                     = UUID.fromString(
       "00001101-0000-1000-8000-00805F9B34FB");
-  private static final String           NAME                        = "MOONSTALKER";
+  private static final String                  NAME                        = "MOONSTALKER";
   // Status  for Handler
-  private static final int              RECIEVE_MESSAGE             = 1;
-  private static final int              CONNECTION_CANCELED_MESSAGE = 2;
-  private              BluetoothAdapter btAdapter                   = null;
-  private MainActivity            act;
-  private BtReadWrite             btReadWrite;
-  private AcceptThread            acceptThread;
-  private BlueToothServiceHandler handler;
-  private String                  outMessage;
-  private boolean         connectionCanceled = true;
-  private BluetoothSocket socket             = null;
+  private static final int                     RECIEVE_MESSAGE             = 1;
+  private static final int                     CONNECTION_CANCELED_MESSAGE = 2;
+  private              BluetoothAdapter        btAdapter                   = null;
+  private              MainActivity            act;
+  private              BtReadWrite             btReadWrite;
+  private              AcceptThread            acceptThread;
+  private              BlueToothServiceHandler handler;
+  private              String                  outMessage;
+  private              boolean                 connectionCanceled          = true;
+  private              BluetoothSocket         socket                      = null;
 
   @SuppressLint("HandlerLeak") BlueToothService(MainActivity act)
   {
@@ -174,9 +174,9 @@ class BlueToothService
 
   private class BtReadWrite extends Thread
   {
-    final InputStream  mmInStream;
-    final OutputStream mmOutStream;
-    private boolean isRunning = false;
+    final   InputStream  mmInStream;
+    final   OutputStream mmOutStream;
+    private boolean      isRunning = false;
 
     BtReadWrite(BluetoothSocket socket)
     {
@@ -298,10 +298,21 @@ class BlueToothService
 
     private void processMessage(String msg)
     {
-      if (msg.contains("MV")) {
-        Log.i(TAG, "Process MOVE message from Client");
-        move();
-        return;
+//      if (msg.contains("MV")) {
+//        Log.i(TAG, "Process MOVE message from Client");
+//        move();
+//        return;
+//      }
+      if (msg.contains("MVS")) {
+        if (msg.contains("MVST?")) {
+          Log.i(TAG, "Process GET STATUS message from Client");
+          st();
+          return;
+        } else {
+          Log.i(TAG, "Processing MOVE START message from Client, " + msg);
+          mvs();
+          return;
+        }
       }
 
       switch (msg) {
@@ -341,6 +352,32 @@ class BlueToothService
         write("<RDY>");
       }
     }, 500);
+  }
+
+  private void st()
+  {
+    final String cmd = "RDY";
+    Log.i(TAG, "Sending " + cmd);
+    new Handler().postDelayed(new Runnable()
+    {
+      @Override public void run()
+      {
+        write(String.format("<%s>", cmd));
+      }
+    }, 5000);
+  }
+
+  private void mvs()
+  {
+    final String cmd = "MVS_ACK N 500";
+    Log.i(TAG, "Sending " + cmd);
+    new Handler().postDelayed(new Runnable()
+    {
+      @Override public void run()
+      {
+        write(String.format("<%s>", cmd));
+      }
+    }, 1000);
   }
 
   private void move()
