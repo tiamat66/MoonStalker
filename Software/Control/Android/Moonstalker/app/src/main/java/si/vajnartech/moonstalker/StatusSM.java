@@ -47,8 +47,7 @@ public class StatusSM extends Thread
     inf.updateStatus();
   }
 
-  @Override
-  public void run()
+  private void addBalls()
   {
     balls.add(new Ball(new Runnable() {
       @Override public void run()
@@ -82,6 +81,12 @@ public class StatusSM extends Thread
 
       }
     }, ST_WAITING_ACK, 3));
+  }
+
+  @Override
+  public void run()
+  {
+    addBalls();
 
     while (r) {
       try {
@@ -147,6 +152,7 @@ public class StatusSM extends Thread
     } else if (prevStatus == ST_NOT_CONNECTED && TelescopeStatus.get() == ST_CONNECTED) {
       inf.startProgress(MainActivity.ProgressType.INITIALIZING);
       inf.initTelescope();
-    }
+    } else if (prevStatus == ST_CONNECTED && TelescopeStatus.get() == ST_READY)
+      inf.stopProgress();
   }
 }

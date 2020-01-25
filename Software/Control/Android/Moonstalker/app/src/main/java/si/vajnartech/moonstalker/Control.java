@@ -47,8 +47,9 @@ public class Control extends Telescope
 
   void moveStart(final String direction)
   {
-    TelescopeStatus.set(ST_MOVING_S);
+    TelescopeStatus.set(ST_WAITING_ACK);
     outMessageProcess(MOVE_START, direction, "500");
+
     new Thread(new Runnable()
     {
       @Override public void run()
@@ -181,6 +182,9 @@ public class Control extends Telescope
       case MOVE_ACK:
         processMvAck();
         break;
+      case MVS_ACK:
+        processMvsAck();
+        break;
       }
 
       Log.i(TAG, "Get message and process it from Server: " + opcode);
@@ -277,6 +281,11 @@ public class Control extends Telescope
   private void processMvAck()
   {
     TelescopeStatus.set(ST_NOT_READY); // TODO.
+  }
+
+  private void processMvsAck()
+  {
+    TelescopeStatus.setAck(MVS_ACK);
   }
 
   private void processBattery(int val)

@@ -106,33 +106,16 @@ public class IOProcessor extends AsyncTask<String, Void, String>
   {
     Instruction j = _parseInMsg(instruction);
 
-    switch (j.opCode) {
-    case READY:
-      Log.i(TAG, "processing RDY from response ");
-      ctrlInterface.messageProcess(j.opCode, new Bundle());
-      break;
-    case BATTERY:
+    if (j.opCode.equals(BATTERY))
+    {
       Log.i(TAG, "processing BTRY from response with p1 = " + j.parameters.get(0));
       Bundle b = new Bundle();
       int val = Integer.parseInt(j.parameters.get(0));
       b.putInt("p1", val);
       ctrlInterface.messageProcess(j.opCode, b);
-      break;
-    case MOVE_ACK:
-      Log.i(TAG, "Processing MOVE_ACK");
+    } else
       ctrlInterface.messageProcess(j.opCode, new Bundle());
-      break;
-    case NOT_READY:
-      Log.i(TAG, "Processing NOT_READY");
-      ctrlInterface.messageProcess(j.opCode, new Bundle());
-      break;
-    default:
-      try {
-        throw new Exception("Unknown response received: " + instruction);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+
     ctrlInterface.dump(String.format("$ msg rcvd: %s\n", j.opCode));
   }
 }

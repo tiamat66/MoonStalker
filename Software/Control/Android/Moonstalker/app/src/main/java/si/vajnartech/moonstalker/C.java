@@ -36,11 +36,14 @@ public final class C
   static final int ST_CONNECTED     = 12;
   static final int ST_CALIBRATING   = 13;
   static final int ST_MANUAL   = 14;
-  static final int ST_MOVING_E = 15;
-  static final int ST_MOVING_S = 16;
   static final int ST_CALIBRATED   = 17;
   static final int ST_MOVE_TO_OBJECT = 18;
   static final int ST_NOT_READY = 19;
+  static final int ST_WAITING_ACK = 20;
+
+  // Triggers
+  static final int ST_MOVING_S = 16;
+  static final int ST_MOVING_E = 15;
 
   // Moving directions
   static final String N = "N";

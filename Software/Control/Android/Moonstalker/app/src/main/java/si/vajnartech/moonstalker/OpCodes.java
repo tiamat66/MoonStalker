@@ -6,6 +6,7 @@ final class OpCodes
   static final int IN_MSG  = 2;
 
   // in messages
+  static final String NA   = "NA";
   static final String INIT = "INIT";
 
   static final String READY     = "RDY";      // <RDY> ob MVST

@@ -28,10 +28,6 @@ public class ManualFragment extends MyFragment
       @Override public boolean onTouch(View view, MotionEvent event)
       {
         double rx, ry;
-//        // deactivate touch-screen while moving
-//        if (TelescopeStatus.get() == ST_MOVING ||
-//            TelescopeStatus.get() == ST_MOVING_E)
-//          return true;
 
         switch (event.getAction()) {
         case MotionEvent.ACTION_DOWN:
@@ -55,7 +51,7 @@ public class ManualFragment extends MyFragment
           break;
         case MotionEvent.ACTION_UP:
           fingerOnScreen.set(false);
-          act.ctrl.moveStop();
+          //act.ctrl.moveStop();
           break;
         default:
           return false;
