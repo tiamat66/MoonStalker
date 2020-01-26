@@ -45,16 +45,14 @@ public class Control extends Telescope
     processor = new CommandProcessor(this, act);
   }
 
-  void moveStart(final String direction)
+  private void onManualMoving(final String direction)
   {
-    TelescopeStatus.set(ST_WAITING_ACK);
-    outMessageProcess(MOVE_START, direction, "500");
-
     new Thread(new Runnable()
     {
       @Override public void run()
       {
-        while (TelescopeStatus.get() == ST_MOVING_S) {
+        while (TelescopeStatus.get() == ST_MOVING &&
+               (TelescopeStatus.getMode() == ST_CALIBRATING || TelescopeStatus.getMode() == ST_MANUAL)) {
           switch (direction) {
           case "N":
             fakeH++;
@@ -102,9 +100,15 @@ public class Control extends Telescope
     }).start();
   }
 
+  void moveStart(final String direction)
+  {
+    TelescopeStatus.set(ST_WAITING_ACK);
+    outMessageProcess(MOVE_START, direction, "500");
+  }
+
   void moveStop()
   {
-    TelescopeStatus.set(ST_MOVING_E);
+    TelescopeStatus.set(ST_WAITING_ACK);
     outMessageProcess(MOVE_STOP);
   }
 
@@ -184,6 +188,9 @@ public class Control extends Telescope
         break;
       case MVS_ACK:
         processMvsAck();
+        break;
+      case MVE_ACK:
+        processMveAck();
         break;
       }
 
@@ -286,6 +293,11 @@ public class Control extends Telescope
   private void processMvsAck()
   {
     TelescopeStatus.setAck(MVS_ACK);
+  }
+
+  private void processMveAck()
+  {
+    TelescopeStatus.setAck(MVE_ACK);
   }
 
   private void processBattery(int val)

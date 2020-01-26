@@ -55,26 +55,7 @@ public final class C
   static final String SW = "SW";
   static final String NW = "NW";
   static final String NONE = "NONE";
-
-//  public enum Directions
-//  {
-//    UP(1),
-//    DOWN(2),
-//    LEFT(3),
-//    RIGHT(4),
-//    NONE(5);
-//
-//    private final int value;
-//    Directions(int value)
-//    {
-//      this.value = value;
-//    }
-//
-//    public int getValue()
-//    {
-//      return value;
-//    }
-//  }
+  static final String CLEAR = "";
 
   public static String curConstellation = "";
   static String calObj = "Polaris";

@@ -5,7 +5,7 @@ import android.util.Log;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static si.vajnartech.moonstalker.C.*;
-import static si.vajnartech.moonstalker.OpCodes.NA;
+import static si.vajnartech.moonstalker.OpCodes.WAITING;
 
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final class TelescopeStatus
 {
@@ -64,7 +64,7 @@ import static si.vajnartech.moonstalker.OpCodes.NA;
     status = st;
     Log.i("STATUS", "ST=" + get());
     if (st == ST_MOVING_S)
-      setAck(NA);
+      setAck(WAITING);
   }
 
   static int get()

@@ -1,6 +1,7 @@
 package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,6 +44,7 @@ public class ManualFragment extends MyFragment
             differential.up(new Differential(rx, ry));
             differential.is(differential.mul(new Differential(1.0, -1.0))); // negate y part of point
             String direction = differential.getDirection();
+            Log.i(TAG, "FINGER MOVE*************************************=" + direction);
             if (!direction.equals(NONE)) {
               fingerOnScreen.set(true);
               act.ctrl.moveStart(direction);
@@ -50,8 +52,9 @@ public class ManualFragment extends MyFragment
           }
           break;
         case MotionEvent.ACTION_UP:
+          Log.i(TAG, "FINGER UP*************************************");
           fingerOnScreen.set(false);
-          //act.ctrl.moveStop();
+          act.ctrl.moveStop();
           break;
         default:
           return false;

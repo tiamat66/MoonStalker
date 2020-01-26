@@ -52,7 +52,8 @@ import static si.vajnartech.moonstalker.C.curObj;
 // ko je operabilen in naenkrat dobi error
 // daj statuse v enum
 // kako dolociti max speed
-// delam na MVS
+// delam na MVS/MVE in hendlanje responsev
+// naredi samo eno opcijo rocno vodenje z moznostjo kalibracije
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener

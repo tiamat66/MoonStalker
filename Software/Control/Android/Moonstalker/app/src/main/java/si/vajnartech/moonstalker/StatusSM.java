@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import static si.vajnartech.moonstalker.C.*;
+import static si.vajnartech.moonstalker.OpCodes.MVE_ACK;
 import static si.vajnartech.moonstalker.OpCodes.MVS_ACK;
 
 interface Nucleus
@@ -57,7 +58,7 @@ public class StatusSM extends Thread
         BlueTooth.disconnect();
         reset();
       }
-    }, ST_CONNECTED, 10));
+    }, ST_CONNECTED, 7));
 
     balls.add(new Ball(new Runnable() {
       @Override public void run()
@@ -71,12 +72,18 @@ public class StatusSM extends Thread
       @Override public void run()
       {
         if (TelescopeStatus.getAck().isEmpty()) return;
-        if (TelescopeStatus.getAck().equals(MVS_ACK)) {
-          Log.i("STATUS", "Acknowledge got");
+        if (TelescopeStatus.getAck().equals(MVS_ACK) ||
+            TelescopeStatus.getAck().equals(MVE_ACK)) {
+          if (MVE_ACK.equals(TelescopeStatus.getAck()))
+            TelescopeStatus.set(ST_READY);
+          else
+            TelescopeStatus.set(ST_MOVING);
+          TelescopeStatus.setAck(CLEAR);
         }
         else {
-          Log.i("STATUS", "No respones - tu bi dal naceloma isto kot ");
           inf.onNoAnswer();
+          TelescopeStatus.setAck(CLEAR);
+          restoreState();
         }
 
       }
@@ -106,7 +113,10 @@ public class StatusSM extends Thread
         balls.go(prevStatus);
       else {
         balls.reset();
-        if (TelescopeStatus.get() != ST_NOT_READY) saveState();
+        if (TelescopeStatus.get() != ST_NOT_READY &&
+            TelescopeStatus.get() != ST_MOVING &&
+            TelescopeStatus.get() != ST_WAITING_ACK)
+          saveState();
         process();
         if (TelescopeStatus.get() != prevStatus || TelescopeStatus.getMode() != prevMode)
           inf.updateStatus();
