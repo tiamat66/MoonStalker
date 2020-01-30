@@ -315,6 +315,11 @@ class BlueToothService
         }
       }
 
+      if (msg.contains("MVE")) {
+        Log.i(TAG, "Processing MOVE END message from Client, ");
+        mve();
+      }
+
       switch (msg) {
       case "<ST?>":
         Log.i(TAG, "Process STATUS message from Client");
@@ -364,7 +369,20 @@ class BlueToothService
       {
         write(String.format("<%s>", cmd));
       }
-    }, 5000);
+    }, 3000);
+  }
+
+  private void mve()
+  {
+    final String cmd = "MVE_ACK";
+    Log.i(TAG, "Sending " + cmd);
+    new Handler().postDelayed(new Runnable()
+    {
+      @Override public void run()
+      {
+        write(String.format("<%s>", cmd));
+      }
+    }, 1000);
   }
 
   private void mvs()
