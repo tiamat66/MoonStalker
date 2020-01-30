@@ -102,12 +102,14 @@ public class Control extends Telescope
 
   void moveStart(final String direction)
   {
+    if (TelescopeStatus.locked()) return;
     TelescopeStatus.set(ST_WAITING_ACK);
     outMessageProcess(MOVE_START, direction, "500");
   }
 
   void moveStop()
   {
+    if (TelescopeStatus.locked()) return;
     TelescopeStatus.set(ST_WAITING_ACK);
     outMessageProcess(MOVE_STOP);
   }
@@ -229,6 +231,7 @@ public class Control extends Telescope
             }
             if (!isSocketFree.get() || instrBuffer.isEmpty() || TelescopeStatus.locked()) continue;
             lock();
+            TelescopeStatus.lock();
             new IOProcessor(instrBuffer.removeFirst(), new ControlInterface()
             {
               @Override
@@ -270,14 +273,9 @@ public class Control extends Telescope
   private void processReady()
   {
     Log.i(TAG, "processReady in Control = " + TelescopeStatus.get());
-    if (TelescopeStatus.get() == ST_CONNECTED) {
-      TelescopeStatus.set(ST_READY);
-      TelescopeStatus.setMode(ST_READY);
-    } else if (TelescopeStatus.get() == ST_MOVING) {
-      TelescopeStatus.set(ST_READY);
-    } else if (TelescopeStatus.get() == ST_MOVING_E) {
-      TelescopeStatus.set(ST_READY);
-    }
+    TelescopeStatus.set(ST_READY);
+    TelescopeStatus.setMode(ST_READY);
+    TelescopeStatus.unlock();
   }
 
   private void processNotReady()
@@ -292,11 +290,13 @@ public class Control extends Telescope
 
   private void processMvsAck()
   {
+    TelescopeStatus.unlock();
     TelescopeStatus.setAck(MVS_ACK);
   }
 
   private void processMveAck()
   {
+    TelescopeStatus.unlock();
     TelescopeStatus.setAck(MVE_ACK);
   }
 

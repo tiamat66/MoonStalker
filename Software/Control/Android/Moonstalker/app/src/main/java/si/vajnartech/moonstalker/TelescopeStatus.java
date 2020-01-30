@@ -63,8 +63,6 @@ import static si.vajnartech.moonstalker.OpCodes.WAITING;
   {
     status = st;
     Log.i("STATUS", "ST=" + get());
-    if (st == ST_MOVING_S)
-      setAck(WAITING);
   }
 
   static int get()

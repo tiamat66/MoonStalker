@@ -41,6 +41,7 @@ import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
 import static si.vajnartech.moonstalker.C.ST_MANUAL;
 import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
+import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
@@ -52,7 +53,8 @@ import static si.vajnartech.moonstalker.C.curObj;
 // ko je operabilen in naenkrat dobi error
 // daj statuse v enum
 // kako dolociti max speed
-// delam na MVS/MVE in hendlanje responsev
+// delam na MVS/MVE in hendlanje responsev (acknowledges delajo!!!! preveri se NOT_READY),
+// takoj postimat kako bo sploh tole premikanje zgledalo
 // naredi samo eno opcijo rocno vodenje z moznostjo kalibracije
 
 @SuppressWarnings("ConstantConditions")
@@ -194,12 +196,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
               terminal.setText(tx(R.string.manual));
             } else if (TelescopeStatus.getMode() == ST_CALIBRATED) {
               update(R.string.calibrated, R.drawable.ic_ok_s, false, true, true, true);
-            } else if (TelescopeStatus.getMode() == ST_CALIBRATING) {
+            } else if (TelescopeStatus.getMode() == ST_CALIBRATING &&
+                       TelescopeStatus.get() != ST_MOVING) {
               update(R.string.calibrating, R.drawable.ic_cal_s);
             } else if (TelescopeStatus.get() == ST_READY) {
               if (TelescopeStatus.getMode() != ST_TRACING)
                 update(R.string.ready, R.drawable.ic_ok_s, true, true, false, false);
-            }
+            } else if (TelescopeStatus.get() == ST_MOVING)
+              update(R.string.moving, R.drawable.ic_mv_s);
           }
         });
       }
