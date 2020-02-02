@@ -7,5 +7,7 @@
   <color name="colorError">#F62B15</color>
   <color name="colorOk">#15F620</color>
   <color name="colorOk2">#15b620</color>
+  <color name="colorNeutral">#59ADF0</color>
+  <color name="colorMoving">#0F31EE</color>
 
 </resources>

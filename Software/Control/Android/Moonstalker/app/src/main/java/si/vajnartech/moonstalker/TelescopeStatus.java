@@ -15,6 +15,7 @@ import static si.vajnartech.moonstalker.OpCodes.WAITING;
   private static int    mode   = -1;
   private static String error  = "";
   private static String ack = "";
+  private static String misc = "";
 
   private static AtomicBoolean lck = new AtomicBoolean(false);
 
@@ -80,5 +81,15 @@ import static si.vajnartech.moonstalker.OpCodes.WAITING;
     set(ST_ERROR);
     error = e;
     Log.i("STATUS", "ERR=" + getError());
+  }
+
+  static void setMisc(String val)
+  {
+    misc = val;
+  }
+
+  static String getMisc()
+  {
+    return misc;
   }
 }

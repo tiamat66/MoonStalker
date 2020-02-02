@@ -15,7 +15,7 @@
   <string name="initializing">initializing</string>
   <string name="calibrated">calibrated</string>
   <string name="move">Move</string>
-  <string name="manual">manual</string>
+  <string name="manual">Manual control</string>
   <string name="track">Track</string>
   <string name="calibrate">Calibrate</string>
   <string name="not_connected">not connected</string>

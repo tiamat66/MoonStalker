@@ -29,7 +29,7 @@ interface Nucleus
 @SuppressWarnings("FieldCanBeLocal")
 public class StatusSM extends Thread
 {
-  private int timeout   = 2000;
+  private int timeout   = 1000;
 
   private int     prevStatus;
   private int     prevMode;

@@ -28,6 +28,8 @@ public class ManualFragment extends MyFragment
     {
       @Override public boolean onTouch(View view, MotionEvent event)
       {
+        if (TelescopeStatus.get() != ST_READY)
+          return false;
         double rx, ry;
 
         switch (event.getAction()) {
@@ -46,15 +48,13 @@ public class ManualFragment extends MyFragment
             String direction = differential.getDirection();
             if (!direction.equals(NONE)) {
               fingerOnScreen.set(true);
-              Log.i(TAG, "****************************ZACNI VRTETI=" + direction);
+              TelescopeStatus.setMisc(direction);
               act.ctrl.moveStart(direction);
             }
           }
           break;
         case MotionEvent.ACTION_UP:
-          Log.i(TAG, "FINGER UP*************************************");
           fingerOnScreen.set(false);
-          act.ctrl.moveStop();
           break;
         default:
           return false;
