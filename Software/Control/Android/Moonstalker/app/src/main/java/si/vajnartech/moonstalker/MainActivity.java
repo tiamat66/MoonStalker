@@ -69,15 +69,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   TerminalWindow terminal;
   Monitor        monitor;
-  ImageView      statusLight;
 
-  @SuppressLint("InflateParams") @Override
+  @SuppressLint("InflateParams")
+  @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     Toolbar toolbar = findViewById(R.id.toolbar);
-    statusLight = findViewById(R.id.status_light);
     setSupportActionBar(toolbar);
     getSupportActionBar().setTitle("");
     C.curMessage = tx(R.string.not_connected);
@@ -151,12 +150,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
 
       @SuppressWarnings("SameParameterValue")
-      void update(Integer title, Integer icon, boolean ca, boolean ma, boolean tr, boolean mo)
+      void update(Integer title, boolean ca, boolean ma, boolean tr, boolean mo)
       {
         if (title != null)
           terminal.setText(tx(title));
-        if (icon != null)
-          statusLight.setImageDrawable(getResources().getDrawable(icon));
         menu.findItem(R.id.calibrate).setEnabled(ca);
         menu.findItem(R.id.manual).setEnabled(ma);
         menu.findItem(R.id.track).setEnabled(tr);
@@ -165,22 +162,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
 
       @SuppressWarnings("SameParameterValue")
-      void update(String title, Integer icon)
+      void update(String title)
       {
         if (title != null)
           terminal.setText(title);
-        if (icon != null)
-          statusLight.setImageDrawable(getResources().getDrawable(icon));
-        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
       }
 
-      void update(Integer title, Integer icon)
+      void update(Integer title)
       {
         if (title != null)
           terminal.setText(tx(title));
-        if (icon != null)
-          statusLight.setImageDrawable(getResources().getDrawable(icon));
-        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
       }
 
       @Override
@@ -198,28 +189,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
               fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorMoving)));
 
             if (TelescopeStatus.get() == ST_NOT_READY)
-              update(R.string.not_ready, R.drawable.ic_error_s);
-            if (TelescopeStatus.getMode() == ST_TRACING) {
-              terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent2));
-              update(R.string.tracing, R.drawable.ic_mv_s);
-            } else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
-              update(R.string.ready, R.drawable.ic_ok_s, false, true, true, false);
-              terminal.setBackgroundColor(getResources().getColor(R.color.colorOk2));
-              if (currentFragment instanceof SelectFragment)
-                ((SelectFragment) currentFragment).setPositionString();
-            } else if (TelescopeStatus.getMode() == ST_MANUAL) {
-              update(R.string.ready, R.drawable.ic_ok_s);
-              terminal.setText(tx(R.string.manual));
-            } else if (TelescopeStatus.getMode() == ST_CALIBRATED) {
-              update(R.string.calibrated, R.drawable.ic_ok_s, false, true, true, true);
-            } else if (TelescopeStatus.getMode() == ST_CALIBRATING &&
-                       TelescopeStatus.get() != ST_MOVING) {
-              update(R.string.calibrating, R.drawable.ic_cal_s);
-            } else if (TelescopeStatus.get() == ST_READY) {
+              update(R.string.not_ready);
+            else if (TelescopeStatus.getMode() == ST_TRACING)
+              update(R.string.tracing);
+            else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT)
+              update(R.string.ready, false, true, true, false);
+            else if (TelescopeStatus.getMode() == ST_MANUAL)
+              update(R.string.manual);
+            else if (TelescopeStatus.getMode() == ST_CALIBRATED)
+              update(R.string.calibrated, false, true, true, true);
+            else if (TelescopeStatus.getMode() == ST_CALIBRATING &&
+                     TelescopeStatus.get() != ST_MOVING)
+              update(R.string.calibrating);
+            else if (TelescopeStatus.get() == ST_READY)
               if (TelescopeStatus.getMode() != ST_TRACING)
-                update(R.string.ready, R.drawable.ic_ok_s, true, true, false, false);
-            } else if (TelescopeStatus.get() == ST_MOVING)
-              update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()), R.drawable.ic_mv_s);
+                update(R.string.ready, true, true, false, false);
+            else if (TelescopeStatus.get() == ST_MOVING)
+              update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
           }
         });
       }
