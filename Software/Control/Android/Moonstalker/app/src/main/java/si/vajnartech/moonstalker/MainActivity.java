@@ -188,7 +188,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             else if (TelescopeStatus.get() == ST_MOVING)
               fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorMoving)));
 
-            if (TelescopeStatus.get() == ST_NOT_READY)
+            if (TelescopeStatus.get() == ST_MOVING)
+              update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
+            else if (TelescopeStatus.get() == ST_NOT_READY)
               update(R.string.not_ready);
             else if (TelescopeStatus.getMode() == ST_TRACING)
               update(R.string.tracing);
@@ -198,14 +200,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
               update(R.string.manual);
             else if (TelescopeStatus.getMode() == ST_CALIBRATED)
               update(R.string.calibrated, false, true, true, true);
-            else if (TelescopeStatus.getMode() == ST_CALIBRATING &&
-                     TelescopeStatus.get() != ST_MOVING)
-              update(R.string.calibrating);
+            else if (TelescopeStatus.getMode() == ST_CALIBRATING)
+                update(R.string.calibrating);
             else if (TelescopeStatus.get() == ST_READY)
               if (TelescopeStatus.getMode() != ST_TRACING)
                 update(R.string.ready, true, true, false, false);
-            else if (TelescopeStatus.get() == ST_MOVING)
-              update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
           }
         });
       }
