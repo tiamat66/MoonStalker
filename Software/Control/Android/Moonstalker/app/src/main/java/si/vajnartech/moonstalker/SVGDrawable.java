@@ -16,8 +16,8 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PictureDrawable;
 import android.util.Log;
 
-import com.caverock.androidsvg.SVG;
-import com.caverock.androidsvg.SVGParseException;
+import si.vajnartech.moonstalker.androidsvg.SVG;
+import si.vajnartech.moonstalker.androidsvg.SVGParseException;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class SVGDrawable extends Drawable

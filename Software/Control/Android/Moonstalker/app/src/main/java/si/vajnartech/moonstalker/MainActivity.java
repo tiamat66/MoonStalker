@@ -59,6 +59,7 @@ import static si.vajnartech.moonstalker.C.curObj;
 // naredi samo eno opcijo rocno vodenje z moznostjo kalibracije
 // oznaci graficno kam se premika, ko imamo rocno vodenje
 // implementiraj NS, SE .....
+// implementacija kurzorskih tipk
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -263,6 +264,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     connect(false);
 
     new GetSkyObjList(3);
+
+    registerSVGTransforms();
   }
 
   private void connect(boolean exe)
@@ -608,7 +611,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   public void refreshCurrentFragment()
   {
-    MyFragment          f           = currentFragment;
+    MyFragment f = currentFragment;
+
     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
     transaction.detach(f);
     transaction.commit();
@@ -617,5 +621,40 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     transaction.attach(f);
     transaction.commit();
   }
-}
 
+  protected void registerSVGTransforms()
+  {
+    SVGResources  res = (SVGResources) getResources();
+    res.setStyleTransformer(new SVGResources.SVGStyleTransformer()
+    {
+      @Override
+      public String transformStyle(String propertyName)
+      {
+//        int num;
+//        // Messages
+//        num = Messages.getUnreadNum(act);
+//        if ("messaging_no_messages_display".equals(propertyName))
+//          return num > 0 ? "inherit" : "none";
+//        String msgCount = Integer.toString(num);
+//        if ("messaging_no_messages_width".equals(propertyName))
+//          return Integer.toString(5 + msgCount.length() * 4);
+//        if ("messaging_no_messages_count".equals(propertyName)) {
+//          unreadMsgsCnt = num;
+//          return msgCount;
+//        }
+//        // Documents
+//        num = Documents.getUnreadNum(act);
+//        if ("documents_no_documents_display".equals(propertyName))
+//          return num > 0 ? "inherit" : "none";
+//        String docCount = Integer.toString(num);
+//        if ("documents_no_documents_width".equals(propertyName))
+//          return Integer.toString(5 * 6 + docCount.length() * 4 * 6);
+//        if ("documents_no_documents_count".equals(propertyName)) {
+//          unreadDocsCnt = num;
+//          return docCount;
+//        }
+        return propertyName;
+      }
+    });
+  }
+}
