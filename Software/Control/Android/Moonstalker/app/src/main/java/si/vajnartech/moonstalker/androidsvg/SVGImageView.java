@@ -1,10 +1,5 @@
 package si.vajnartech.moonstalker.androidsvg;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Paint;
@@ -17,33 +12,33 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+
+import si.vajnartech.moonstalker.R;
+
 /**
  * SVGImageView is a View widget that allows users to include SVG images in their layouts.
- *
+ * <p>
  * It is implemented as a thin layer over {@code android.widget.ImageView}.
+ * <p>
+ * In its present form it has one significant limitation.  It uses the {@link SVG#renderToPicture()}
+ * method. That means that SVG documents that use {@code <mask>} elements will not display correctly.
  *
- * <h2>XML attributes</h2>
- * <dl>
- *   <dt><code>svg</code></dt>
- *   <dd>A resource reference, or a file name, of an SVG in your application</dd>
- *   <dt><code>css</code></dt>
- *   <dd>Optional extra CSS to apply when rendering the SVG</dd>
- * </dl>
+ * @attr ref R.styleable#SVGImageView_svg
  */
+@SuppressWarnings("JavaDoc")
 public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
 {
-  private SVG            svg = null;
-  private RenderOptions  renderOptions = new RenderOptions();
-
-  private static Method  setLayerTypeMethod = null;
-
+  private static Method setLayerTypeMethod = null;
 
   static {
-    try
-    {
+    try {
       setLayerTypeMethod = View.class.getMethod("setLayerType", Integer.TYPE, Paint.class);
-    }
-    catch (NoSuchMethodException e) { /* do nothing */ }
+    } catch (NoSuchMethodException e) { /* do nothing */ }
   }
 
 
@@ -67,43 +62,28 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
   }
 
 
-  private void  init(AttributeSet attrs, int defStyle)
+  private void init(AttributeSet attrs, int defStyle)
   {
     if (isInEditMode())
       return;
 
     TypedArray a = getContext().getTheme()
         .obtainStyledAttributes(attrs, R.styleable.SVGImageView, defStyle, 0);
-    try
-    {
-      // Check for css attribute
-      String  css = a.getString(R.styleable.SVGImageView_css);
-      if (css != null)
-        renderOptions.css(css);
-
-      // Check whether svg attribute is a resourceId
-      int  resourceId = a.getResourceId(R.styleable.SVGImageView_svg, -1);
+    try {
+      int resourceId = a.getResourceId(R.styleable.SVGImageView_svg, -1);
       if (resourceId != -1) {
         setImageResource(resourceId);
         return;
       }
 
-      // Check whether svg attribute is a string.
-      // Could be a URL/filename or an SVG itself
-      String  url = a.getString(R.styleable.SVGImageView_svg);
-      if (url != null)
-      {
-        Uri  uri = Uri.parse(url);
-        if (internalSetImageURI(uri))
+      String url = a.getString(R.styleable.SVGImageView_svg);
+      if (url != null) {
+        Uri uri = Uri.parse(url);
+        if (internalSetImageURI(uri, false))
           return;
 
-        // Not a URL, so try loading it as an asset filename
-        if (internalSetImageAsset(url))
-          return;
-
-        // Last chance, maybe there is an actual SVG in the string
-        // If the SVG is in the string, then we will assume it is not very large, and thus doesn't need to be parsed in the background.
-        setFromString(url);
+        // Last chance, try loading it as an asset filename
+        setImageAsset(url);
       }
 
     } finally {
@@ -113,53 +93,20 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
 
 
   /**
-   * Directly set the SVG that should be rendered by this view.
-   * @param svg An {@code SVG} instance
-   * @since 1.2.1
+   * Directly set the SVG.
    */
-  public void  setSVG(SVG svg)
+  public void setSVG(SVG mysvg)
   {
-    if (svg == null)
-      throw new IllegalArgumentException("Null value passed to setSVG()");
-    this.svg = svg;
-    doRender();
-  }
-
-
-  /**
-   * Directly set the SVG and the CSS.
-   * @param svg An {@code SVG} instance
-   * @param css Optional extra CSS to apply when rendering
-   * @since 1.3
-   */
-  public void  setSVG(SVG svg, String css)
-  {
-    if (svg == null)
+    if (mysvg == null)
       throw new IllegalArgumentException("Null value passed to setSVG()");
 
-    this.svg = svg;
-    this.renderOptions.css(css);
-
-    doRender();
+    setSoftwareLayerType();
+    setImageDrawable(new PictureDrawable(mysvg.renderToPicture()));
   }
-
-
-  /**
-   * Directly set the CSS.
-   * @param css Extra CSS to apply when rendering
-   * @since 1.3
-   */
-  public void  setCSS(String css)
-  {
-    this.renderOptions.css(css);
-    doRender();
-  }
-
 
 
   /**
    * Load an SVG image from the given resource id.
-   * @param resourceId the id of an Android resource in your application
    */
   @Override
   public void setImageResource(int resourceId)
@@ -170,85 +117,49 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
 
   /**
    * Load an SVG image from the given resource URI.
-   * @param uri the URI of an Android resource in your application
    */
   @Override
-  public void  setImageURI(Uri uri)
+  public void setImageURI(Uri uri)
   {
-    if (!internalSetImageURI(uri))
-      Log.e("SVGImageView", "File not found: " + uri);
+    internalSetImageURI(uri, true);
   }
 
 
   /**
    * Load an SVG image from the given asset filename.
-   * @param filename the file name of an SVG in the assets folder in your application
    */
-  public void  setImageAsset(String filename)
+  public void setImageAsset(String filename)
   {
-    if (!internalSetImageAsset(filename))
-      Log.e("SVGImageView", "File not found: " + filename);
+    new LoadAssetTask(getContext(), filename).execute();
   }
-
-
-
-  //===============================================================================================
 
 
   /*
    * Attempt to set a picture from a Uri. Return true if it worked.
    */
-  private boolean  internalSetImageURI(Uri uri)
+  private boolean internalSetImageURI(Uri uri, boolean isDirectRequestFromUser)
   {
-    try
-    {
-      InputStream  is = getContext().getContentResolver().openInputStream(uri);
-      new LoadURITask().execute(is);
-      return true;
-    }
-    catch (FileNotFoundException e)
-    {
-      return false;
-    }
-
-  }
-
-
-  private boolean  internalSetImageAsset(String filename)
-  {
-    try
-    {
-      InputStream  is = getContext().getAssets().open(filename);
-      new LoadURITask().execute(is);
-      return true;
-    }
-    catch (IOException e)
-    {
-      return false;
-    }
-
-  }
-
-
-  private void setFromString(String url)
-  {
+    InputStream is;
     try {
-      this.svg = SVG.getFromString(url);
-      doRender();
-    } catch (SVGParseException e) {
-      // Failed to interpret url as a resource, a filename, or an actual SVG...
-      Log.e("SVGImageView", "Could not find SVG at: " + url);
+      is = getContext().getContentResolver().openInputStream(uri);
+    } catch (FileNotFoundException e) {
+      if (isDirectRequestFromUser)
+        Log.e("SVGImageView", "File not found: " + uri);
+      return false;
     }
+
+    new LoadURITask().execute(is);
+    return true;
   }
 
 
   //===============================================================================================
 
 
-  private class LoadResourceTask extends AsyncTask<Integer, Integer, SVG>
+  private class LoadResourceTask extends AsyncTask<Integer, Integer, Picture>
   {
-    private Context  context;
-    private int      resourceId;
+    private Context context;
+    private int     resourceId;
 
     LoadResourceTask(Context context, int resourceId)
     {
@@ -256,54 +167,86 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
       this.resourceId = resourceId;
     }
 
-    protected SVG  doInBackground(Integer... params)
+    protected Picture doInBackground(Integer... params)
     {
-      try
-      {
-        return SVG.getFromResource(context, resourceId);
-      }
-      catch (SVGParseException e)
-      {
+      try {
+        SVG svg = SVG.getFromResource(context, resourceId);
+        return svg.renderToPicture();
+      } catch (SVGParseException e) {
         Log.e("SVGImageView", String.format("Error loading resource 0x%x: %s", resourceId, e.getMessage()));
       }
       return null;
     }
 
-    protected void  onPostExecute(SVG svg)
+    protected void onPostExecute(Picture picture)
     {
-      SVGImageView.this.svg = svg;
-      doRender();
+      if (picture != null) {
+        setSoftwareLayerType();
+        setImageDrawable(new PictureDrawable(picture));
+      }
     }
   }
 
 
-  private class LoadURITask extends AsyncTask<InputStream, Integer, SVG>
+  private class LoadAssetTask extends AsyncTask<String, Integer, Picture>
   {
-    protected SVG  doInBackground(InputStream... is)
+    private Context context;
+    private String  filename;
+
+    LoadAssetTask(Context context, String filename)
     {
-      try
-      {
-        return SVG.getFromInputStream(is[0]);
-      }
-      catch (SVGParseException e)
-      {
-        Log.e("SVGImageView", "Parse error loading URI: " + e.getMessage());
-      }
-      finally
-      {
-        try
-        {
-          is[0].close();
-        }
-        catch (IOException e) { /* do nothing */ }
+      this.context = context;
+      this.filename = filename;
+    }
+
+    protected Picture doInBackground(String... params)
+    {
+      try {
+        SVG svg = SVG.getFromAsset(context.getAssets(), filename);
+        return svg.renderToPicture();
+      } catch (SVGParseException e) {
+        Log.e("SVGImageView", "Error loading file " + filename + ": " + e.getMessage());
+      } catch (FileNotFoundException e) {
+        Log.e("SVGImageView", "File not found: " + filename);
+      } catch (IOException e) {
+        Log.e("SVGImageView", "Unable to load asset file: " + filename, e);
       }
       return null;
     }
 
-    protected void  onPostExecute(SVG svg)
+    protected void onPostExecute(Picture picture)
     {
-      SVGImageView.this.svg = svg;
-      doRender();
+      if (picture != null) {
+        setSoftwareLayerType();
+        setImageDrawable(new PictureDrawable(picture));
+      }
+    }
+  }
+
+
+  private class LoadURITask extends AsyncTask<InputStream, Integer, Picture>
+  {
+    protected Picture doInBackground(InputStream... is)
+    {
+      try {
+        SVG svg = SVG.getFromInputStream(is[0]);
+        return svg.renderToPicture();
+      } catch (SVGParseException e) {
+        Log.e("SVGImageView", "Parse error loading URI: " + e.getMessage());
+      } finally {
+        try {
+          is[0].close();
+        } catch (IOException e) { /* do nothing */ }
+      }
+      return null;
+    }
+
+    protected void onPostExecute(Picture picture)
+    {
+      if (picture != null) {
+        setSoftwareLayerType();
+        setImageDrawable(new PictureDrawable(picture));
+      }
     }
   }
 
@@ -314,30 +257,16 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
   /*
    * Use reflection to call an API 11 method from this library (which is configured with a minSdkVersion of 8)
    */
-  private void  setSoftwareLayerType()
+  private void setSoftwareLayerType()
   {
     if (setLayerTypeMethod == null)
       return;
 
-    try
-    {
-      int  LAYER_TYPE_SOFTWARE = View.class.getField("LAYER_TYPE_SOFTWARE").getInt(new View(getContext()));
+    try {
+      int LAYER_TYPE_SOFTWARE = View.class.getField("LAYER_TYPE_SOFTWARE").getInt(new View(getContext()));
       setLayerTypeMethod.invoke(this, LAYER_TYPE_SOFTWARE, null);
-    }
-    catch (Exception e)
-    {
+    } catch (Exception e) {
       Log.w("SVGImageView", "Unexpected failure calling setLayerType", e);
     }
   }
-
-
-  private void  doRender()
-  {
-    if (svg == null)
-      return;
-    Picture  picture = this.svg.renderToPicture(renderOptions);
-    setSoftwareLayerType();
-    setImageDrawable(new PictureDrawable(picture));
-  }
-
 }
