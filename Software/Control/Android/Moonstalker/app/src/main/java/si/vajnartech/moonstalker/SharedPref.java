@@ -108,7 +108,7 @@ public class SharedPref
     return res;
   }
 
-  private int getInt(String sName)
+  public int getInt(String sName)
   {
     try {
       return pref.getInt(sName, (int) defaults.get(sName, 0));

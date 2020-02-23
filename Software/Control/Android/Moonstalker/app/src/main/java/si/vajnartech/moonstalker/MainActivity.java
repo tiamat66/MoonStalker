@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -630,31 +631,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public String transformStyle(String propertyName)
       {
-//        int num;
-//        // Messages
-//        num = Messages.getUnreadNum(act);
-//        if ("messaging_no_messages_display".equals(propertyName))
-//          return num > 0 ? "inherit" : "none";
-//        String msgCount = Integer.toString(num);
-//        if ("messaging_no_messages_width".equals(propertyName))
-//          return Integer.toString(5 + msgCount.length() * 4);
-//        if ("messaging_no_messages_count".equals(propertyName)) {
-//          unreadMsgsCnt = num;
-//          return msgCount;
-//        }
-//        // Documents
-//        num = Documents.getUnreadNum(act);
-//        if ("documents_no_documents_display".equals(propertyName))
-//          return num > 0 ? "inherit" : "none";
-//        String docCount = Integer.toString(num);
-//        if ("documents_no_documents_width".equals(propertyName))
-//          return Integer.toString(5 * 6 + docCount.length() * 4 * 6);
-//        if ("documents_no_documents_count".equals(propertyName)) {
-//          unreadDocsCnt = num;
-//          return docCount;
-//        }
+        // TODO: Handle transformation, look in AT7
+        Log.i("IZAA", "Property name=" + propertyName);
         return propertyName;
       }
     });
+  }
+
+  @Override
+  protected void attachBaseContext(Context newBase)
+  {
+    super.attachBaseContext(new MyContextWrapper(newBase));
   }
 }
