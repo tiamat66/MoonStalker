@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -997,14 +999,14 @@ public class SVGParser
     // want to collapse them all into one SVG.TextSequence node
     SVG.SvgConditionalContainer parent           = (SVG.SvgConditionalContainer) currentElement;
     int                         numOlderSiblings = parent.children.size();
-    SVG.SvgObject               previousSibling  = (numOlderSiblings == 0) ? null : parent.children.get(
+    SVG.SvgObject previousSibling = (numOlderSiblings == 0) ? null : parent.children.get(
         numOlderSiblings - 1);
     if (previousSibling instanceof SVG.TextSequence) {
       // Last sibling was a TextSequence also, so merge them.
-      ((SVG.TextSequence) previousSibling).text += characters;
+      ((SVG.TextSequence) previousSibling).text += transformDynamicValues(characters);
     } else {
       // Add a new TextSequence to the child node list
-      currentElement.addChild(new SVG.TextSequence(characters));
+      currentElement.addChild(new SVG.TextSequence(transformDynamicValues(characters)));
     }
   }
 
@@ -2890,6 +2892,7 @@ public class SVGParser
 
   static void processStyleProperty(Style style, String localName, String val)// throws SVGParseException
   {
+    val = transformDynamicValues(val);
     if (val.length() == 0) { // The spec doesn't say how to handle empty style attributes.
       return;               // Our strategy is just to ignore them.
     }
@@ -3208,6 +3211,7 @@ public class SVGParser
 
   private Matrix parseTransformList(String val) throws SVGParseException
   {
+    val = transformDynamicValues(val);
     Matrix matrix = new Matrix();
 
     TextScanner scan = new TextScanner(val);
@@ -3341,6 +3345,7 @@ public class SVGParser
    */
   static Length parseLength(String val) throws SVGParseException
   {
+    val = transformDynamicValues(val);
     if (val.length() == 0)
       throw new SVGParseException("Invalid length value (empty string)");
     int  end      = val.length();
@@ -4412,5 +4417,21 @@ public class SVGParser
     String transformStyle(String propertyName);
   }
 
+  /* Custom part */
   public static CustomValueHandler mCustomHandler = null;
+
+  @SuppressWarnings("RegExpRedundantEscape")
+  private static String transformDynamicValues(String val)
+  {
+    if (mCustomHandler == null)
+      return val;
+
+    Log.i("IZAA", val);
+    Matcher m = Pattern.compile("\\{%(.*)%\\}").matcher(val);
+    while (m.find()) {
+      Log.i("IZAA", "ahcahcahca");
+      val = val.replaceAll("\\{%" + m.group(1) + "%\\}", mCustomHandler.transformStyle(m.group(1)));
+    }
+    return val;
+  }
 }
