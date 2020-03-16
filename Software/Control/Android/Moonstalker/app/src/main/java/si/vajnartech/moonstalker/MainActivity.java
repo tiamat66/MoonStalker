@@ -631,8 +631,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public String transformStyle(String propertyName)
       {
-        // TODO: Handle transformation, look in AT7
-        Log.i("IZAA", "Property name=" + propertyName);
+        // TODO: vajnar.
+        if ("n_color".equals(propertyName))
+          return "#ff0000";
         return propertyName;
       }
     });

@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import si.vajnartech.moonstalker.androidsvg.SVGImageView;
 
 
-public class KeyArrowsFragment extends MyFragment
+public class KeyArrowsFragment extends MyFragment implements View.OnClickListener
 {
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -16,6 +16,13 @@ public class KeyArrowsFragment extends MyFragment
     View         res = inflater.inflate(R.layout.keypad_arrows, container, false);
     SVGImageView iv  = res.findViewById(R.id.keypad_arrows);
     iv.setImageDrawable(new SVGDrawable(getResources(), R.raw.keyboard_arrows, 800, 800));
+    iv.setOnClickListener(this);
     return res;
+  }
+
+  @Override
+  public void onClick(View v)
+  {
+
   }
 }
