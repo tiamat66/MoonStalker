@@ -633,7 +633,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       {
         // TODO: vajnar.
         if ("n_color".equals(propertyName))
-          return "#ff0000";
+          return KeyArrowsFragment.upAColor;
         return propertyName;
       }
     });
