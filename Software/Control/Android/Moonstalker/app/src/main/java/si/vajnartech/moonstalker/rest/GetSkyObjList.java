@@ -11,6 +11,7 @@ public class GetSkyObjList extends REST<SkyObjList>
     super(String.format(REST.GET_OBJECTS, objType), "vajnar", "vajnar", REST.SERVER_ADDRESS, new OnFail() {
       @Override public void execute()
       {
+        // TODO: vajnar.
         Log.i("IZAA", "Something went wrong...................................................");
       }
     });
@@ -25,10 +26,6 @@ public class GetSkyObjList extends REST<SkyObjList>
   protected void onPostExecute(SkyObjList j)
   {
     super.onPostExecute(j);
-
-    if (j != null)
-      for (String s: j.list)
-        Log.i("IZAA", "*=" + s);
   }
 }
 
