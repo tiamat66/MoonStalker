@@ -48,17 +48,17 @@ public class SVGParser
   private static final String XML_STYLESHEET_PROCESSING_INSTRUCTION = "xml-stylesheet";
 
   // <?xml-stylesheet> attribute names and values
-  public static final String XML_STYLESHEET_ATTR_TYPE         = "type";
-  public static final String XML_STYLESHEET_ATTR_ALTERNATE    = "alternate";
-  public static final String XML_STYLESHEET_ATTR_HREF         = "href";
-  public static final String XML_STYLESHEET_ATTR_MEDIA        = "media";
-  public static final String XML_STYLESHEET_ATTR_MEDIA_ALL    = "all";
-  public static final String XML_STYLESHEET_ATTR_ALTERNATE_NO = "no";
+  private static final String XML_STYLESHEET_ATTR_TYPE         = "type";
+  private static final String XML_STYLESHEET_ATTR_ALTERNATE    = "alternate";
+  private static final String XML_STYLESHEET_ATTR_HREF         = "href";
+  private static final String XML_STYLESHEET_ATTR_MEDIA        = "media";
+  private static final String XML_STYLESHEET_ATTR_MEDIA_ALL    = "all";
+  private static final String XML_STYLESHEET_ATTR_ALTERNATE_NO = "no";
 
   // Used by the automatic XML parser switching code.
   // This value defines how much of the SVG file preamble will we keep in order to check for
   // a doctype definition that has internal entities defined.
-  public static final int ENTITY_WATCH_BUFFER_SIZE = 4096;
+  private static final int ENTITY_WATCH_BUFFER_SIZE = 4096;
 
 
   // SVG parser
@@ -139,62 +139,6 @@ public class SVGParser
       return UNSUPPORTED;
     }
   }
-
-  // Element types that we don't support. Those that are containers have their
-  // contents ignored.
-  //private static final String  TAG_ANIMATECOLOR        = "animateColor";
-  //private static final String  TAG_ANIMATEMOTION       = "animateMotion";
-  //private static final String  TAG_ANIMATETRANSFORM    = "animateTransform";
-  //private static final String  TAG_ALTGLYPH            = "altGlyph";
-  //private static final String  TAG_ALTGLYPHDEF         = "altGlyphDef";
-  //private static final String  TAG_ALTGLYPHITEM        = "altGlyphItem";
-  //private static final String  TAG_ANIMATE             = "animate";
-  //private static final String  TAG_COLORPROFILE        = "color-profile";
-  //private static final String  TAG_CURSOR              = "cursor";
-  //private static final String  TAG_FEBLEND             = "feBlend";
-  //private static final String  TAG_FECOLORMATRIX       = "feColorMatrix";
-  //private static final String  TAG_FECOMPONENTTRANSFER = "feComponentTransfer";
-  //private static final String  TAG_FECOMPOSITE         = "feComposite";
-  //private static final String  TAG_FECONVOLVEMATRIX    = "feConvolveMatrix";
-  //private static final String  TAG_FEDIFFUSELIGHTING   = "feDiffuseLighting";
-  //private static final String  TAG_FEDISPLACEMENTMAP   = "feDisplacementMap";
-  //private static final String  TAG_FEDISTANTLIGHT      = "feDistantLight";
-  //private static final String  TAG_FEFLOOD             = "feFlood";
-  //private static final String  TAG_FEFUNCA             = "feFuncA";
-  //private static final String  TAG_FEFUNCB             = "feFuncB";
-  //private static final String  TAG_FEFUNCG             = "feFuncG";
-  //private static final String  TAG_FEFUNCR             = "feFuncR";
-  //private static final String  TAG_FEGAUSSIANBLUR      = "feGaussianBlur";
-  //private static final String  TAG_FEIMAGE             = "feImage";
-  //private static final String  TAG_FEMERGE             = "feMerge";
-  //private static final String  TAG_FEMERGENODE         = "feMergeNode";
-  //private static final String  TAG_FEMORPHOLOGY        = "feMorphology";
-  //private static final String  TAG_FEOFFSET            = "feOffset";
-  //private static final String  TAG_FEPOINTLIGHT        = "fePointLight";
-  //private static final String  TAG_FESPECULARLIGHTING  = "feSpecularLighting";
-  //private static final String  TAG_FESPOTLIGHT         = "feSpotLight";
-  //private static final String  TAG_FETILE              = "feTile";
-  //private static final String  TAG_FETURBULENCE        = "feTurbulence";
-  //private static final String  TAG_FILTER              = "filter";
-  //private static final String  TAG_FONT                = "font";
-  //private static final String  TAG_FONTFACE            = "font-face";
-  //private static final String  TAG_FONTFACEFORMAT      = "font-face-format";
-  //private static final String  TAG_FONTFACENAME        = "font-face-name";
-  //private static final String  TAG_FONTFACESRC         = "font-face-src";
-  //private static final String  TAG_FONTFACEURI         = "font-face-uri";
-  //private static final String  TAG_FOREIGNOBJECT       = "foreignObject";
-  //private static final String  TAG_GLYPH               = "glyph";
-  //private static final String  TAG_GLYPHREF            = "glyphRef";
-  //private static final String  TAG_HKERN               = "hkern";
-  //private static final String  TAG_MASK                = "mask";
-  //private static final String  TAG_METADATA            = "metadata";
-  //private static final String  TAG_MISSINGGLYPH        = "missing-glyph";
-  //private static final String  TAG_MPATH               = "mpath";
-  //private static final String  TAG_SCRIPT              = "script";
-  //private static final String  TAG_SET                 = "set";
-  //private static final String  TAG_STYLE               = "style";
-  //private static final String  TAG_VKERN               = "vkern";
-
 
   // Supported SVG attributes
   private enum SVGAttr
@@ -596,11 +540,11 @@ public class SVGParser
   /*
    * Implements the SAX Attributes class so that our parser can share a common attributes object
    */
-  private class XPPAttributesWrapper implements Attributes
+  private static class XPPAttributesWrapper implements Attributes
   {
     private XmlPullParser parser;
 
-    public XPPAttributesWrapper(XmlPullParser parser)
+    XPPAttributesWrapper(XmlPullParser parser)
     {
       this.parser = parser;
     }
@@ -778,7 +722,7 @@ public class SVGParser
   private class SAXHandler extends DefaultHandler2
   {
     @Override
-    public void startDocument() throws SAXException
+    public void startDocument()
     {
       SVGParser.this.startDocument();
     }
@@ -808,21 +752,21 @@ public class SVGParser
 
 
     @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException
+    public void endElement(String uri, String localName, String qName)
     {
       SVGParser.this.endElement(uri, localName, qName);
     }
 
 
     @Override
-    public void endDocument() throws SAXException
+    public void endDocument()
     {
       SVGParser.this.endDocument();
     }
 
 
     @Override
-    public void processingInstruction(String target, String data) throws SAXException
+    public void processingInstruction(String target, String data)
     {
       TextScanner         scan       = new TextScanner(data);
       Map<String, String> attributes = parseProcessingInstructionAttributes(scan);
@@ -1011,7 +955,7 @@ public class SVGParser
   }
 
 
-  private void endElement(String uri, String localName, String qName) throws SVGParseException
+  private void endElement(String uri, String localName, String qName)
   {
     if (ignoring) {
       if (--ignoreDepth == 0) {
@@ -1793,6 +1737,7 @@ public class SVGParser
   }
 
 
+  @SuppressWarnings("SwitchStatementWithTooFewBranches")
   private void parseAttributesTRef(SVG.TRef obj, Attributes attributes)
   {
     for (int i = 0; i < attributes.getLength(); i++) {
@@ -1831,7 +1776,7 @@ public class SVGParser
   }
 
 
-  private void parseAttributesConditional(SVG.SvgConditional obj, Attributes attributes) throws SVGParseException
+  private void parseAttributesConditional(SVG.SvgConditional obj, Attributes attributes)
   {
     for (int i = 0; i < attributes.getLength(); i++) {
       String val = attributes.getValue(i).trim();
@@ -2105,6 +2050,7 @@ public class SVGParser
   }
 
 
+  @SuppressWarnings("SwitchStatementWithTooFewBranches")
   private void parseAttributesStop(SVG.Stop obj, Attributes attributes) throws SVGParseException
   {
     for (int i = 0; i < attributes.getLength(); i++) {
@@ -2185,6 +2131,7 @@ public class SVGParser
   }
 
 
+  @SuppressWarnings("SwitchStatementWithTooFewBranches")
   private void parseAttributesClipPath(SVG.ClipPath obj, Attributes attributes) throws SVGParseException
   {
     for (int i = 0; i < attributes.getLength(); i++) {
@@ -2425,7 +2372,7 @@ public class SVGParser
   {
     String input;
     int    position    = 0;
-    int    inputLength = 0;
+    int    inputLength;
 
     private NumberParser numberParser = new NumberParser();
 
@@ -2835,7 +2782,7 @@ public class SVGParser
   /*
    * Parse the style attributes for an element.
    */
-  private void parseAttributesStyle(SvgElementBase obj, Attributes attributes) throws SVGParseException
+  private void parseAttributesStyle(SvgElementBase obj, Attributes attributes)
   {
     for (int i = 0; i < attributes.getLength(); i++) {
       String val = attributes.getValue(i).trim();
@@ -3430,7 +3377,7 @@ public class SVGParser
   {
     try {
       float o = parseFloat(val);
-      return (o < 0f) ? 0f : (o > 1f) ? 1f : o;
+      return (o < 0f) ? 0f : Math.min(o, 1f);
     } catch (SVGParseException e) {
       return null;
     }
@@ -3664,8 +3611,8 @@ public class SVGParser
     hue /= 60f;    // [0, 360] -> [0, 6]
     sat /= 100;   // [0, 100] -> [0, 1]
     light /= 100; // [0, 100] -> [0, 1]
-    sat = (sat < 0f) ? 0f : (sat > 1f) ? 1f : sat;
-    light = (light < 0f) ? 0f : (light > 1f) ? 1f : light;
+    sat = (sat < 0f) ? 0f : Math.min(sat, 1f);
+    light = (light < 0f) ? 0f : Math.min(light, 1f);
     float t1, t2;
     if (light <= 0.5f) {
       t2 = light * (sat + 1f);
@@ -3937,7 +3884,7 @@ public class SVGParser
     if (sum == 0f)
       return null;
 
-    return dashes.toArray(new Length[dashes.size()]);
+    return dashes.toArray(new Length[0]);
   }
 
 
@@ -4426,12 +4373,9 @@ public class SVGParser
     if (mCustomHandler == null)
       return val;
 
-    Log.i("IZAA", val);
     Matcher m = Pattern.compile("\\{%(.*)%\\}").matcher(val);
-    while (m.find()) {
-      Log.i("IZAA", "ahcahcahca");
+    while (m.find())
       val = val.replaceAll("\\{%" + m.group(1) + "%\\}", mCustomHandler.transformStyle(m.group(1)));
-    }
     return val;
   }
 }
