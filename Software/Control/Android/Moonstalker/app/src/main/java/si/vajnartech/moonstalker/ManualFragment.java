@@ -62,13 +62,14 @@ public class ManualFragment extends MyFragment implements View.OnClickListener, 
       view.performClick();
       break;
     case MotionEvent.ACTION_MOVE:
+
       if (!fingerOnScreen.get()) {
         rx = event.getRawX();
         ry = event.getRawY();
         differential.up(new Differential(rx, ry));
         differential.is(differential.mul(new Differential(1.0, -1.0))); // negate y part of point
         String direction = differential.getDirection();
-        Log.i("IZAAA", "Braclj=" + direction);
+        Log.i("IZAA", "Braclj=" + direction);
 //        if (!direction.equals(NONE)) {
 //          fingerOnScreen.set(true);
 //          TelescopeStatus.setMisc(direction);
