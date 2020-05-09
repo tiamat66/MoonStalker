@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     menu = navigationView.getMenu();
     drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-    setFragment("main", KeyArrowsFragment.class, new Bundle());
+    setFragment("main", MainFragment.class, new Bundle());
 
     // init terminal window
     terminal = new TerminalWindow(this);
@@ -633,7 +633,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       {
         // TODO: vajnar.
         if ("n_color".equals(propertyName))
-          return KeyArrowsFragment.upAColor;
+          return ManualFragment.upAColor;
         return propertyName;
       }
     });

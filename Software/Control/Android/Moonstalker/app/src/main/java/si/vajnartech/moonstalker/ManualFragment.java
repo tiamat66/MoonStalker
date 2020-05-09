@@ -1,6 +1,7 @@
 package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -9,59 +10,79 @@ import android.view.ViewGroup;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import si.vajnartech.moonstalker.androidsvg.SVGImageView;
+
 import static si.vajnartech.moonstalker.C.*;
 
-public class ManualFragment extends MyFragment
+public class ManualFragment extends MyFragment implements View.OnClickListener, View.OnTouchListener
 {
+  static String upAColor = "#ff0000";
+  private View view;
   private Differential differential = new Differential();
-
   private AtomicBoolean fingerOnScreen = new AtomicBoolean(false);
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
+    view = inflater.inflate(R.layout.keypad_arrows, container, false);
+    _updateArrows();
     View res = inflater.inflate(R.layout.frag_manual, container, false);
-    View kp  = res.findViewById(R.id.key_pad);
 
-    kp.setOnTouchListener(new View.OnTouchListener()
-    {
-      @Override public boolean onTouch(View view, MotionEvent event)
-      {
-        if (TelescopeStatus.get() != ST_READY)
-          return false;
-        double rx, ry;
+    return view;
+  }
 
-        switch (event.getAction()) {
-        case MotionEvent.ACTION_DOWN:
-          rx = event.getRawX();
-          ry = event.getRawY();
-          differential.up(new Differential(rx, ry));
-          view.performClick();
-          break;
-        case MotionEvent.ACTION_MOVE:
-          if (!fingerOnScreen.get()) {
-            rx = event.getRawX();
-            ry = event.getRawY();
-            differential.up(new Differential(rx, ry));
-            differential.is(differential.mul(new Differential(1.0, -1.0))); // negate y part of point
-            String direction = differential.getDirection();
-            if (!direction.equals(NONE)) {
-              fingerOnScreen.set(true);
-              TelescopeStatus.setMisc(direction);
-              act.ctrl.moveStart(direction);
-            }
-          }
-          break;
-        case MotionEvent.ACTION_UP:
-          fingerOnScreen.set(false);
-          break;
-        default:
-          return false;
-        }
-        return true;
+  private void _updateArrows()
+  {
+    if (view == null) return;
+
+    SVGImageView iv = view.findViewById(R.id.keypad_arrows);
+    iv.setImageDrawable(new SVGDrawable(getResources(), R.raw.keyboard_arrows, 800, 800));
+    iv.setOnClickListener(this);
+  }
+
+  @Override
+  public void onClick(View v)
+  {
+    upAColor = "#00ff00";
+    _updateArrows();
+  }
+
+  @Override
+  public boolean onTouch(View v, MotionEvent event)
+  {
+    if (TelescopeStatus.get() != ST_READY)
+      return false;
+    double rx, ry;
+
+    switch (event.getAction()) {
+    case MotionEvent.ACTION_DOWN:
+      rx = event.getRawX();
+      ry = event.getRawY();
+      differential.up(new Differential(rx, ry));
+      view.performClick();
+      break;
+    case MotionEvent.ACTION_MOVE:
+      if (!fingerOnScreen.get()) {
+        rx = event.getRawX();
+        ry = event.getRawY();
+        differential.up(new Differential(rx, ry));
+        differential.is(differential.mul(new Differential(1.0, -1.0))); // negate y part of point
+        String direction = differential.getDirection();
+        Log.i("IZAAA", "Braclj=" + direction);
+//        if (!direction.equals(NONE)) {
+//          fingerOnScreen.set(true);
+//          TelescopeStatus.setMisc(direction);
+//          act.ctrl.moveStart(direction);
+//        }
       }
-    });
-    return res;
+      break;
+    case MotionEvent.ACTION_UP:
+      fingerOnScreen.set(false);
+      break;
+    default:
+      return false;
+    }
+    return true;
   }
 }
 
