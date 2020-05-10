@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -15,11 +14,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
@@ -29,15 +31,14 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
-
 import si.vajnartech.moonstalker.rest.GetSkyObjList;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.E;
+import static si.vajnartech.moonstalker.C.N;
+import static si.vajnartech.moonstalker.C.NONE;
+import static si.vajnartech.moonstalker.C.S;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
@@ -48,6 +49,7 @@ import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
+import static si.vajnartech.moonstalker.C.W;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 // dodaj v rocne komande tudi diagonalne premike in lepso slikco s puscicami krog!!!!
@@ -631,9 +633,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public String transformStyle(String propertyName)
       {
-        // TODO: vajnar.
-        if ("n_color".equals(propertyName))
-          return ManualFragment.upAColor;
+        if ("u_color".equals(propertyName))
+          return TelescopeStatus.getMisc().equals(N) ? ManualFragment.on : ManualFragment.off;
+        else if ("r_color".equals(propertyName))
+          return TelescopeStatus.getMisc().equals(E) ? ManualFragment.on : ManualFragment.off;
+        else if ("d_color".equals(propertyName))
+          return TelescopeStatus.getMisc().equals(S) ? ManualFragment.on : ManualFragment.off;
+        else if ("l_color".equals(propertyName))
+          return TelescopeStatus.getMisc().equals(W) ? ManualFragment.on : ManualFragment.off;
         return propertyName;
       }
     });

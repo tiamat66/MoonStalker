@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker.androidsvg;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Paint;
@@ -124,6 +125,13 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
   }
 
 
+  @Override
+  public boolean performClick()
+  {
+    return super.performClick();
+  }
+
+
   /**
    * Load an SVG image from the given asset filename.
    */
@@ -155,6 +163,7 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
   //===============================================================================================
 
 
+  @SuppressLint("StaticFieldLeak")
   private class LoadResourceTask extends AsyncTask<Integer, Integer, Picture>
   {
     private Context context;
@@ -187,6 +196,7 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
   }
 
 
+  @SuppressLint("StaticFieldLeak")
   private class LoadAssetTask extends AsyncTask<String, Integer, Picture>
   {
     private Context context;
@@ -223,6 +233,7 @@ public class SVGImageView extends androidx.appcompat.widget.AppCompatImageView
   }
 
 
+  @SuppressLint("StaticFieldLeak")
   private class LoadURITask extends AsyncTask<InputStream, Integer, Picture>
   {
     protected Picture doInBackground(InputStream... is)

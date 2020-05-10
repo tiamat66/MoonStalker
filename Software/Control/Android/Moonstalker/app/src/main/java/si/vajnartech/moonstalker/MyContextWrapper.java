@@ -3,7 +3,6 @@ package si.vajnartech.moonstalker;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.Resources;
-import android.util.Log;
 
 public class MyContextWrapper extends ContextWrapper
 {
@@ -19,9 +18,9 @@ public class MyContextWrapper extends ContextWrapper
   {
     try {
       if (mResources == null)
-        mResources = new SVGResources(super.getResources(), getPackageName());
+        mResources = new SVGResources(super.getResources());
     } catch (Exception e) {
-      Log.i("IZAA", "Error: " + e);
+      e.printStackTrace();
     }
     return mResources;
   }

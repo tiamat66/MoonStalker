@@ -14,11 +14,15 @@ import si.vajnartech.moonstalker.androidsvg.SVGImageView;
 
 import static si.vajnartech.moonstalker.C.*;
 
-public class ManualFragment extends MyFragment implements View.OnClickListener, View.OnTouchListener
+public class ManualFragment extends MyFragment implements  View.OnTouchListener
 {
-  static String upAColor = "#ff0000";
-  private View view;
-  private Differential differential = new Differential();
+  static final String off = "#ff0000";
+  static final String on = "#00ff00";
+
+  private String direction;
+  private View   view;
+
+  private Differential  d = new Differential();
   private AtomicBoolean fingerOnScreen = new AtomicBoolean(false);
 
   @Override
@@ -26,7 +30,6 @@ public class ManualFragment extends MyFragment implements View.OnClickListener, 
   {
     view = inflater.inflate(R.layout.keypad_arrows, container, false);
     _updateArrows();
-    View res = inflater.inflate(R.layout.frag_manual, container, false);
 
     return view;
   }
@@ -34,17 +37,9 @@ public class ManualFragment extends MyFragment implements View.OnClickListener, 
   private void _updateArrows()
   {
     if (view == null) return;
-
     SVGImageView iv = view.findViewById(R.id.keypad_arrows);
     iv.setImageDrawable(new SVGDrawable(getResources(), R.raw.keyboard_arrows, 800, 800));
-    iv.setOnClickListener(this);
-  }
-
-  @Override
-  public void onClick(View v)
-  {
-    upAColor = "#00ff00";
-    _updateArrows();
+    iv.setOnTouchListener(this);
   }
 
   @Override
@@ -54,31 +49,32 @@ public class ManualFragment extends MyFragment implements View.OnClickListener, 
       return false;
     double rx, ry;
 
+    v.performClick();
     switch (event.getAction()) {
     case MotionEvent.ACTION_DOWN:
       rx = event.getRawX();
       ry = event.getRawY();
-      differential.up(new Differential(rx, ry));
-      view.performClick();
+      d.up(new Differential(rx, ry));
       break;
     case MotionEvent.ACTION_MOVE:
-
       if (!fingerOnScreen.get()) {
         rx = event.getRawX();
         ry = event.getRawY();
-        differential.up(new Differential(rx, ry));
-        differential.is(differential.mul(new Differential(1.0, -1.0))); // negate y part of point
-        String direction = differential.getDirection();
-        Log.i("IZAA", "Braclj=" + direction);
-//        if (!direction.equals(NONE)) {
-//          fingerOnScreen.set(true);
-//          TelescopeStatus.setMisc(direction);
+        d.up(new Differential(rx, ry));
+        d.is(d.mul(new Differential(1.0, -1.0))); // negate y part of point
+        if (!d.getDirection().equals(NONE)) {
+          direction = d.getDirection();
+          fingerOnScreen.set(true);
+          TelescopeStatus.setMisc(direction);
+          _updateArrows();
 //          act.ctrl.moveStart(direction);
-//        }
+        }
       }
       break;
     case MotionEvent.ACTION_UP:
       fingerOnScreen.set(false);
+      TelescopeStatus.setMisc(NONE);
+      _updateArrows();
       break;
     default:
       return false;
