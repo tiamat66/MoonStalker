@@ -186,6 +186,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           @Override
           public void run()
           {
+            if (currentFragment instanceof ManualFragment) {
+              ManualFragment frag = (ManualFragment) currentFragment;
+              frag.updateArrows();
+            }
+
             // FAB
             if (TelescopeStatus.get() == ST_READY)
               fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorOk2)));

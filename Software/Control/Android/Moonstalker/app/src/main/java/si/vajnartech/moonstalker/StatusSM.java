@@ -74,8 +74,10 @@ public class StatusSM extends Thread
         if (TelescopeStatus.getAck().isEmpty()) return;
         if (TelescopeStatus.getAck().equals(MVS_ACK) ||
             TelescopeStatus.getAck().equals(MVE_ACK)) {
-          if (MVE_ACK.equals(TelescopeStatus.getAck()))
+          if (MVE_ACK.equals(TelescopeStatus.getAck())) {
             TelescopeStatus.set(ST_READY);
+            TelescopeStatus.setMisc(NONE);
+          }
           else
             TelescopeStatus.set(ST_MOVING);
           TelescopeStatus.setAck(CLEAR);

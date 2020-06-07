@@ -17,9 +17,8 @@ import static si.vajnartech.moonstalker.C.*;
 public class ManualFragment extends MyFragment implements  View.OnTouchListener
 {
   static final String off = "#ff0000";
-  static final String on = "#00ff00";
+  static final String on  = "#00ff00";
 
-  private String direction;
   private View   view;
 
   private Differential  d = new Differential();
@@ -29,12 +28,12 @@ public class ManualFragment extends MyFragment implements  View.OnTouchListener
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
     view = inflater.inflate(R.layout.keypad_arrows, container, false);
-    _updateArrows();
+    updateArrows();
 
     return view;
   }
 
-  private void _updateArrows()
+  void updateArrows()
   {
     if (view == null) return;
     SVGImageView iv = view.findViewById(R.id.keypad_arrows);
@@ -45,8 +44,6 @@ public class ManualFragment extends MyFragment implements  View.OnTouchListener
   @Override
   public boolean onTouch(View v, MotionEvent event)
   {
-    if (TelescopeStatus.get() != ST_READY)
-      return false;
     double rx, ry;
 
     v.performClick();
@@ -63,18 +60,18 @@ public class ManualFragment extends MyFragment implements  View.OnTouchListener
         d.up(new Differential(rx, ry));
         d.is(d.mul(new Differential(1.0, -1.0))); // negate y part of point
         if (!d.getDirection().equals(NONE)) {
-          direction = d.getDirection();
+          String direction = d.getDirection();
           fingerOnScreen.set(true);
           TelescopeStatus.setMisc(direction);
-          _updateArrows();
-//          act.ctrl.moveStart(direction);
+          updateArrows();
+          act.ctrl.moveStart(direction);
         }
       }
       break;
     case MotionEvent.ACTION_UP:
       fingerOnScreen.set(false);
       TelescopeStatus.setMisc(NONE);
-      _updateArrows();
+      act.ctrl.moveStop();
       break;
     default:
       return false;
@@ -86,7 +83,7 @@ public class ManualFragment extends MyFragment implements  View.OnTouchListener
 @SuppressWarnings("NullableProblems")
 class Differential
 {
-  private static final double thrs = 3.0;
+  private static final double thrs = 5.0;
 
   private double q_x1, q_x2;
   private double x1, x2;
