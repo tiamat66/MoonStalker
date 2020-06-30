@@ -36,32 +36,26 @@ public final class C
   static final int ST_CONNECTED     = 12;
   static final int ST_CALIBRATING   = 13;
   static final int ST_MANUAL   = 14;
-  static final int ST_MOVING_E = 15;
-  static final int ST_MOVING_S = 16;
   static final int ST_CALIBRATED   = 17;
   static final int ST_MOVE_TO_OBJECT = 18;
   static final int ST_NOT_READY = 19;
+  static final int ST_WAITING_ACK = 20;
+
+  // Triggers
+  static final int ST_MOVING_S = 16;
+  static final int ST_MOVING_E = 15;
 
   // Moving directions
-  public enum Directions
-  {
-    UP(1),
-    DOWN(2),
-    LEFT(3),
-    RIGHT(4),
-    NONE(5);
-
-    private final int value;
-    Directions(int value)
-    {
-      this.value = value;
-    }
-
-    public int getValue()
-    {
-      return value;
-    }
-  }
+  static final String N = "N";
+  static final String E = "E";
+  static final String S = "S";
+  static final String W = "W";
+  static final String NE = "NE";
+  static final String SE = "SE";
+  static final String SW = "SW";
+  static final String NW = "NW";
+  static final String NONE = "NONE";
+  static final String CLEAR = "";
 
   public static String curConstellation = "";
   static String calObj = "Polaris";

@@ -29,25 +29,13 @@
         android:textSize="30sp"
         android:textStyle="italic" />
 
-      <ImageView
-        android:id="@+id/status_light"
-        android:layout_width="match_parent"
-        android:layout_height="32dp"
-        app:srcCompat="@drawable/ic_error_s"
-        tools:ignore="ContentDescription,VectorDrawableCompat" />
 
-    
-  
-</com.google.android.material.appbar.AppBarLayout>
+  </com.google.android.material.appbar.AppBarLayout>
 
-  <com.google.android.material.floatingactionbutton.FloatingActionButton
-    android:id="@+id/fab"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_gravity="bottom|end"
-    android:layout_margin="@dimen/fab_margin"
-    app:backgroundTint="@color/colorAccent"
-    app:srcCompat="@android:drawable/checkbox_on_background" />
+  <com.google.android.material.floatingactionbutton.FloatingActionButton android:id="@+id/fab"
+    android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end"
+    android:layout_margin="@dimen/fab_margin" android:src="@android:drawable/checkbox_on_background"
+    app:backgroundTint="@color/colorOk" />
 
   <include layout="@layout/content_main" />
 

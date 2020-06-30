@@ -7,6 +7,7 @@ import android.os.Message;
 import android.util.Log;
 
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static java.lang.Thread.sleep;
@@ -16,27 +17,23 @@ import static si.vajnartech.moonstalker.OpCodes.*;
 interface ControlInterface
 {
   void releaseSocket();
+
   void messageProcess(String msg, Bundle bundle);
+
   void dump(String str);
 }
 
-@SuppressWarnings("unused")
-interface OutCommandInterface
+@SuppressWarnings("SameParameterValue")
+public class Control extends Telescope
 {
-  void outMessageProcess(String opcode);
-  void outMessageProcess(String opcode, String p1);
-  void outMessageProcess(String opcode, String p1, String p2);
-  void outMessageProcess(String opcode, String p1, String p2, String p3);
-}
+  private AtomicBoolean isSocketFree;
 
-public class Control extends Telescope implements OutCommandInterface
-{
-  private boolean          isSocketFree;
   private InMessageHandler inMessageHandler;
   private CommandProcessor processor;
   private MainActivity     act;
-  private int              fakeA = 0;
-  private int              fakeH = 0;
+
+  private int fakeA = 0;
+  private int fakeH = 0;
 
 
   Control(MainActivity act)
@@ -44,30 +41,46 @@ public class Control extends Telescope implements OutCommandInterface
     super(act);
     this.act = act;
     inMessageHandler = new InMessageHandler();
-    isSocketFree = true;
+    isSocketFree = new AtomicBoolean(true);
     processor = new CommandProcessor(this, act);
   }
 
-  void moveStart(final C.Directions direction)
+  private void onManualMoving(final String direction)
   {
-    TelescopeStatus.set(ST_MOVING_S);
-    outMessageProcess(MOVE_START, Integer.toString(direction.getValue()));
-    new Thread(new Runnable() {
+    new Thread(new Runnable()
+    {
       @Override public void run()
       {
-        while(TelescopeStatus.get() == ST_MOVING_S) {
+        while (TelescopeStatus.get() == ST_MOVING &&
+               (TelescopeStatus.getMode() == ST_CALIBRATING || TelescopeStatus.getMode() == ST_MANUAL)) {
           switch (direction) {
-          case UP:
+          case "N":
             fakeH++;
             break;
-          case DOWN:
+          case "S":
             fakeH--;
             break;
-          case LEFT:
+          case "W":
             fakeA--;
             break;
-          case RIGHT:
+          case "E":
             fakeA++;
+            break;
+          case "NE":
+            fakeH++;
+            fakeA++;
+            break;
+          case "SE":
+            fakeH--;
+            fakeA++;
+            break;
+          case "SW":
+            fakeH--;
+            fakeA--;
+            break;
+          case "NW":
+            fakeH++;
+            fakeA--;
             break;
           }
           try {
@@ -87,9 +100,17 @@ public class Control extends Telescope implements OutCommandInterface
     }).start();
   }
 
+  void moveStart(final String direction)
+  {
+    if (TelescopeStatus.locked()) return;
+    TelescopeStatus.set(ST_WAITING_ACK);
+    outMessageProcess(MOVE_START, direction, "500");
+  }
+
   void moveStop()
   {
-    TelescopeStatus.set(ST_MOVING_E);
+    if (TelescopeStatus.locked()) return;
+    TelescopeStatus.set(ST_WAITING_ACK);
     outMessageProcess(MOVE_STOP);
   }
 
@@ -101,24 +122,26 @@ public class Control extends Telescope implements OutCommandInterface
   }
 
   @Override
-  public void outMessageProcess(String opcode)
+  void st()
+  {
+    outMessageProcess(GET_STATUS);
+  }
+
+  private void outMessageProcess(String opcode)
   {
     processor.add(new Instruction(opcode));
   }
 
-  @Override
-  public void outMessageProcess(String opcode, String p1)
+  private void outMessageProcess(String opcode, String p1)
   {
     processor.add(new Instruction(opcode, p1));
   }
 
-  @Override
-  public void outMessageProcess(String opcode, String p1, String p2)
+  private void outMessageProcess(String opcode, String p1, String p2)
   {
     processor.add(new Instruction(opcode, p1, p2));
   }
 
-  @Override
   public void outMessageProcess(String opcode, String p1, String p2, String p3)
   {
     processor.add(new Instruction(opcode, p1, p2, p3));
@@ -140,7 +163,7 @@ public class Control extends Telescope implements OutCommandInterface
       if (message.what != IN_MSG)
         return;
 
-      Bundle parms = (Bundle) message.obj;
+      Bundle parms  = (Bundle) message.obj;
       String opcode = "";
       if (parms != null)
         opcode = (String) parms.get("opcode");
@@ -158,7 +181,6 @@ public class Control extends Telescope implements OutCommandInterface
         break;
       case INIT:
         outMessageProcess(GET_STATUS);
-        outMessageProcess(GET_BATTERY);
         break;
       case NOT_READY:
         processNotReady();
@@ -166,8 +188,12 @@ public class Control extends Telescope implements OutCommandInterface
       case MOVE_ACK:
         processMvAck();
         break;
-      default:
-        return;
+      case MVS_ACK:
+        processMvsAck();
+        break;
+      case MVE_ACK:
+        processMveAck();
+        break;
       }
 
       Log.i(TAG, "Get message and process it from Server: " + opcode);
@@ -177,9 +203,10 @@ public class Control extends Telescope implements OutCommandInterface
   class CommandProcessor
   {
     LinkedList<Instruction> instrBuffer = new LinkedList<>();
-    boolean                 r;
-    Control                 ctrl;
-    MainActivity            ctx;
+
+    boolean      r;
+    Control      ctrl;
+    MainActivity ctx;
 
     CommandProcessor(Control ctrl, MainActivity act)
     {
@@ -202,9 +229,11 @@ public class Control extends Telescope implements OutCommandInterface
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
-            if (!isSocketFree || instrBuffer.isEmpty() || TelescopeStatus.locked()) continue;
+            if (!isSocketFree.get() || instrBuffer.isEmpty() || TelescopeStatus.locked()) continue;
             lock();
-            new IOProcessor(instrBuffer.removeFirst(), new ControlInterface() {
+            TelescopeStatus.lock();
+            new IOProcessor(instrBuffer.removeFirst(), new ControlInterface()
+            {
               @Override
               public void releaseSocket()
               {
@@ -220,7 +249,8 @@ public class Control extends Telescope implements OutCommandInterface
               @Override
               public void dump(final String str)
               {
-                ctx.runOnUiThread(new Runnable() {
+                ctx.runOnUiThread(new Runnable()
+                {
                   @Override public void run()
                   {
                     ctx.monitor.update(str);
@@ -243,14 +273,9 @@ public class Control extends Telescope implements OutCommandInterface
   private void processReady()
   {
     Log.i(TAG, "processReady in Control = " + TelescopeStatus.get());
-    if (TelescopeStatus.get() == ST_CONNECTED) {
-      TelescopeStatus.set(ST_READY);
-      TelescopeStatus.setMode(ST_READY);
-    } else if (TelescopeStatus.get() == ST_MOVING) {
-      TelescopeStatus.set(ST_READY);
-    } else if (TelescopeStatus.get() == ST_MOVING_E) {
-      TelescopeStatus.set(ST_READY);
-    }
+    TelescopeStatus.set(ST_READY);
+    TelescopeStatus.setMode(ST_READY);
+    TelescopeStatus.unlock();
   }
 
   private void processNotReady()
@@ -263,6 +288,18 @@ public class Control extends Telescope implements OutCommandInterface
     TelescopeStatus.set(ST_NOT_READY); // TODO.
   }
 
+  private void processMvsAck()
+  {
+    TelescopeStatus.unlock();
+    TelescopeStatus.setAck(MVS_ACK);
+  }
+
+  private void processMveAck()
+  {
+    TelescopeStatus.unlock();
+    TelescopeStatus.setAck(MVE_ACK);
+  }
+
   private void processBattery(int val)
   {
     TelescopeStatus.setBatteryVoltage(val);
@@ -270,13 +307,13 @@ public class Control extends Telescope implements OutCommandInterface
 
   private void lock()
   {
-    isSocketFree = false;
+    isSocketFree.set(false);
   }
 
   private void release()
   {
     Log.i(TAG, "Release--------------------------------------------------------------------------");
-    isSocketFree = true;
+    isSocketFree.set(true);
   }
 }
 

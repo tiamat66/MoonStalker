@@ -9,10 +9,10 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.core.content.ContextCompat;
-
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+
+import androidx.core.content.ContextCompat;
 
 import static java.lang.Math.acos;
 import static java.lang.Math.asin;
@@ -31,9 +31,9 @@ public class PositionCalculus implements LocationListener
   private double ra;
   private double dec;
   double az = 0;
-  double h = 0;
+  double h  = 0;
 
-  Location curLocation = new Location("GPS");
+  private Location curLocation = new Location("GPS");
 
   PositionCalculus(MainActivity act)
   {
@@ -174,11 +174,11 @@ public class PositionCalculus implements LocationListener
 
   public static double getRaFromString(String s)
   {
-    double h = Double.valueOf(s.substring(0, s.indexOf('h')));
+    double h = Double.parseDouble(s.substring(0, s.indexOf('h')));
     Log.i(TAG, "ddddddddd=" + h);
-    double min = Double.valueOf(s.substring(s.indexOf('h') + 1, s.indexOf('m')));
+    double min = Double.parseDouble(s.substring(s.indexOf('h') + 1, s.indexOf('m')));
     Log.i(TAG, "ddddddddd=" + min);
-    double sec = Double.valueOf(s.substring(s.indexOf('m') + 1, s.length()));
+    double sec = Double.parseDouble(s.substring(s.indexOf('m') + 1));
     Log.i(TAG, "ddddddddd=" + sec);
 
     return convertHour2Dec(h, min, sec);
@@ -186,11 +186,11 @@ public class PositionCalculus implements LocationListener
 
   public static double getDecFromString(String s)
   {
-    double d = Double.valueOf(s.substring(0, s.indexOf('d')));
+    double d = Double.parseDouble(s.substring(0, s.indexOf('d')));
     Log.i(TAG, "ddddddddd=" + d);
-    double min = Double.valueOf(s.substring(s.indexOf('d') + 1, s.indexOf('\'')));
+    double min = Double.parseDouble(s.substring(s.indexOf('d') + 1, s.indexOf('\'')));
     Log.i(TAG, "ddddddddd=" + min);
-    double sec = Double.valueOf(s.substring(s.indexOf('\'') + 1, s.indexOf('\"')));
+    double sec = Double.parseDouble(s.substring(s.indexOf('\'') + 1, s.indexOf('\"')));
     Log.i(TAG, "ddddddddd=" + sec);
 
     return convertHour2Dec(d, min, sec);

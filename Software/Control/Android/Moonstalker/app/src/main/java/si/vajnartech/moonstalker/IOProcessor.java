@@ -10,10 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import static si.vajnartech.moonstalker.C.TAG;
-import static si.vajnartech.moonstalker.OpCodes.BATTERY;
-import static si.vajnartech.moonstalker.OpCodes.MOVE_ACK;
-import static si.vajnartech.moonstalker.OpCodes.NOT_READY;
-import static si.vajnartech.moonstalker.OpCodes.READY;
+import static si.vajnartech.moonstalker.OpCodes.*;
 
 public class IOProcessor extends AsyncTask<String, Void, String>
 {
@@ -88,18 +85,18 @@ public class IOProcessor extends AsyncTask<String, Void, String>
 
   private Instruction _parseInMsg(String input)
   {
-    if (input.contains("<" + READY + ">")) {
+    if (input.contains("<" + READY + ">"))
       return new Instruction(READY);
-    }
-    else if (input.contains("<" + NOT_READY)) {
+    else if (input.contains("<" + NOT_READY))
       return new Instruction(NOT_READY);
-    }
-    else if (input.contains("<" + MOVE_ACK)) {
+    else if (input.contains("<" + MOVE_ACK))
       return new Instruction(MOVE_ACK);
-    }
-    else if (input.contains("<" + BATTERY)) {
+    else if (input.contains("<" + BATTERY))
       return new Instruction(BATTERY, input.substring(input.indexOf(BATTERY), input.length()-1).split(" ")[1]);
-    }
+    else if (input.contains("<" + MVS_ACK))
+      return new Instruction(MVS_ACK);
+    else if (input.contains("<" + MVE_ACK))
+      return new Instruction(MVE_ACK);
     return new Instruction("");
   }
 
@@ -107,33 +104,16 @@ public class IOProcessor extends AsyncTask<String, Void, String>
   {
     Instruction j = _parseInMsg(instruction);
 
-    switch (j.opCode) {
-    case READY:
-      Log.i(TAG, "processing RDY from response ");
-      ctrlInterface.messageProcess(j.opCode, new Bundle());
-      break;
-    case BATTERY:
+    if (j.opCode.equals(BATTERY))
+    {
       Log.i(TAG, "processing BTRY from response with p1 = " + j.parameters.get(0));
       Bundle b = new Bundle();
       int val = Integer.parseInt(j.parameters.get(0));
       b.putInt("p1", val);
       ctrlInterface.messageProcess(j.opCode, b);
-      break;
-    case MOVE_ACK:
-      Log.i(TAG, "Processing MOVE_ACK");
+    } else
       ctrlInterface.messageProcess(j.opCode, new Bundle());
-      break;
-    case NOT_READY:
-      Log.i(TAG, "Processing NOT_READY");
-      ctrlInterface.messageProcess(j.opCode, new Bundle());
-      break;
-    default:
-      try {
-        throw new Exception("Unknown response received: " + instruction);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+
     ctrlInterface.dump(String.format("$ msg rcvd: %s\n", j.opCode));
   }
 }

@@ -15,7 +15,7 @@
   <string name="initializing">inicializiram</string>
   <string name="calibrated">teleskop kalibriran</string>
   <string name="move">Premakni</string>
-  <string name="manual">ročno vodenje</string>
+  <string name="manual">Ročno vodenje</string>
   <string name="track">Sledi</string>
   <string name="calibrate">Kalibriraj</string>
   <string name="not_connected"> brez povezave</string>

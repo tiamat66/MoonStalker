@@ -5,14 +5,17 @@ import android.util.Log;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static si.vajnartech.moonstalker.C.*;
+import static si.vajnartech.moonstalker.OpCodes.WAITING;
 
-@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
-final class TelescopeStatus
+@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final class TelescopeStatus
 {
-  private static int    btryVoltage = -1;
-  private static int    status      = -1;
-  private static int    mode        = -1;
-  private static String error       = "";
+  private static int btryVoltage = -1;
+
+  private static int    status = -1;
+  private static int    mode   = -1;
+  private static String error  = "";
+  private static String ack = "";
+  private static String misc = "";
 
   private static AtomicBoolean lck = new AtomicBoolean(false);
 
@@ -35,6 +38,16 @@ final class TelescopeStatus
   {
     btryVoltage = voltage;
     Log.i(TAG, "Battery=" + btryVoltage);
+  }
+
+  static String getAck()
+  {
+    return ack;
+  }
+
+  static void setAck(String val)
+  {
+    ack = val;
   }
 
   static void setMode(int m)
@@ -68,5 +81,15 @@ final class TelescopeStatus
     set(ST_ERROR);
     error = e;
     Log.i("STATUS", "ERR=" + getError());
+  }
+
+  static void setMisc(String val)
+  {
+    misc = val;
+  }
+
+  static String getMisc()
+  {
+    return misc;
   }
 }

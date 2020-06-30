@@ -10,6 +10,7 @@ import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 import static si.vajnartech.moonstalker.OpCodes.*;
 
+@SuppressWarnings("SameParameterValue")
 public abstract class Telescope extends PositionCalculus
 {
   private double hSteps = 0;
@@ -86,4 +87,6 @@ public abstract class Telescope extends PositionCalculus
   public abstract void inMsgProcess(String msg, Bundle bundle);
 
   abstract void mv(int hSteps, int vSteps, int speed);
+
+  abstract void st();
 }
