@@ -31,13 +31,11 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
-import si.vajnartech.moonstalker.rest.GetSkyObjList;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static si.vajnartech.moonstalker.C.E;
 import static si.vajnartech.moonstalker.C.N;
-import static si.vajnartech.moonstalker.C.NONE;
 import static si.vajnartech.moonstalker.C.S;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
@@ -52,6 +50,9 @@ import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.W;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
+// pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
+// od zgornje postacke FAB rata moder ko premikamo in je kljukica dajmo rajsi krizec
+// naredi premakni na, da bo delalo, in izgled
 // dodaj v rocne komande tudi diagonalne premike in lepso slikco s puscicami krog!!!!
 // ko je operabilen in naenkrat se prekine BT, connection lost
 // ko je operabilen in naenkrat dobi error
@@ -59,10 +60,9 @@ import static si.vajnartech.moonstalker.C.curObj;
 // kako dolociti max speed
 // delam na MVS/MVE in hendlanje responsev (acknowledges delajo!!!! preveri se NOT_READY),
 // takoj postimat kako bo sploh tole premikanje zgledalo
-// naredi samo eno opcijo rocno vodenje z moznostjo kalibracije
-// oznaci graficno kam se premika, ko imamo rocno vodenje
-// implementiraj NS, SE .....
-// implementacija kurzorskih tipk
+// naredi samo eno opcijo rocno vodenje z moznostjo kalibracijenehal premikati se ni zgodil move end
+// rocno vodenje, vcasih se puscica ugasne teleskop pa se ni
+// select fragment popravi
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -143,7 +143,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // init astro database
     SelectFragment.initAstroObjDatabase(this);
-    final MainActivity ctx = this;
     // start state machine
     new StatusSM(new Nucleus()
     {
@@ -210,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             else if (TelescopeStatus.getMode() == ST_CALIBRATED)
               update(R.string.calibrated, false, true, true, true);
             else if (TelescopeStatus.getMode() == ST_CALIBRATING)
-                update(R.string.calibrating);
+              update(R.string.calibrating);
             else if (TelescopeStatus.get() == ST_READY)
               if (TelescopeStatus.getMode() != ST_TRACING)
                 update(R.string.ready, true, true, false, false);
@@ -270,9 +269,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // init current astro object
     new GetStarInfo(C.calObj, null);
     connect(false);
-
-    new GetSkyObjList(3);
-
     registerSVGTransforms();
   }
 
@@ -632,7 +628,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   protected void registerSVGTransforms()
   {
-    SVGResources  res = (SVGResources) getResources();
+    SVGResources res = (SVGResources) getResources();
     res.setStyleTransformer(new SVGResources.SVGStyleTransformer()
     {
       @Override
