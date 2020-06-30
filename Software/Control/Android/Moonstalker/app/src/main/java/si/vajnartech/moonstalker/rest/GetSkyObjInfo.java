@@ -43,25 +43,9 @@ public abstract class GetSkyObjInfo<T>
   }
 
   protected abstract void process(String data);
+
   protected abstract String parse(String txt, String start, String end);
+
   protected abstract String parse(String txt, String start);
-
-  protected class Parser
-  {
-    private String txt, start, end;
-
-    Parser(String txt, String start, String end)
-    {
-      this.txt = txt;
-      this.start = start;
-      this.end = end;
-    }
-
-    Parser(String txt, String start)
-    {
-      this.txt = txt;
-      this.start = start;
-    }
-  }
 }
 

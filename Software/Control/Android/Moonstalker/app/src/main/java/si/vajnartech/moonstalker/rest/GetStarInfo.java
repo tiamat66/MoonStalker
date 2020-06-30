@@ -5,13 +5,11 @@ import android.util.Log;
 import si.vajnartech.moonstalker.AstroObject;
 import si.vajnartech.moonstalker.C;
 
-import static si.vajnartech.moonstalker.C.TAG;
-import static si.vajnartech.moonstalker.C.curConstellation;
 import static si.vajnartech.moonstalker.PositionCalculus.getDecFromString;
 import static si.vajnartech.moonstalker.PositionCalculus.getRaFromString;
 
 @SuppressWarnings("SameParameterValue")
-public class GetStarInfo extends GetSkyObjInfo
+public class GetStarInfo extends GetSkyObjInfo<CharSequence>
 {
   private SkyInterface skyInterface;
 
@@ -28,7 +26,7 @@ public class GetStarInfo extends GetSkyObjInfo
     if (data == null)
       return;
     res = parse(data, "Right Ascension and Declination: ", " (epoch 2000.0)");
-    Log.i(TAG, "GetSkyObjInfo: " + data);
+    Log.i(C.TAG, "GetSkyObjInfo: " + data);
 
     if (res.isEmpty())
       return;
@@ -37,7 +35,7 @@ public class GetStarInfo extends GetSkyObjInfo
     String a = "RightAscensionandDeclination:</B>";
     String b = "s,";
     String c = "s,";
-    Log.i(TAG, "GetSkyObjInfo: " + res);
+    Log.i(C.TAG, "GetSkyObjInfo: " + res);
 
 
     String j1 = res.substring(a.length(), res.indexOf(b));
@@ -47,13 +45,14 @@ public class GetStarInfo extends GetSkyObjInfo
     C.curObj = new AstroObject(name, i1, i2, j1, j2);
 
     int q1 = parse1(data, "Proper names:");
-    Log.i(TAG, "obj: " + C.curObj);
+    Log.i(C.TAG, "obj: " + C.curObj);
     res = parse1(data, q1 + "</B>".length() + name.length(), "<BR>");
     String[] result = res.split(",");
-    Log.i(TAG, "result: " + res);
+    Log.i(C.TAG, "result: " + res);
 
-    curConstellation = result.length >= 3 ? result[2] : result[1];
-    Log.i(TAG, "current constalation = " + curConstellation);
+    C.curConstellation = result.length >= 3 ? result[2] : result[1];
+    Log.i(C.TAG, "current constalation = " + C.curConstellation);
+    Log.i(C.TAG, "current object = " + C.curObj);
     if (skyInterface != null)
       skyInterface.updateConstellation();
   }
