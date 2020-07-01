@@ -63,6 +63,7 @@ import static si.vajnartech.moonstalker.C.curObj;
 // naredi samo eno opcijo rocno vodenje z moznostjo kalibracijenehal premikati se ni zgodil move end
 // rocno vodenje, vcasih se puscica ugasne teleskop pa se ni
 // select fragment popravi
+// naj javi, da se ni mogel povezati s podatkovno bazo
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener

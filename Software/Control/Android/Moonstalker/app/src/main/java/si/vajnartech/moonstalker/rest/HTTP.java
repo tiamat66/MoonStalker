@@ -22,17 +22,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import si.vajnartech.moonstalker.C;
 import si.vajnartech.moonstalker.MainActivity;
 
 @SuppressWarnings("WeakerAccess")
 public class HTTP extends AsyncTask<String, Void, String>
 {
-  protected       String                  url               = "";
+  protected       String                  url;
   protected       File                    destinationFile   = null;
   protected       OutputStream            destinationStream = null;
   protected       String                  params            = "";
   protected       HashMap<String, String> headers           = new HashMap<>();
-  protected       GetCompleteEvent        onComplete        = null;
+  protected       GetCompleteEvent        onComplete;
   protected       GetCompleteEvent        onFail            = null;
   protected       GetCompleteEvent        onErrorConnection = null;
   protected       boolean                 completeInThread  = false;
@@ -42,7 +43,7 @@ public class HTTP extends AsyncTask<String, Void, String>
   protected       String                  responseMessage   = "";
   public          AtomicInteger           progress          = new AtomicInteger(0);
   public volatile boolean                 throttled         = false;
-  public          StringComposer          diag              = null;  // detail diagnostics HTML
+  public          StringComposer          diag              = new StringComposer(true);  // detail diagnostics HTML
 
   public HTTP(String url, GetCompleteEvent evt)
   {
@@ -89,8 +90,10 @@ public class HTTP extends AsyncTask<String, Void, String>
 
   private void diag(String label, String dataFormat, Object... args)
   {
-    if (diag != null)
+    if (diag != null) {
       diag.trParam(label, dataFormat, args);
+      Log.i(C.TAG, "diag=" + diag);
+    }
   }
 
   private void diag(Exception e)
@@ -99,6 +102,7 @@ public class HTTP extends AsyncTask<String, Void, String>
       StringWriter b = new StringWriter();
       e.printStackTrace(new PrintWriter(b));
       diag.trParam("Exception", "<pre>%s</pre>", b);
+      Log.i(C.TAG, "exception=" + diag);
     }
     if (onErrorConnection != null)
       onErrorConnection.complete(this, null);
