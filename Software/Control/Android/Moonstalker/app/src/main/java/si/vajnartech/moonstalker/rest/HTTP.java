@@ -23,9 +23,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import si.vajnartech.moonstalker.C;
-import si.vajnartech.moonstalker.MainActivity;
 
-@SuppressWarnings("WeakerAccess")
 public class HTTP extends AsyncTask<String, Void, String>
 {
   protected       String                  url;
@@ -37,7 +35,6 @@ public class HTTP extends AsyncTask<String, Void, String>
   protected       GetCompleteEvent        onFail            = null;
   protected       GetCompleteEvent        onErrorConnection = null;
   protected       boolean                 completeInThread  = false;
-  protected       boolean                 logging           = true;
   protected       int                     responseCode      = 0;
   protected       Exception               serverException   = null;
   protected       String                  responseMessage   = "";
@@ -50,42 +47,6 @@ public class HTTP extends AsyncTask<String, Void, String>
     super();
     this.url = url;
     this.onComplete = evt;
-  }
-
-  public HTTP(String url, GetCompleteEvent evt, boolean logging)
-  {
-    super();
-    this.url = url;
-    this.onComplete = evt;
-    this.logging = logging;
-  }
-
-  public HTTP(String url, File file, GetCompleteEvent evt)
-  {
-    super();
-    this.url = url;
-    this.destinationFile = file;
-    this.onComplete = evt;
-  }
-
-  public HTTP(String url, OutputStream file, GetCompleteEvent evt)
-  {
-    super();
-    this.url = url;
-    this.destinationStream = file;
-    this.onComplete = evt;
-  }
-
-  public HTTP params(String p)
-  {
-    params = p;
-    return this;
-  }
-
-  public HTTP headers(String k, String v)
-  {
-    this.headers.put(k, v);
-    return this;
   }
 
   private void diag(String label, String dataFormat, Object... args)
@@ -106,29 +67,6 @@ public class HTTP extends AsyncTask<String, Void, String>
     }
     if (onErrorConnection != null)
       onErrorConnection.complete(this, null);
-  }
-
-  public void setOnFail(GetCompleteEvent onFail)
-  {
-    this.onFail = onFail;
-  }
-
-  public HTTP setOnErrorConnection(GetCompleteEvent e)
-  {
-    onErrorConnection = e;
-    return this;
-  }
-
-  public HTTP onFail(final MainActivity act)
-  {
-    setOnFail(new GetCompleteEvent()
-    {
-      @Override public void complete(HTTP http, String s)
-      {
-//        act.progressOff();
-      }
-    });
-    return this;
   }
 
   private void backgroundReadStream(InputStream in, OutputStream out) throws IOException
@@ -176,9 +114,6 @@ public class HTTP extends AsyncTask<String, Void, String>
             FileOutputStream fil = new FileOutputStream(tmp);
             backgroundReadStream(in, fil);
             fil.close();
-//            if (!tmp.renameTo(destinationFile))
-//              Log.e("HTTP", "File rename failure %s --> %s", tmp.getAbsolutePath(),
-//                    destinationFile.getAbsolutePath());
             if (onComplete != null && completeInThread)
               onComplete.complete(this, destinationFile.getAbsolutePath());
             return destinationFile.getAbsolutePath();
@@ -224,7 +159,7 @@ public class HTTP extends AsyncTask<String, Void, String>
     return null;
   }
 
-  protected void onPostExecute(String data) //(HttpResponse response)
+  protected void onPostExecute(String data)
   {
     if (data != null && data.length() > 0) {
       if (onComplete != null && !completeInThread)
@@ -239,10 +174,11 @@ public class HTTP extends AsyncTask<String, Void, String>
   }
 }
 
+@SuppressWarnings("unused")
 class StringComposer
 {
   private StringBuilder sb;
-  private boolean appendLn;
+  private boolean       appendLn;
 
   public StringComposer(boolean appendLn)
   {
@@ -250,14 +186,14 @@ class StringComposer
     this.appendLn = appendLn;
   }
 
-  public StringComposer append(String format, Object ...args)
+  public StringComposer append(String format, Object... args)
   {
     sb.append(String.format(Locale.GERMAN, format, args));
     if (appendLn) sb.append("\n");
     return this;
   }
 
-  public void trParam(String label, String dataFormat, Object ...args)
+  public void trParam(String label, String dataFormat, Object... args)
   {
     if (dataFormat == null || dataFormat.isEmpty()) dataFormat = "%s";
     String tmp = String.format(Locale.GERMAN, "<tr><td><b>%s</b></td><td>%s</td></tr>", label, dataFormat);
@@ -266,6 +202,7 @@ class StringComposer
     if (appendLn) sb.append("\n");
   }
 
+  @SuppressWarnings("NullableProblems")
   @Override
   public String toString()
   {
