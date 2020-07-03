@@ -49,9 +49,9 @@ public class SelectFragment extends MyFragment
       public void updateConstellation()
       {
         calConstellation = getCFromStar();
-        setPositionString();
+        setPositionString(act);
         if (!curObj.name.equals(C.calObj))
-          act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+          act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent, null));
         constellations.setSelection(constellationAdapter.getPosition(calConstellation));
       }
     });
@@ -146,7 +146,7 @@ public class SelectFragment extends MyFragment
     return String.format("%s (%s)\n%s | %s", curObj.name, calConstellation, az, h);
   }
 
-  public void setPositionString()
+  public static void setPositionString(MainActivity act)
   {
     act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h, 0));
   }

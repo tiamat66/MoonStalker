@@ -64,6 +64,7 @@ import static si.vajnartech.moonstalker.C.curObj;
 // rocno vodenje, vcasih se puscica ugasne teleskop pa se ni
 // select fragment popravi
 // naj javi, da se ni mogel povezati s podatkovno bazo
+// ko je teleskop kalibriran naj to vpise kot toast, v terminal window pa naj gre ime objekta?
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -156,8 +157,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @SuppressWarnings("SameParameterValue")
       void update(Integer title, boolean ca, boolean ma, boolean tr, boolean mo)
       {
-        if (title != null)
+        if (title != null) {
           terminal.setText(tx(title));
+          if (title == R.string.calibrated)
+            setPositionString();
+        }
         menu.findItem(R.id.calibrate).setEnabled(ca);
         menu.findItem(R.id.manual).setEnabled(ma);
         menu.findItem(R.id.track).setEnabled(tr);
@@ -193,9 +197,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             // FAB
             if (TelescopeStatus.get() == ST_READY)
-              fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorOk2)));
+              fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorOk2, null)));
             else if (TelescopeStatus.get() == ST_MOVING)
-              fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorMoving)));
+              fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorMoving, null)));
 
             if (TelescopeStatus.get() == ST_MOVING)
               update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
@@ -238,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         {
           @Override public void run()
           {
-            ((SelectFragment) currentFragment).setPositionString();
+            setPositionString();
           }
         });
       }
@@ -271,6 +275,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     new GetStarInfo(C.calObj, null);
     connect(false);
     registerSVGTransforms();
+  }
+
+
+  private void setPositionString()
+  {
+    SelectFragment.setPositionString(this);
   }
 
   private void connect(boolean exe)
@@ -525,7 +535,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     progress.setLayoutParams(lp_progress);
 
-    int color = getResources().getColor(R.color.colorAccent);
+    int color = getResources().getColor(R.color.colorAccent, null);
     if (progress.getIndeterminateDrawable() != null)
       progress.getIndeterminateDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
 
@@ -541,13 +551,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     else if (type == ProgressType.MOVING)
       loadingText.setText(tx(R.string.moving));
 
-    loadingText.setTextColor(getResources().getColor(R.color.colorAccent));
+    loadingText.setTextColor(getResources().getColor(R.color.colorAccent, null));
     loadingText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
     loadingText.setLayoutParams(lp_loading);
 
     ll_progress = new LinearLayout(this);
     ll_progress.setOrientation(LinearLayout.VERTICAL);
-    ll_progress.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+    ll_progress.setBackgroundColor(getResources().getColor(R.color.colorPrimary, null));
     ll_progress.addView(progress, lp_progress);
     ll_progress.addView(loadingText, lp_loading);
     final FrameLayout.LayoutParams lp_ll = new FrameLayout.LayoutParams(
