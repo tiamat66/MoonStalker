@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     SharedPref.setDefault("device_name", SERVER_NAME);
     SharedPref.setDefault("calibration_obj", calObj);
     final FloatingActionButton fab = findViewById(R.id.fab);
+    updateFab(R.color.colorError, fab);
     fab.setOnClickListener(new View.OnClickListener()
     {
       @SuppressWarnings("SameParameterValue")
@@ -197,9 +198,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             // FAB
             if (TelescopeStatus.get() == ST_READY)
-              fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorOk2, null)));
+              updateFab(R.color.colorOk2, fab);
             else if (TelescopeStatus.get() == ST_MOVING)
-              fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorMoving, null)));
+              updateFab(R.color.colorMoving, fab);
 
             if (TelescopeStatus.get() == ST_MOVING)
               update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
@@ -216,8 +217,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             else if (TelescopeStatus.getMode() == ST_CALIBRATING)
               update(R.string.calibrating);
             else if (TelescopeStatus.get() == ST_READY)
-              if (TelescopeStatus.getMode() != ST_TRACING)
-                update(R.string.ready, true, true, false, false);
+              update(R.string.ready, true, true, false, false);
           }
         });
       }
@@ -281,6 +281,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   private void setPositionString()
   {
     SelectFragment.setPositionString(this);
+  }
+
+  private void updateFab(int color, FloatingActionButton fab)
+  {
+    fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
+
   }
 
   private void connect(boolean exe)
