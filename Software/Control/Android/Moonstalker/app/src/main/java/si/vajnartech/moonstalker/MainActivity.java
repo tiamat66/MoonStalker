@@ -186,39 +186,34 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void updateStatus()
       {
-        runOnUiThread(new Runnable()
-        {
-          @Override
-          public void run()
-          {
-            if (currentFragment instanceof ManualFragment) {
-              ManualFragment frag = (ManualFragment) currentFragment;
-              frag.updateArrows();
-            }
-
-            // FAB
-            if (TelescopeStatus.get() == ST_READY)
-              updateFab(R.color.colorOk2, fab);
-            else if (TelescopeStatus.get() == ST_MOVING)
-              updateFab(R.color.colorMoving, fab);
-
-            if (TelescopeStatus.get() == ST_MOVING)
-              update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
-            else if (TelescopeStatus.get() == ST_NOT_READY)
-              update(R.string.not_ready);
-            else if (TelescopeStatus.getMode() == ST_TRACING)
-              update(R.string.tracing);
-            else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT)
-              update(R.string.ready, false, true, true, false);
-            else if (TelescopeStatus.getMode() == ST_MANUAL)
-              update(R.string.manual);
-            else if (TelescopeStatus.getMode() == ST_CALIBRATED)
-              update(R.string.calibrated, false, true, true, true);
-            else if (TelescopeStatus.getMode() == ST_CALIBRATING)
-              update(R.string.calibrating);
-            else if (TelescopeStatus.get() == ST_READY)
-              update(R.string.ready, true, true, false, false);
+        runOnUiThread(() -> {
+          if (currentFragment instanceof ManualFragment) {
+            ManualFragment frag = (ManualFragment) currentFragment;
+            frag.updateArrows();
           }
+
+          // FAB
+          if (TelescopeStatus.get() == ST_READY)
+            updateFab(R.color.colorOk2, fab);
+          else if (TelescopeStatus.get() == ST_MOVING)
+            updateFab(R.color.colorMoving, fab);
+
+          if (TelescopeStatus.get() == ST_MOVING)
+            update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
+          else if (TelescopeStatus.get() == ST_NOT_READY)
+            update(R.string.not_ready);
+          else if (TelescopeStatus.getMode() == ST_TRACING)
+            update(R.string.tracing);
+          else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT)
+            update(R.string.ready, false, true, true, false);
+          else if (TelescopeStatus.getMode() == ST_MANUAL)
+            update(R.string.manual);
+          else if (TelescopeStatus.getMode() == ST_CALIBRATED)
+            update(R.string.calibrated, false, true, true, true);
+          else if (TelescopeStatus.getMode() == ST_CALIBRATING)
+            update(R.string.calibrating);
+          else if (TelescopeStatus.get() == ST_READY)
+            update(R.string.ready, true, true, false, false);
         });
       }
 
@@ -274,7 +269,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // init current astro object
     new GetStarInfo(C.calObj, null);
     connect(false);
-    registerSVGTransforms();
+    // TODO: tole naredi na drug nacin
+//    registerSVGTransforms();
   }
 
 
