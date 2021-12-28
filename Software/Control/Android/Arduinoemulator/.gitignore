@@ -16,4 +16,6 @@ app/build.gradle
 .idea/dictionaries/
 .idea/modules.xml
 .idea/gradle.xml
+.idea/compiler.xml
+.idea/jarRepositories.xml
 gradle/wrapper/gradle-wrapper.properties
