@@ -25,36 +25,23 @@ class BlueToothService
 {
   private static final String TAG = "IZAA";
 
-  // Delimiters
-  private static final String SM = "<";
-  private static final String EM = ">";
-
-  //Messages
-  //IN
-  private static final String MOVE = "MV";
-  private static final String ST   = "ST?";
-  private static final String BTRY = "BTRY?";
-
-  //OUT
-  private static final String RDY      = "RDY";
-  private static final String NOT_RDY  = "NOT_RDY";
-  private static final String BTRY_RES = "BTRY";
-
   // SDP UUID service
-  private static final UUID                    MY_UUID                     = UUID.fromString(
+  private static final UUID   MY_UUID = UUID.fromString(
       "00001101-0000-1000-8000-00805F9B34FB");
-  private static final String                  NAME                        = "MOONSTALKER";
+  private static final String NAME    = "MOONSTALKER";
+
   // Status  for Handler
-  private static final int                     RECIEVE_MESSAGE             = 1;
-  private static final int                     CONNECTION_CANCELED_MESSAGE = 2;
-  private              BluetoothAdapter        btAdapter                   = null;
-  private              MainActivity            act;
-  private              BtReadWrite             btReadWrite;
-  private              AcceptThread            acceptThread;
-  private              BlueToothServiceHandler handler;
-  private              String                  outMessage;
-  private              boolean                 connectionCanceled          = true;
-  private              BluetoothSocket         socket                      = null;
+  private static final int RECIEVE_MESSAGE             = 1;
+  private static final int CONNECTION_CANCELED_MESSAGE = 2;
+
+  private boolean         connectionCanceled = true;
+  private BluetoothSocket socket             = null;
+  private BtReadWrite     btReadWrite;
+  private AcceptThread    acceptThread;
+
+  private final BluetoothAdapter        btAdapter;
+  private final MainActivity            act;
+  private final BlueToothServiceHandler handler;
 
   @SuppressLint("HandlerLeak") BlueToothService(MainActivity act)
   {
@@ -85,12 +72,13 @@ class BlueToothService
     Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
     if (pairedDevices.size() > 0) {
       for (BluetoothDevice device : pairedDevices) {
-        Log.i("IZAA", device.getName() + "\n" + device.getAddress());
+        Log.i(TAG, device.getName() + "\n" + device.getAddress());
       }
     }
   }
 
-  @SuppressLint("HandlerLeak") class BlueToothServiceHandler extends Handler
+  @SuppressLint("HandlerLeak")
+  class BlueToothServiceHandler extends Handler
   {
     @Override
     public void handleMessage(Message msg)
