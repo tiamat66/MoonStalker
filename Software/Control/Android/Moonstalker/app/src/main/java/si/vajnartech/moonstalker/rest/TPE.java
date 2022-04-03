@@ -9,7 +9,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@SuppressWarnings("NullableProblems")
 class TPE
 {
   public static class CallerDelayedPolicy implements RejectedExecutionHandler

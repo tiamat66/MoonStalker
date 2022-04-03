@@ -2,6 +2,7 @@ package si.vajnartech.moonstalker;
 
 import java.util.UUID;
 
+@SuppressWarnings("unused")
 public final class C
 {
   public static final String TAG = "IZAABELA";

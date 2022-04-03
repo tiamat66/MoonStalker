@@ -11,7 +11,7 @@ import static si.vajnartech.moonstalker.PositionCalculus.getRaFromString;
 @SuppressWarnings("SameParameterValue")
 public class GetStarInfo extends GetSkyObjInfo<CharSequence>
 {
-  private SkyInterface skyInterface;
+  private final SkyInterface skyInterface;
 
   public GetStarInfo(String name, SkyInterface i)
   {

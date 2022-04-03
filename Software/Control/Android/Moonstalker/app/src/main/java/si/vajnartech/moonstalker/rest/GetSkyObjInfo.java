@@ -19,26 +19,14 @@ public abstract class GetSkyObjInfo<T>
 
   GetSkyObjInfo(String name, String URL)
   {
-    HTTP.GetCompleteEvent ce = new HTTP.GetCompleteEvent()
-    {
-      @Override public void complete(HTTP http, String data)
-      {
-        process(data);
-      }
-    };
+    HTTP.GetCompleteEvent ce = (http, data) -> process(data);
     this.name = name;
     new HTTP(URL + name, ce).executeOnExecutor(TPE.THREAD_POOL_EXECUTOR);
   }
 
   GetSkyObjInfo(String URL)
   {
-    HTTP.GetCompleteEvent ce = new HTTP.GetCompleteEvent()
-    {
-      @Override public void complete(HTTP http, String data)
-      {
-        process(data);
-      }
-    };
+    HTTP.GetCompleteEvent ce = (http, data) -> process(data);
     new HTTP(URL, ce).executeOnExecutor(TPE.THREAD_POOL_EXECUTOR);
   }
 

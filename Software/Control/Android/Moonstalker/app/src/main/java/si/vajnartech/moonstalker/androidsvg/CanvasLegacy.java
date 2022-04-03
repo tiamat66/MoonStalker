@@ -8,7 +8,7 @@ import java.lang.reflect.Method;
  * "Aaand it's gone": Canvas#save(int) has been removed from sdk-28,
  * so this helper classes uses reflection to access the API on older devices.
  */
-@SuppressWarnings("JavaReflectionMemberAccess")
+@SuppressWarnings({"JavaReflectionMemberAccess", "ConstantConditions", "SameParameterValue"})
 class CanvasLegacy
 {
   static final int MATRIX_SAVE_FLAG;

@@ -4,6 +4,7 @@ package si.vajnartech.moonstalker.androidsvg;
  * Thrown by the CSS parser if a problem is found while parsing a CSS file.
  */
 
+@SuppressWarnings("unused")
 class CSSParseException extends Exception
 {
   CSSParseException(String msg)
