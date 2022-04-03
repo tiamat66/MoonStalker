@@ -17,3 +17,5 @@ app/build.gradle
 .idea/compiler.xml
 .idea/jarRepositories.xml
 gradle/wrapper/gradle-wrapper.properties
+.idea/deploymentTargetDropDown.xml
+.idea/inspectionProfiles/
