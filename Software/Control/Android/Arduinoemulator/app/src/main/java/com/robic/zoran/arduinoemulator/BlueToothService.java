@@ -162,9 +162,8 @@ class BlueToothService
 
   private class BtReadWrite extends Thread
   {
-    final   InputStream  mmInStream;
-    final   OutputStream mmOutStream;
-    private boolean      isRunning = false;
+    final InputStream  mmInStream;
+    final OutputStream mmOutStream;
 
     BtReadWrite(BluetoothSocket socket)
     {
@@ -192,8 +191,7 @@ class BlueToothService
       byte[] buffer = new byte[256];  // buffer store for the stream
       int    bytes;
 
-      isRunning = true;
-      while (isRunning) {
+      while (true) {
         if (connectionCanceled) break;
         try {
           // Read from the InputStream
@@ -252,15 +250,14 @@ class BlueToothService
     act.print(str);
   }
 
-  abstract class ProcessMsg<T>
+  @SuppressWarnings({"unchecked", "ConstantConditions"})
+  abstract static class ProcessMsg<T>
   {
-    private final Class<T> resultClass;
     T result;
 
     ProcessMsg(String msg)
     {
-      //noinspection unchecked
-      resultClass = (Class<T>)
+      Class<T> resultClass = (Class<T>)
           ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
       if (resultClass != Void.class) {
         InputStream    stream = new ByteArrayInputStream(msg.getBytes(StandardCharsets.UTF_8));
@@ -286,21 +283,15 @@ class BlueToothService
 
     private void processMessage(String msg)
     {
-//      if (msg.contains("MV")) {
-//        Log.i(TAG, "Process MOVE message from Client");
-//        move();
-//        return;
-//      }
       if (msg.contains("MVS")) {
         if (msg.contains("MVST?")) {
           Log.i(TAG, "Process GET STATUS message from Client");
           st();
-          return;
         } else {
           Log.i(TAG, "Processing MOVE START message from Client, " + msg);
           mvs();
-          return;
         }
+        return;
       }
 
       if (msg.contains("MVE")) {
@@ -329,89 +320,42 @@ class BlueToothService
     new Command(msg);
   }
 
-  private boolean chkMsg(String recMsg, String expMsg)
-  {
-    recMsg = recMsg.substring(1, 1 + expMsg.length());
-    return (recMsg.equals(expMsg));
-  }
-
   private void rdy()
   {
     Log.i(TAG, "Sending RDY");
-    new Handler().postDelayed(new Runnable()
-    {
-      @Override public void run()
-      {
-        write("<RDY>");
-      }
-    }, 500);
+    new Handler().postDelayed(() -> write("<RDY>"), 500);
   }
 
   private void st()
   {
     final String cmd = "RDY";
     Log.i(TAG, "Sending " + cmd);
-    new Handler().postDelayed(new Runnable()
-    {
-      @Override public void run()
-      {
-        write(String.format("<%s>", cmd));
-      }
-    }, 3000);
+    new Handler().postDelayed(() -> write(String.format("<%s>", cmd)), 3000);
   }
 
   private void mve()
   {
     final String cmd = "MVE_ACK";
     Log.i(TAG, "Sending " + cmd);
-    new Handler().postDelayed(new Runnable()
-    {
-      @Override public void run()
-      {
-        write(String.format("<%s>", cmd));
-      }
-    }, 1000);
+    new Handler().postDelayed(() -> write(String.format("<%s>", cmd)), 1000);
   }
 
   private void mvs()
   {
     final String cmd = "MVS_ACK N 500";
     Log.i(TAG, "Sending " + cmd);
-    new Handler().postDelayed(new Runnable()
-    {
-      @Override public void run()
-      {
-        write(String.format("<%s>", cmd));
-      }
-    }, 1000);
-  }
-
-  private void move()
-  {
-    Log.i(TAG, "Processing MOVE");
-    new Handler().postDelayed(new Runnable()
-    {
-      @Override public void run()
-      {
-        write("<RDY>");
-      }
-    }, 5000);
+    new Handler().postDelayed(() -> write(String.format("<%s>", cmd)), 1000);
   }
 
   private void btryRes()
   {
     Log.i(TAG, "Sending BTRY");
-    new Handler().postDelayed(new Runnable()
-    {
-      @Override public void run()
-      {
-        write("<BTRY 11300>");
-      }
-    }, 700);
+    new Handler().postDelayed(() -> write("<BTRY 11300>"), 700);
   }
 }
 
-@SuppressWarnings("WeakerAccess") class Instruction
+@SuppressWarnings({"WeakerAccess", "NullableProblems"})
+class Instruction
 {
   public int    opCode;
   public String p1;
@@ -426,23 +370,4 @@ class BlueToothService
            ", p2=" + p2 +
            '}';
   }
-}
-
-@SuppressWarnings("WeakerAccess") class Response
-{
-  public int    opCode;
-  public String p1;
-  public String p2;
-
-  Response(int opCode)
-  {
-    this.opCode = opCode;
-  }
-
-  Response(int opCode, String p1)
-  {
-    this.opCode = opCode;
-    this.p1 = p1;
-  }
-
 }
