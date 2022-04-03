@@ -5,10 +5,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 final class Ball
 {
-  private Runnable postExecute;
+  private final Runnable postExecute;
 
-  private int status;
-  private int threshold;
+  private final int status;
+  private final int threshold;
 
   AtomicInteger stucked = new AtomicInteger(0);
 
