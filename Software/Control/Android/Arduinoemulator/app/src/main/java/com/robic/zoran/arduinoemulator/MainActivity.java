@@ -15,13 +15,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   private static final String TAG = "IZAA";
 
   BlueToothService btService;
-  TextView         mainTextView;
-  Button           sendButton;
-  Button           devButton;
-  Button           serButton;
-  Button           exitButton;
-  EditText         mainEditText;
-  boolean BTServerStarted = false;
+
+  TextView mainTextView;
+  Button   sendButton;
+  Button   devButton;
+  Button   serButton;
+  Button   exitButton;
+  EditText mainEditText;
+  boolean  BTServerStarted = false;
 
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -31,7 +32,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     setContentView(R.layout.activity_main);
 
     btService = new BlueToothService(this);
-    mainEditText = (EditText) findViewById(R.id.edittext_msg);
+    mainEditText = findViewById(R.id.edittext_msg);
 
     main();
   }
@@ -50,19 +51,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
   public void main()
   {
-    sendButton = (Button) findViewById(R.id.main_button);
+    sendButton = findViewById(R.id.main_button);
     assert sendButton != null;
     sendButton.setOnClickListener(this);
 
-    devButton = (Button) findViewById(R.id.button2);
+    devButton = findViewById(R.id.button2);
     assert devButton != null;
     devButton.setOnClickListener(this);
 
-    serButton = (Button) findViewById(R.id.button3);
+    serButton = findViewById(R.id.button3);
     assert serButton != null;
     serButton.setOnClickListener(this);
 
-    exitButton = (Button) findViewById(R.id.button4);
+    exitButton = findViewById(R.id.button4);
     assert exitButton != null;
     exitButton.setOnClickListener(this);
 
@@ -78,27 +79,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
-      serButton.setText("STOP BT SERVER");
+      serButton.setText(tx(R.string.stop_server));
       BTServerStarted = true;
     }
   }
+
   @SuppressLint("SetTextI18n")
   @Override
   public void onClick(View v)
   {
-    switch (v.getId()) {
-
-    case R.id.main_button:
+    int id = v.getId();
+    if (id == R.id.main_button) {
       mainTextView.setText("Sent message: " + mainEditText.getText().toString());
       btService.write(mainEditText.getText().toString());
-      break;
-    case R.id.button2:
+    } else if (id == R.id.button2) {
       btService.getPairedDevices();
-      break;
-    case R.id.button3:
+    } else if (id == R.id.button3) {
       startStop();
-      break;
-    case R.id.button4:
+    } else if (id == R.id.button4) {
       exit("Aplication terminated", "");
     }
   }
@@ -113,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
   public void print(String msg)
   {
-    mainTextView = (TextView) findViewById(R.id.main_textview);
+    mainTextView = findViewById(R.id.main_textview);
     assert mainTextView != null;
     mainTextView.setText(msg);
   }
@@ -123,6 +121,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Log.d(TAG, title + " - " + message);
     finish();
     System.exit(0);
+  }
+
+  public String tx(int stringId, Object... formatArgs)
+  {
+    if (formatArgs.length > 0)
+      return getString(stringId, formatArgs);
+    return getString(stringId);
   }
 }
 
