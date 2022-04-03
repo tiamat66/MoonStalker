@@ -2,7 +2,6 @@ package si.vajnartech.moonstalker;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
@@ -34,9 +33,6 @@ import androidx.fragment.app.FragmentTransaction;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
-import static si.vajnartech.moonstalker.C.E;
-import static si.vajnartech.moonstalker.C.N;
-import static si.vajnartech.moonstalker.C.S;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
@@ -47,9 +43,9 @@ import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
-import static si.vajnartech.moonstalker.C.W;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
+// ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo
 // pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
 // od zgornje postacke FAB rata moder ko premikamo in je kljukica dajmo rajsi krizec
 // naredi premakni na, da bo delalo, in izgled
@@ -233,13 +229,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       public void move()
       {
         ctrl.move(curObj);
-        runOnUiThread(new Runnable()
-        {
-          @Override public void run()
-          {
-            setPositionString();
-          }
-        });
+        runOnUiThread(() -> setPositionString());
       }
 
       @Override
@@ -251,13 +241,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void dump(final String str)
       {
-        runOnUiThread(new Runnable()
-        {
-          @Override public void run()
-          {
-            monitor.update(str);
-          }
-        });
+        runOnUiThread(() -> monitor.update(str));
       }
 
       @Override
@@ -269,8 +253,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // init current astro object
     new GetStarInfo(C.calObj, null);
     connect(false);
-    // TODO: tole naredi na drug nacin
-//    registerSVGTransforms();
+    // TODO: tole naredi animacije na androidov nacin na drug nacin
   }
 
 
@@ -316,13 +299,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       @Override
       public void onOk()
       {
-        runOnUiThread(new Runnable()
-        {
-          public void run()
-          {
-            Toast.makeText(MainActivity.this, tx(R.string.connected), Toast.LENGTH_SHORT).show();
-          }
-        });
+        runOnUiThread(() -> Toast.makeText(MainActivity.this, tx(R.string.connected), Toast.LENGTH_SHORT).show());
       }
 
       @Override
@@ -338,24 +315,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   private void promptToCalibration()
   {
-    runOnUiThread(new Runnable()
-    {
-      @Override public void run()
-      {
-        myMessage(tx(R.string.calibration_ntfy));
-      }
-    });
+    runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
   }
 
   private void initControl()
   {
-    runOnUiThread(new Runnable()
-    {
-      public void run()
-      {
-        ctrl = new Control(MainActivity.this);
-        ctrl.init();
-      }
+    runOnUiThread(() -> {
+      ctrl = new Control(MainActivity.this);
+      ctrl.init();
     });
   }
 
@@ -433,13 +400,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setFragment("manual control", ManualFragment.class, new Bundle());
         TelescopeStatus.setMode(ST_MANUAL);
       } else
-        myMessage(tx(R.string.to_manual_move), new Runnable()
-        {
-          @Override public void run()
-          {
-            setFragment("manual control", ManualFragment.class, new Bundle());
-            TelescopeStatus.setMode(ST_MANUAL);
-          }
+        myMessage(tx(R.string.to_manual_move), () -> {
+          setFragment("manual control", ManualFragment.class, new Bundle());
+          TelescopeStatus.setMode(ST_MANUAL);
         });
     }
     DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -449,60 +412,32 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
   void myMessage(final String msg)
   {
-    runOnUiThread(new Runnable()
-    {
-      public void run()
-      {
+    runOnUiThread(() -> {
 
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle(tx(R.string.warning));
-        alertDialog.setMessage(msg);
-        alertDialog.setButton(
-            AlertDialog.BUTTON_NEUTRAL, "OK",
-            new DialogInterface.OnClickListener()
-            {
-              public void onClick(DialogInterface dialog, int which)
-              {
-                dialog.dismiss();
-              }
-            });
-        alertDialog.show();
-      }
+      AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+      alertDialog.setTitle(tx(R.string.warning));
+      alertDialog.setMessage(msg);
+      alertDialog.setButton(
+          AlertDialog.BUTTON_NEUTRAL, "OK",
+          (dialog, which) -> dialog.dismiss());
+      alertDialog.show();
     });
   }
 
   void myMessage(final String msg, final Runnable action)
   {
-    runOnUiThread(new Runnable()
-    {
-      public void run()
-      {
+    runOnUiThread(() -> {
 
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle(tx(R.string.warning));
-        alertDialog.setMessage(msg);
-        alertDialog.setButton(
-            AlertDialog.BUTTON_POSITIVE, tx(R.string.ok),
-            new DialogInterface.OnClickListener()
-            {
-              @Override
-              public void onClick(DialogInterface dialog, int which)
-              {
-                action.run();
-              }
-            });
-        alertDialog.setButton(
-            AlertDialog.BUTTON_NEGATIVE, tx(android.R.string.cancel),
-            new DialogInterface.OnClickListener()
-            {
-              @Override
-              public void onClick(DialogInterface dialog, int which)
-              {
-                dialog.dismiss();
-              }
-            });
-        alertDialog.show();
-      }
+      AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+      alertDialog.setTitle(tx(R.string.warning));
+      alertDialog.setMessage(msg);
+      alertDialog.setButton(
+          AlertDialog.BUTTON_POSITIVE, tx(R.string.ok),
+          (dialog, which) -> action.run());
+      alertDialog.setButton(
+          AlertDialog.BUTTON_NEGATIVE, tx(android.R.string.cancel),
+          (dialog, which) -> dialog.dismiss());
+      alertDialog.show();
     });
   }
 
@@ -567,13 +502,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     );
     lp_ll.gravity = Gravity.CENTER;
     ll_progress.setLayoutParams(lp_ll);
-    runOnUiThread(new Runnable()
-    {
-      @Override public void run()
-      {
-        ((ConstraintLayout) findViewById(R.id.content)).addView(ll_progress, lp_ll);
-      }
-    });
+    runOnUiThread(() -> ((ConstraintLayout) findViewById(R.id.content)).addView(ll_progress, lp_ll));
   }
 
   public void pOn(ProgressType type)
@@ -584,13 +513,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   public void pOff()
   {
     if (ll_progress != null) {
-      runOnUiThread(new Runnable()
-      {
-        @Override public void run()
-        {
-          ((ConstraintLayout) findViewById(R.id.content)).removeView(ll_progress);
-          ll_progress = null;
-        }
+      runOnUiThread(() -> {
+        ((ConstraintLayout) findViewById(R.id.content)).removeView(ll_progress);
+        ll_progress = null;
       });
     }
   }
@@ -637,27 +562,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     transaction = getSupportFragmentManager().beginTransaction();
     transaction.attach(f);
     transaction.commit();
-  }
-
-  protected void registerSVGTransforms()
-  {
-    SVGResources res = (SVGResources) getResources();
-    res.setStyleTransformer(new SVGResources.SVGStyleTransformer()
-    {
-      @Override
-      public String transformStyle(String propertyName)
-      {
-        if ("u_color".equals(propertyName))
-          return TelescopeStatus.getMisc().equals(N) ? ManualFragment.on : ManualFragment.off;
-        else if ("r_color".equals(propertyName))
-          return TelescopeStatus.getMisc().equals(E) ? ManualFragment.on : ManualFragment.off;
-        else if ("d_color".equals(propertyName))
-          return TelescopeStatus.getMisc().equals(S) ? ManualFragment.on : ManualFragment.off;
-        else if ("l_color".equals(propertyName))
-          return TelescopeStatus.getMisc().equals(W) ? ManualFragment.on : ManualFragment.off;
-        return propertyName;
-      }
-    });
   }
 
   @Override
