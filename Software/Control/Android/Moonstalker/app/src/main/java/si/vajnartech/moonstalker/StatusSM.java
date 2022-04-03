@@ -29,66 +29,55 @@ interface Nucleus
 @SuppressWarnings("FieldCanBeLocal")
 public class StatusSM extends Thread
 {
-  private int timeout   = 1000;
+  private final int timeout = 1000;
 
   private int     prevStatus;
-  private int     prevMode;
-  private boolean r;
-  private Nucleus inf;
-  private Bundle  savedState = null;
+  private       int     prevMode;
+  private final boolean running;
+  private final Nucleus inf;
+  private       Bundle  savedState = null;
 
-  private Balls balls = new Balls();
+  private final Balls balls = new Balls();
 
   StatusSM(Nucleus inf)
   {
     reset();
     this.inf = inf;
-    r = true;
+    running = true;
     start();
     inf.updateStatus();
   }
 
   private void addBalls()
   {
-    balls.add(new Ball(new Runnable() {
-      @Override public void run()
-      {
-        inf.stopProgress();
-        inf.onNoAnswer();
-        BlueTooth.disconnect();
-        reset();
-      }
+    balls.add(new Ball(() -> {
+      inf.stopProgress();
+      inf.onNoAnswer();
+      BlueTooth.disconnect();
+      reset();
     }, ST_CONNECTED, 7));
 
-    balls.add(new Ball(new Runnable() {
-      @Override public void run()
-      {
-        TelescopeStatus.unlock();
-        inf.st();
-      }
+    balls.add(new Ball(() -> {
+      TelescopeStatus.unlock();
+      inf.st();
     }, ST_NOT_READY, 5));
 
-    balls.add(new Ball(new Runnable() {
-      @Override public void run()
-      {
-        if (TelescopeStatus.getAck().isEmpty()) return;
-        if (TelescopeStatus.getAck().equals(MVS_ACK) ||
-            TelescopeStatus.getAck().equals(MVE_ACK)) {
-          if (MVE_ACK.equals(TelescopeStatus.getAck())) {
-            TelescopeStatus.set(ST_READY);
-            TelescopeStatus.setMisc(NONE);
-          }
-          else
-            TelescopeStatus.set(ST_MOVING);
-          TelescopeStatus.setAck(CLEAR);
-        }
-        else {
-          inf.onNoAnswer();
-          TelescopeStatus.setAck(CLEAR);
-          restoreState();
-        }
-
+    balls.add(new Ball(() -> {
+      if (TelescopeStatus.getAck().isEmpty()) return;
+      if (TelescopeStatus.getAck().equals(MVS_ACK) ||
+          TelescopeStatus.getAck().equals(MVE_ACK)) {
+        if (MVE_ACK.equals(TelescopeStatus.getAck())) {
+          TelescopeStatus.set(ST_READY);
+          TelescopeStatus.setMisc(NONE);
+        } else
+          TelescopeStatus.set(ST_MOVING);
+        TelescopeStatus.setAck(CLEAR);
+      } else {
+        inf.onNoAnswer();
+        TelescopeStatus.setAck(CLEAR);
+        restoreState();
       }
+
     }, ST_WAITING_ACK, 3));
   }
 
@@ -97,7 +86,7 @@ public class StatusSM extends Thread
   {
     addBalls();
 
-    while (r) {
+    while (running) {
       try {
         sleep(timeout);
       } catch (InterruptedException e) {
