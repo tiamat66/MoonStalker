@@ -6,9 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 public class Json
 {
-  private static ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   public static String toJson(Object obj)
   {
