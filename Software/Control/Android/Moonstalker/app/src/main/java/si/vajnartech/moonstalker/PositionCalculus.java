@@ -26,14 +26,16 @@ import static si.vajnartech.moonstalker.C.MINIMUM_DISTANCE;
 import static si.vajnartech.moonstalker.C.MINIMUM_TIME;
 import static si.vajnartech.moonstalker.C.TAG;
 
+@SuppressWarnings("unused")
 public class PositionCalculus implements LocationListener
 {
   private double ra;
   private double dec;
+
   double az = 0;
   double h  = 0;
 
-  private Location curLocation = new Location("GPS");
+  private final Location curLocation = new Location("GPS");
 
   PositionCalculus(MainActivity act)
   {
@@ -148,7 +150,7 @@ public class PositionCalculus implements LocationListener
     long   minutes = (long) fPart;
     double seconds = fPart - minutes;
     seconds *= 60;
-    return String.format("%d %d\' %.2f\"", hours, minutes, seconds);
+    return String.format("%d %d' %.2f\"", hours, minutes, seconds);
   }
 
   private static double convertHour2Dec(double h, double min, double s)
@@ -199,8 +201,6 @@ public class PositionCalculus implements LocationListener
   @Override
   public void onLocationChanged(Location location)
   {
-    // TODO:
-    //curLocation = location;
   }
 
   @Override

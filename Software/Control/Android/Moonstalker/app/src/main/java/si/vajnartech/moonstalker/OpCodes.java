@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker;
 
+@SuppressWarnings("unused")
 final class OpCodes
 {
   static final int OUT_MSG = 1;

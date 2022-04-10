@@ -9,8 +9,9 @@ import java.util.LinkedList;
 
 class Monitor extends PopupWindow
 {
-  private TextView           tv;
-  private LinkedList<String> content = new LinkedList<>();
+  private final TextView tv;
+
+  private final LinkedList<String> content = new LinkedList<>();
 
   Monitor(View ctxView)
   {
@@ -23,7 +24,7 @@ class Monitor extends PopupWindow
     content.add(el);
     int           size = content.size();
     StringBuilder p    = new StringBuilder();
-    for (int i=7; i>0; i-- )
+    for (int i = 7; i > 0; i--)
       p.append((size > i) ? content.get(size - (i + 1)) : "\n");
     p.append(content.isEmpty() ? "" : content.getLast());
     tv.setText(p.toString());

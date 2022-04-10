@@ -4,8 +4,8 @@ import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static si.vajnartech.moonstalker.C.*;
-import static si.vajnartech.moonstalker.OpCodes.WAITING;
+import static si.vajnartech.moonstalker.C.ST_ERROR;
+import static si.vajnartech.moonstalker.C.TAG;
 
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final class TelescopeStatus
 {
@@ -17,7 +17,7 @@ import static si.vajnartech.moonstalker.OpCodes.WAITING;
   private static String ack = "";
   private static String misc = "";
 
-  private static AtomicBoolean lck = new AtomicBoolean(false);
+  private static final AtomicBoolean lck = new AtomicBoolean(false);
 
   static void lock()
   {

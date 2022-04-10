@@ -91,12 +91,6 @@ public class SVGDrawable extends Drawable
     // TODO: image.root.setFilters(alpha, colorFilter);
     int width = Math.max(1, bounds.width());
     int height = Math.max(1, bounds.height());
-    /*
-      if (width == 0 || height == 0) {
-        canvas.restoreToCount(saveCount);
-        return;
-      }
-     */
 
     Canvas target = null;
     Bitmap b = null;

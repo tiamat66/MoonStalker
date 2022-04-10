@@ -14,9 +14,9 @@ import static si.vajnartech.moonstalker.OpCodes.*;
 
 public class IOProcessor extends AsyncTask<String, Void, String>
 {
-  private Instruction      instruction;
-  private BluetoothSocket  socket;
-  private ControlInterface ctrlInterface;
+  private final Instruction      instruction;
+  private final BluetoothSocket  socket;
+  private final ControlInterface ctrlInterface;
 
   IOProcessor(Instruction opCode, ControlInterface i)
   {

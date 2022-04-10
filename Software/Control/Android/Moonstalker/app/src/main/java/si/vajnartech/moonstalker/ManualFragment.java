@@ -1,7 +1,6 @@
 package si.vajnartech.moonstalker;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -12,17 +11,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import si.vajnartech.moonstalker.androidsvg.SVGImageView;
 
-import static si.vajnartech.moonstalker.C.*;
+import static si.vajnartech.moonstalker.C.E;
+import static si.vajnartech.moonstalker.C.N;
+import static si.vajnartech.moonstalker.C.NONE;
+import static si.vajnartech.moonstalker.C.S;
+import static si.vajnartech.moonstalker.C.W;
 
-public class ManualFragment extends MyFragment implements  View.OnTouchListener
+public class ManualFragment extends MyFragment implements View.OnTouchListener
 {
-  static final String off = "#ff0000";
-  static final String on  = "#00ff00";
+  private View view;
 
-  private View   view;
+  private final Differential d = new Differential();
 
-  private Differential  d = new Differential();
-  private AtomicBoolean fingerOnScreen = new AtomicBoolean(false);
+  private final AtomicBoolean fingerOnScreen = new AtomicBoolean(false);
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)

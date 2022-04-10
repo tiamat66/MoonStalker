@@ -6,20 +6,20 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 
-@SuppressWarnings({"ConstantConditions", "WeakerAccess", "UnusedReturnValue", "DeprecatedIsStillUsed", "deprecation"})
+@SuppressWarnings(
+    {"ConstantConditions", "WeakerAccess", "UnusedReturnValue", "deprecation", "unused", "SameParameterValue"})
 public class SharedPref
 {
   private static final String                   PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
-  private              SharedPreferences        pref;
+  private final        SharedPreferences        pref;
   private              SharedPreferences.Editor e                        = null;
   private              int                      editLevel                = 0;
-  static private       DefHash                  defaults                 = new DefHash();
+  static private final DefHash                  defaults                 = new DefHash();
   private static       SharedPreferences        defaultSharedPref        = null;
 
   SharedPref(Context context)

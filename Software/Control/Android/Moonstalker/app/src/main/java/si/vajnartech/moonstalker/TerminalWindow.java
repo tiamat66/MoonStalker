@@ -6,8 +6,8 @@ import android.widget.TextView;
 @SuppressWarnings("SameParameterValue")
 final class TerminalWindow
 {
-  private TextView tv;
-  private MainActivity act;
+  private final TextView     tv;
+  private final MainActivity act;
 
   TerminalWindow(MainActivity act)
   {
