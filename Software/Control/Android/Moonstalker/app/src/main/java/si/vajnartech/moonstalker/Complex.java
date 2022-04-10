@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker;
 
+@SuppressWarnings("unused")
 public class Complex
 {
   double re;
