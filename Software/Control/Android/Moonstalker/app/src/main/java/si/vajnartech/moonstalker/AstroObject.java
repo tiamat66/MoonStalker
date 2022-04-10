@@ -1,5 +1,8 @@
 package si.vajnartech.moonstalker;
 
+import androidx.annotation.NonNull;
+
+@SuppressWarnings("unused")
 public class AstroObject
 {
   public String name;
@@ -23,7 +26,7 @@ public class AstroObject
     this.dec = dec;
   }
 
-  @Override
+  @NonNull @Override
   public String toString()
   {
     return "AstroObject{" +
