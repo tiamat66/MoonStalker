@@ -12,7 +12,6 @@ import java.text.DecimalFormat;
 import java.util.Comparator;
 
 import si.vajnartech.moonstalker.rest.GetConstellationInfo;
-import si.vajnartech.moonstalker.rest.GetSkyObjInfo;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static si.vajnartech.moonstalker.C.calConstellation;
@@ -43,17 +42,12 @@ public class SelectFragment extends MyFragment
   {
     if (sp == null) return;
     String name = sp.getItemAtPosition(position).toString();
-    new GetStarInfo(name, new GetSkyObjInfo.SkyInterface()
-    {
-      @Override
-      public void updateConstellation()
-      {
-        calConstellation = getCFromStar();
-        setPositionString(act);
-        if (!curObj.name.equals(C.calObj))
-          act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent, null));
-        constellations.setSelection(constellationAdapter.getPosition(calConstellation));
-      }
+    new GetStarInfo(name, () -> {
+      calConstellation = getCFromStar();
+      setPositionString(act);
+      if (!curObj.name.equals(C.calObj))
+        act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent, null));
+      constellations.setSelection(constellationAdapter.getPosition(calConstellation));
     });
   }
 
@@ -94,7 +88,6 @@ public class SelectFragment extends MyFragment
     });
   }
 
-  @SuppressWarnings("ConstantConditions")
   static String getCFromStar()
   {
     int i;
@@ -116,22 +109,10 @@ public class SelectFragment extends MyFragment
   static void initAstroObjDatabase(MainActivity ctx)
   {
     skyObjAdapter = ArrayAdapter.createFromResource(ctx, R.array.sky_objects, android.R.layout.simple_spinner_item);
-    skyObjAdapter.sort(new Comparator<CharSequence>()
-    {
-      @Override public int compare(CharSequence charSequence, CharSequence t1)
-      {
-        return (charSequence.toString().charAt(0) - t1.toString().charAt(0));
-      }
-    });
+    skyObjAdapter.sort(Comparator.comparingInt(charSequence -> charSequence.toString().charAt(0)));
 
     constellationAdapter = new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_item);
-    constellationAdapter.sort(new Comparator<CharSequence>()
-    {
-      @Override public int compare(CharSequence charSequence, CharSequence t1)
-      {
-        return (charSequence.toString().charAt(0) - t1.toString().charAt(0));
-      }
-    });
+    constellationAdapter.sort(Comparator.comparingInt(charSequence -> charSequence.toString().charAt(0)));
     new GetConstellationInfo(constellationAdapter);
   }
 
