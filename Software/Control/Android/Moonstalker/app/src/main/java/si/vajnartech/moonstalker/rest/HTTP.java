@@ -26,21 +26,20 @@ import si.vajnartech.moonstalker.C;
 
 public class HTTP extends AsyncTask<String, Void, String>
 {
-  protected       String                  url;
-  protected       File                    destinationFile   = null;
-  protected       OutputStream            destinationStream = null;
-  protected       String                  params            = "";
-  protected       HashMap<String, String> headers           = new HashMap<>();
-  protected       GetCompleteEvent        onComplete;
-  protected       GetCompleteEvent        onFail            = null;
-  protected       GetCompleteEvent        onErrorConnection = null;
-  protected       boolean                 completeInThread  = false;
-  protected       int                     responseCode      = 0;
-  protected       Exception               serverException   = null;
-  protected       String                  responseMessage   = "";
-  public          AtomicInteger           progress          = new AtomicInteger(0);
-  public volatile boolean                 throttled         = false;
-  public          StringComposer          diag              = new StringComposer(true);  // detail diagnostics HTML
+  protected String                  url;
+  protected File                    destinationFile   = null;
+  protected OutputStream            destinationStream = null;
+  protected String                  params            = "";
+  protected HashMap<String, String> headers           = new HashMap<>();
+  protected GetCompleteEvent        onComplete;
+  protected GetCompleteEvent        onFail            = null;
+  protected GetCompleteEvent        onErrorConnection = null;
+  protected boolean                 completeInThread  = false;
+  protected int                     responseCode      = 0;
+  protected Exception               serverException   = null;
+  protected String                  responseMessage   = "";
+  public    AtomicInteger           progress          = new AtomicInteger(0);
+  public    StringComposer          diag              = new StringComposer(true);  // detail diagnostics HTML
 
   public HTTP(String url, GetCompleteEvent evt)
   {
@@ -77,7 +76,6 @@ public class HTTP extends AsyncTask<String, Void, String>
       out.write(buffer, 0, size);
       progress.addAndGet(size);
       if (isCancelled()) break;
-      if (throttled) try { Thread.sleep(99); } catch (InterruptedException ignored) { }
     }
   }
 
@@ -177,8 +175,9 @@ public class HTTP extends AsyncTask<String, Void, String>
 @SuppressWarnings("unused")
 class StringComposer
 {
-  private StringBuilder sb;
-  private boolean       appendLn;
+  private final StringBuilder sb;
+
+  private final boolean appendLn;
 
   public StringComposer(boolean appendLn)
   {

@@ -22,7 +22,7 @@ interface OnFail
   void execute();
 }
 
-@SuppressWarnings({"unchecked", "ConstantConditions"})
+@SuppressWarnings({"unchecked", "ConstantConditions", "unused"})
 public abstract class REST<T> extends AsyncTask<String, Void, T>
 {
   static final int OUTPUT_TYPE_JSON   = 0;
@@ -35,13 +35,13 @@ public abstract class REST<T> extends AsyncTask<String, Void, T>
   static final String GET_OBJECTS    = SERVER_ADDRESS + "rest/get-object-list/%s"; // type
 
 
-  private String url;
-  private String token = "";
+  private final String url;
+  private       String token = "";
   protected OnFail onFail;
 
   private final Class<T> resultClass;
 
-  private Gson gson;
+  private final Gson gson;
 
   REST(String url, String userName, String password, String server, OnFail onFail)
   {
@@ -90,7 +90,7 @@ public abstract class REST<T> extends AsyncTask<String, Void, T>
   T callServer(Object params, int objectType)
   {
     try {
-      URL url  = new URL(this.url);
+      URL               url  = new URL(this.url);
       HttpURLConnection conn = (HttpURLConnection) url.openConnection();
       conn.setRequestMethod("POST");
       int readTimeout = 0;
@@ -139,7 +139,7 @@ public abstract class REST<T> extends AsyncTask<String, Void, T>
         is.close();
       }
       return result;
-    } catch (IOException e ) {
+    } catch (IOException e) {
       if (onFail != null)
         onFail.execute();
       e.printStackTrace();

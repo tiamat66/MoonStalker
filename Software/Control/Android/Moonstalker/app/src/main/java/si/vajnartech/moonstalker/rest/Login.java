@@ -1,4 +1,5 @@
 package si.vajnartech.moonstalker.rest;
+
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -19,11 +20,14 @@ import java.nio.charset.StandardCharsets;
 
 public class Login extends AsyncTask<String, Void, Integer>
 {
-  private        REST<Integer> task;
-  private static String        token = "";
-  private        String        user, pwd;
-  private Gson gson;
-  private String server;
+  private final REST<Integer> task;
+
+  private static String token = "";
+
+  private final String user;
+  private final String pwd;
+  private final Gson   gson;
+  private final String server;
 
   Login(REST<Integer> task, String userName, String password, String server)
   {
