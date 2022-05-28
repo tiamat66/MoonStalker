@@ -1,6 +1,5 @@
 package si.vajnartech.moonstalker;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -13,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.ST_INIT;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
@@ -101,8 +101,7 @@ public class Control extends Telescope
     inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
   }
 
-  @SuppressLint("HandlerLeak")
-  private class InMessageHandler extends Handler
+  private static class InMessageHandler extends Handler
   {
     InMessageHandler()
     {
@@ -132,7 +131,7 @@ public class Control extends Telescope
         TelescopeStatus.setError(parms.getString("p1"));
         break;
       case INIT:
-        outMessageProcess(GET_STATUS);
+        processInit();
         break;
       case NOT_READY:
         processNotReady();
@@ -207,7 +206,7 @@ public class Control extends Telescope
     }
   }
 
-  private void processReady()
+  private static void processReady()
   {
     Log.i(TAG, "processReady in Control = " + TelescopeStatus.get());
     TelescopeStatus.set(ST_READY);
@@ -215,29 +214,34 @@ public class Control extends Telescope
     TelescopeStatus.unlock();
   }
 
-  private void processNotReady()
+  private static void processInit()
+  {
+    TelescopeStatus.set(ST_INIT);
+  }
+
+  private static void processNotReady()
   {
     TelescopeStatus.set(ST_NOT_READY);
   }
 
-  private void processMvAck()
+  private static void processMvAck()
   {
     TelescopeStatus.set(ST_NOT_READY); // TODO.
   }
 
-  private void processMvsAck()
+  private static void processMvsAck()
   {
     TelescopeStatus.unlock();
     TelescopeStatus.setAck(MVS_ACK);
   }
 
-  private void processMveAck()
+  private static void processMveAck()
   {
     TelescopeStatus.unlock();
     TelescopeStatus.setAck(MVE_ACK);
   }
 
-  private void processBattery(int val)
+  private static void processBattery(int val)
   {
     TelescopeStatus.setBatteryVoltage(val);
   }

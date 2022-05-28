@@ -7,7 +7,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static si.vajnartech.moonstalker.C.ST_ERROR;
 import static si.vajnartech.moonstalker.C.TAG;
 
-@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final class TelescopeStatus
+@SuppressWarnings("FieldCanBeLocal")
+public final class TelescopeStatus
 {
   private static int btryVoltage = -1;
 
@@ -19,17 +20,17 @@ import static si.vajnartech.moonstalker.C.TAG;
 
   private static final AtomicBoolean lck = new AtomicBoolean(false);
 
-  static void lock()
+  public static void lock()
   {
     lck.set(true);
   }
 
-  static void unlock()
+  public static void unlock()
   {
     lck.set(false);
   }
 
-  static boolean locked()
+  public static boolean locked()
   {
     return lck.get();
   }
@@ -40,33 +41,33 @@ import static si.vajnartech.moonstalker.C.TAG;
     Log.i(TAG, "Battery=" + btryVoltage);
   }
 
-  static String getAck()
+  public static String getAck()
   {
     return ack;
   }
 
-  static void setAck(String val)
+  public static void setAck(String val)
   {
     ack = val;
   }
 
-  static void setMode(int m)
+  public static void setMode(int m)
   {
     mode = m;
   }
 
-  static int getMode()
+  public static int getMode()
   {
     return mode;
   }
 
-  static void set(int st)
+  public static void set(int st)
   {
     status = st;
     Log.i("STATUS", "ST=" + get());
   }
 
-  static int get()
+  public static int get()
   {
     return status;
   }
@@ -83,7 +84,7 @@ import static si.vajnartech.moonstalker.C.TAG;
     Log.i("STATUS", "ERR=" + getError());
   }
 
-  static void setMisc(String val)
+  public static void setMisc(String val)
   {
     misc = val;
   }

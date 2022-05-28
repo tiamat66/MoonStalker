@@ -27,20 +27,22 @@ public final class C
   static final         double K                    = MOTOR_STEPS_NUM * REDUCTOR_TRANSLATION * BELT_TRANSLATION;
 
   // Telescope status values
-  static final int ST_READY =    1;
+  public static final int ST_READY =    1;
   static final int ST_ERROR =    2;
   static final int ST_TRACING =  5;
-  static final int ST_MOVING =   6;
+  public static final int ST_MOVING =   6;
   static final int ST_BTRY_LOW = 7;
   static final int ST_NOT_CAL =  9;
-  static final int ST_NOT_CONNECTED = 10;
-  static final int ST_CONNECTED     = 12;
+  public static final int ST_NOT_CONNECTED = 10;
+  public static final int ST_CONNECTED     = 12;
   static final int ST_CALIBRATING   = 13;
   static final int ST_MANUAL   = 14;
   static final int ST_CALIBRATED   = 17;
   static final int ST_MOVE_TO_OBJECT = 18;
-  static final int ST_NOT_READY = 19;
-  static final int ST_WAITING_ACK = 20;
+  public static final int ST_NOT_READY = 19;
+  public static final int ST_WAITING_ACK = 20;
+  public static final int ST_INIT = 21;
+  public static final int ST_CONNECTING = 22;
 
   // Triggers
   static final int ST_MOVING_S = 16;
@@ -55,8 +57,8 @@ public final class C
   static final String SE = "SE";
   static final String SW = "SW";
   static final String NW = "NW";
-  static final String NONE = "NONE";
-  static final String CLEAR = "";
+  public static final String NONE = "NONE";
+  public static final String CLEAR = "";
 
   public static String curConstellation = "";
   static String calObj = "Polaris";
@@ -64,7 +66,7 @@ public final class C
   public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
 
   static boolean monitoring = false;
-  static boolean mStatus = false;
+  public static boolean mStatus = false;
   static String  curMessage = "";
 }
 

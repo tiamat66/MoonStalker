@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import static si.vajnartech.moonstalker.C.K;
+import static si.vajnartech.moonstalker.C.ST_CONNECTING;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.C.calObj;
@@ -77,6 +78,11 @@ public abstract class Telescope extends PositionCalculus
       vSteps -= cur_v_steps;
       mv(cur_h_steps, cur_v_steps, 500);
     }
+  }
+
+  protected void connect()
+  {
+    TelescopeStatus.set(ST_CONNECTING);
   }
 
   void init()
