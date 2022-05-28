@@ -18,7 +18,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 
-import static si.vajnartech.moonstalker.C.ST_CONNECTED;
 import static si.vajnartech.moonstalker.C.TAG;
 
 interface BTInterface
@@ -34,27 +33,31 @@ interface BTInterface
   void onError();
 }
 
-class BlueTooth extends AsyncTask<String, Void, Void>
+abstract class BlueTooth extends AsyncTask<String, Void, Void> implements BTInterface
 {
-  private final BTInterface             btInterface;
-  private final BluetoothAdapter        btAdapter;
-  private final String                  url;
-  private final WeakReference<Activity> ctx;
+  private static  BluetoothAdapter btAdapter;
+  static volatile BluetoothSocket  socket;
+
+  private final String url;
 
   private BluetoothDevice pairedDevice = null;
 
-  static volatile BluetoothSocket socket;
+  protected final WeakReference<MainActivity> act;
 
-  BlueTooth(String url, MainActivity act, BTInterface i)
+  BlueTooth(String url, MainActivity act)
   {
     super();
-    btInterface = i;
-    btAdapter = BluetoothAdapter.getDefaultAdapter();
-    this.ctx = new WeakReference<>(act);
+
     this.url = url;
+    this.act = new WeakReference<>(act);
+  }
+
+  static void initBluetooth(MainActivity act)
+  {
+    btAdapter = BluetoothAdapter.getDefaultAdapter();
+
     if (btAdapter == null) {
       Log.i(TAG, "Bluetooth not support");
-      btInterface.exit("Bluetooth not support");
     } else {
       if (btAdapter.isEnabled())
         Log.i(TAG, "Bluetooth ON");
@@ -79,7 +82,7 @@ class BlueTooth extends AsyncTask<String, Void, Void>
     pairedDevice = null;
     Log.i(TAG, "Enter getPairedDevices");
     if (ActivityCompat.checkSelfPermission(
-        ctx.get(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+        act.get(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
       Log.i(TAG, "Permission BLUETOOTH_CONNECT not granted");
       return false;
     }
@@ -93,13 +96,13 @@ class BlueTooth extends AsyncTask<String, Void, Void>
       }
     } else {
       Log.i(TAG, "No paired device");
-      btInterface.exit("No paired device");
+      exit("No paired device");
       return false;
     }
 
     if (pairedDevice == null) {
       Log.i(TAG, "Invalid paired device");
-      btInterface.exit("Invalid paired device");
+      exit("Invalid paired device");
     }
 
     return true;
@@ -107,14 +110,15 @@ class BlueTooth extends AsyncTask<String, Void, Void>
 
   private void connect()
   {
-    btInterface.progressOn();
+    progressOn();
     try {
       if (ActivityCompat.checkSelfPermission(
-          ctx.get(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+          act.get(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
         Log.i(TAG, "Permission BLUETOOTH_CONNECT not granted");
         return;
       }
-      socket = pairedDevice.createRfcommSocketToServiceRecord(C.token);
+      if (pairedDevice != null)
+        socket = pairedDevice.createRfcommSocketToServiceRecord(C.token);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -123,17 +127,17 @@ class BlueTooth extends AsyncTask<String, Void, Void>
     try {
       assert socket != null;
       socket.connect();
-      btInterface.progressOff();
-      TelescopeStatus.set(ST_CONNECTED);
-      btInterface.onOk();
+      progressOff();
+
+      onOk();
     } catch (IOException connectException) {
       connectException.printStackTrace();
-      btInterface.onError();
+      onError();
       try {
         Log.i(TAG, "Connection refused=" + socket);
-        btInterface.progressOff();
+        progressOff();
         socket.close();
-      } catch (IOException ignored) { }
+      } catch (IOException ignored) {}
     }
   }
 

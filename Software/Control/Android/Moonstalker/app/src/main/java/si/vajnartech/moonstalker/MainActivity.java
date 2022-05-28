@@ -3,20 +3,12 @@ package si.vajnartech.moonstalker;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
@@ -26,11 +18,9 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
-import si.vajnartech.moonstalker.rest.GetStarInfo;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
@@ -40,12 +30,11 @@ import static si.vajnartech.moonstalker.C.ST_MANUAL;
 import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
-import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
-import static si.vajnartech.moonstalker.C.curObj;
-// ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo
+// preveri ce faila sploh init bluetooth, naslednje ce faila connect, in potem se ce faila init telescope!!!
+// ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo, javi naj se prekinjena BT povezava
 // pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
 // od zgornje postacke FAB rata moder ko premikamo in je kljukica dajmo rajsi krizec
 // naredi premakni na, da bo delalo, in izgled
@@ -61,13 +50,18 @@ import static si.vajnartech.moonstalker.C.curObj;
 // select fragment popravi
 // naj javi, da se ni mogel povezati s podatkovno bazo
 // ko je teleskop kalibriran naj to vpise kot toast, v terminal window pa naj gre ime objekta?
+// animacije
+// astro data base
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
-  MyFragment currentFragment = null;
-  Control    ctrl;
-  Menu       menu;
+  FloatingActionButton fab;
+  DrawerLayout         drawer;
+  MyFragment           currentFragment = null;
+  Control              ctrl;
+  Menu                 menu;
+  ProgressIndicator    progressIndicator;
 
   TerminalWindow terminal;
   Monitor        monitor;
@@ -85,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     SharedPref.setDefault("device_name", SERVER_NAME);
     SharedPref.setDefault("calibration_obj", calObj);
-    final FloatingActionButton fab = findViewById(R.id.fab);
+    fab = findViewById(R.id.fab);
     updateFab(R.color.colorError, fab);
     fab.setOnClickListener(new View.OnClickListener()
     {
@@ -105,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (currentFragment instanceof SettingsFragment) {
           setFragment("main", MainFragment.class, new Bundle());
         } else if (TelescopeStatus.get() == ST_NOT_CONNECTED) {
-          connect(true);
+          ctrl.connect();
         } else if (TelescopeStatus.getMode() == ST_MANUAL) {
           update(ST_READY, ST_READY);
           setFragment("main", MainFragment.class, new Bundle());
@@ -121,7 +115,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
     });
 
-    final DrawerLayout drawer = findViewById(R.id.drawer_layout);
+    progressIndicator = new ProgressIndicator(this);
+
+    drawer = findViewById(R.id.drawer_layout);
     ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
         this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
     drawer.addDrawerListener(toggle);
@@ -140,177 +136,35 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
     monitor.update("$ ");
 
-    // init astro database
-    SelectFragment.initAstroObjDatabase(this);
+    // init astro database TODO
+    //  SelectFragment.initAstroObjDatabase(this);
+
     // start state machine
-    new StatusSM(new Nucleus()
-    {
-      @Override
-      public void initTelescope()
-      {
-        initControl();
-      }
+    new MyStateMachine(this);
 
-      @SuppressWarnings("SameParameterValue")
-      void update(Integer title, boolean ca, boolean ma, boolean tr, boolean mo)
-      {
-        if (title != null) {
-          terminal.setText(tx(title));
-          if (title == R.string.calibrated)
-            setPositionString();
-        }
-        menu.findItem(R.id.calibrate).setEnabled(ca);
-        menu.findItem(R.id.manual).setEnabled(ma);
-        menu.findItem(R.id.track).setEnabled(tr);
-        menu.findItem(R.id.move).setEnabled(mo);
-        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-      }
+    // create control mechanism
+    ctrl = new Control(MainActivity.this);
 
-      @SuppressWarnings("SameParameterValue")
-      void update(String title)
-      {
-        if (title != null)
-          terminal.setText(title);
-      }
+    //  init current astro object TODO
+    //  new GetStarInfo(C.calObj, null);
 
-      void update(Integer title)
-      {
-        if (title != null)
-          terminal.setText(tx(title));
-      }
-
-      @Override
-      public void updateStatus()
-      {
-        runOnUiThread(() -> {
-          if (currentFragment instanceof ManualFragment) {
-            ManualFragment frag = (ManualFragment) currentFragment;
-            frag.updateArrows();
-          }
-
-          // FAB
-          if (TelescopeStatus.get() == ST_READY)
-            updateFab(R.color.colorOk2, fab);
-          else if (TelescopeStatus.get() == ST_MOVING)
-            updateFab(R.color.colorMoving, fab);
-
-          if (TelescopeStatus.get() == ST_MOVING)
-            update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
-          else if (TelescopeStatus.get() == ST_NOT_READY)
-            update(R.string.not_ready);
-          else if (TelescopeStatus.getMode() == ST_TRACING)
-            update(R.string.tracing);
-          else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT)
-            update(R.string.ready, false, true, true, false);
-          else if (TelescopeStatus.getMode() == ST_MANUAL)
-            update(R.string.manual);
-          else if (TelescopeStatus.getMode() == ST_CALIBRATED)
-            update(R.string.calibrated, false, true, true, true);
-          else if (TelescopeStatus.getMode() == ST_CALIBRATING)
-            update(R.string.calibrating);
-          else if (TelescopeStatus.get() == ST_READY)
-            update(R.string.ready, true, true, false, false);
-        });
-      }
-
-      @Override
-      public void startProgress(ProgressType pt)
-      {
-        pOn(pt);
-      }
-
-      @Override
-      public void stopProgress()
-      {
-        pOff();
-      }
-
-      @Override
-      public void move()
-      {
-        ctrl.move(curObj);
-        runOnUiThread(() -> setPositionString());
-      }
-
-      @Override
-      public void st()
-      {
-        ctrl.st();
-      }
-
-      @Override
-      public void dump(final String str)
-      {
-        runOnUiThread(() -> monitor.update(str));
-      }
-
-      @Override
-      public void onNoAnswer()
-      {
-        myMessage(tx(R.string.msg_no_answer));
-      }
-    });
-    // init current astro object
-    new GetStarInfo(C.calObj, null);
-    connect(false);
-    // TODO: tole naredi animacije na androidov nacin na drug nacin
+    BlueTooth.initBluetooth(this);
   }
 
 
-  private void setPositionString()
+  public void setPositionString()
   {
     SelectFragment.setPositionString(this);
   }
 
-  private void updateFab(int color, FloatingActionButton fab)
+  public void updateFab(int color, FloatingActionButton fab)
   {
     fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
-
   }
 
-  private void connect(boolean exe)
+  public void connect()
   {
-    BlueTooth b = new BlueTooth(new SharedPref(this).getString("device_name"), this, new BTInterface()
-    {
-      @Override
-      public void exit(String msg)
-      {
-        myMessage(msg);
-        try {
-          Thread.sleep(5000);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        finish();
-      }
-
-      @Override
-      public void progressOn()
-      {
-        pOn(ProgressType.CONNECTING);
-      }
-
-      @Override
-      public void progressOff()
-      {
-        pOff();
-      }
-
-      @Override
-      public void onOk()
-      {
-        runOnUiThread(() -> Toast.makeText(MainActivity.this, tx(R.string.connected), Toast.LENGTH_SHORT).show());
-      }
-
-      @Override
-      public void onError()
-      {
-        myMessage(tx(R.string.connection_failed));
-      }
-    });
-
-    if (exe)
-      b.executeOnExecutor(THREAD_POOL_EXECUTOR);
+    new MyBlueTooth(new SharedPref(this).getString("device_name"), this).executeOnExecutor(THREAD_POOL_EXECUTOR);
   }
 
   private void promptToCalibration()
@@ -318,12 +172,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
   }
 
-  private void initControl()
+  public void initControl()
   {
-    runOnUiThread(() -> {
-      ctrl = new Control(MainActivity.this);
-      ctrl.init();
-    });
+    runOnUiThread(() -> ctrl.init());
   }
 
   @Override
@@ -447,84 +298,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       return getString(stringId, formatArgs);
     return getString(stringId);
   }
-
-  /***********************************************************************************************
-   *
-   * Progress indicator section
-   *
-   ***********************************************************************************************/
-  public LinearLayout ll_progress = null;
-
-  public enum ProgressType
-  {
-    CONNECTING,
-    INITIALIZING,
-    MOVING
-  }
-
-  public void progressOn(ProgressType type)
-  {
-    ProgressBar progress = new ProgressBar(this);
-    LinearLayout.LayoutParams lp_progress = new LinearLayout.LayoutParams(
-        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-    lp_progress.gravity = Gravity.CENTER;
-    lp_progress.weight = 0;
-
-    progress.setLayoutParams(lp_progress);
-
-    int color = getResources().getColor(R.color.colorAccent, null);
-    if (progress.getIndeterminateDrawable() != null)
-      progress.getIndeterminateDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
-
-    TextView loadingText = new TextView(this);
-    LinearLayout.LayoutParams lp_loading = new LinearLayout.LayoutParams(
-        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-    lp_loading.weight = 0;
-    lp_loading.gravity = Gravity.CENTER;
-    if (type == ProgressType.CONNECTING)
-      loadingText.setText(tx(R.string.connecting));
-    else if (type == ProgressType.INITIALIZING)
-      loadingText.setText(tx(R.string.initializing));
-    else if (type == ProgressType.MOVING)
-      loadingText.setText(tx(R.string.moving));
-
-    loadingText.setTextColor(getResources().getColor(R.color.colorAccent, null));
-    loadingText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
-    loadingText.setLayoutParams(lp_loading);
-
-    ll_progress = new LinearLayout(this);
-    ll_progress.setOrientation(LinearLayout.VERTICAL);
-    ll_progress.setBackgroundColor(getResources().getColor(R.color.colorPrimary, null));
-    ll_progress.addView(progress, lp_progress);
-    ll_progress.addView(loadingText, lp_loading);
-    final FrameLayout.LayoutParams lp_ll = new FrameLayout.LayoutParams(
-        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-    );
-    lp_ll.gravity = Gravity.CENTER;
-    ll_progress.setLayoutParams(lp_ll);
-    runOnUiThread(() -> ((ConstraintLayout) findViewById(R.id.content)).addView(ll_progress, lp_ll));
-  }
-
-  public void pOn(ProgressType type)
-  {
-    progressOn(type);
-  }
-
-  public void pOff()
-  {
-    if (ll_progress != null) {
-      runOnUiThread(() -> {
-        ((ConstraintLayout) findViewById(R.id.content)).removeView(ll_progress);
-        ll_progress = null;
-      });
-    }
-  }
-
-  /***********************************************************************************************
-   *
-   * Fragment section
-   *
-   ***********************************************************************************************/
 
   private MyFragment createFragment(String tag, Class<? extends MyFragment> cls, Bundle params)
   {
