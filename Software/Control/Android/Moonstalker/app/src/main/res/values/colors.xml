@@ -9,5 +9,6 @@
   <color name="colorOk2">#15b620</color>
   <color name="colorNeutral">#59ADF0</color>
   <color name="colorMoving">#0F31EE</color>
+  <color name="textInvertedNormal">#dd000000</color>
 
 </resources>

@@ -22,15 +22,13 @@ import static si.vajnartech.moonstalker.C.TAG;
 
 interface BTInterface
 {
-  void exit(String msg);
-
   void progressOn();
 
   void progressOff();
 
   void onOk();
 
-  void onError();
+  void onError(String msg);
 }
 
 abstract class BlueTooth extends AsyncTask<String, Void, Void> implements BTInterface
@@ -57,7 +55,7 @@ abstract class BlueTooth extends AsyncTask<String, Void, Void> implements BTInte
     btAdapter = BluetoothAdapter.getDefaultAdapter();
 
     if (btAdapter == null) {
-      Log.i(TAG, "Bluetooth not support");
+      Log.i(TAG, "Bluetooth not supported");
     } else {
       if (btAdapter.isEnabled())
         Log.i(TAG, "Bluetooth ON");
@@ -80,10 +78,15 @@ abstract class BlueTooth extends AsyncTask<String, Void, Void> implements BTInte
   private boolean getPairedDevices(String url)
   {
     pairedDevice = null;
-    Log.i(TAG, "Enter getPairedDevices");
+    if (btAdapter == null) {
+      onError(act.get().tx(R.string.connection_failed));
+      return false;
+    }
+
     if (ActivityCompat.checkSelfPermission(
         act.get(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
       Log.i(TAG, "Permission BLUETOOTH_CONNECT not granted");
+      onError(act.get().tx(R.string.connection_failed));
       return false;
     }
     Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
@@ -96,13 +99,13 @@ abstract class BlueTooth extends AsyncTask<String, Void, Void> implements BTInte
       }
     } else {
       Log.i(TAG, "No paired device");
-      exit("No paired device");
+        onError(act.get().tx(R.string.connection_failed));
       return false;
     }
 
     if (pairedDevice == null) {
       Log.i(TAG, "Invalid paired device");
-      exit("Invalid paired device");
+        onError(act.get().tx(R.string.connection_failed));
     }
 
     return true;
@@ -132,7 +135,7 @@ abstract class BlueTooth extends AsyncTask<String, Void, Void> implements BTInte
       onOk();
     } catch (IOException connectException) {
       connectException.printStackTrace();
-      onError();
+      onError(act.get().tx(R.string.connection_failed));
       try {
         Log.i(TAG, "Connection refused=" + socket);
         progressOff();

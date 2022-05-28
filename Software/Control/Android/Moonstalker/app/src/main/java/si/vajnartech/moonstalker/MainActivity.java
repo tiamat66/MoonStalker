@@ -33,7 +33,8 @@ import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
-// preveri ce faila sploh init bluetooth, naslednje ce faila connect, in potem se ce faila init telescope!!!
+// theme alert dialogi
+// in potem se ce faila init telescope!!!
 // ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo, javi naj se prekinjena BT povezava
 // pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
 // od zgornje postacke FAB rata moder ko premikamo in je kljukica dajmo rajsi krizec
@@ -341,5 +342,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   protected void attachBaseContext(Context newBase)
   {
     super.attachBaseContext(new MyContextWrapper(newBase));
+  }
+
+  public void showNotification(String message)
+  {
+    Snackbar snack = MySnackBar.makeSnackbar(this, message, 3000);
+    snack.show();
   }
 }
