@@ -1,2 +1,3 @@
 rootProject.name='Moonstalker'
 include ':app'
+include ':mathlibrary'
