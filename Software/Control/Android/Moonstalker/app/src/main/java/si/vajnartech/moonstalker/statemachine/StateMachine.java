@@ -1,39 +1,64 @@
 package si.vajnartech.moonstalker.statemachine;
 
-import android.os.Bundle;
+import android.util.Log;
 
 import java.util.Arrays;
 
 import si.vajnartech.moonstalker.C;
+import si.vajnartech.moonstalker.MainActivity;
 import si.vajnartech.moonstalker.OpCodes;
+import si.vajnartech.moonstalker.ProgressIndicator;
 import si.vajnartech.moonstalker.TelescopeStatus;
-
+import si.vajnartech.moonstalker.UI;
 
 
 public abstract class StateMachine implements StateMachineActions
 {
   private static final State state = new State();
 
+  protected MainActivity act;
+  protected UI           userInterface;
+
+
   Integer[] edgeStates = {C.ST_READY, C.ST_NOT_CONNECTED};
 
-  protected StateMachine()
+  protected StateMachine(MainActivity act)
   {
-    new Runner();
+    this.act = act;
+    userInterface = new UI(act);
+
+    state.reset();
+    Log.i("pepe", "zagata");
+
+    Thread runner = new Runner();
+    runner.start();
+    updateStatus();
   }
 
   private static class State
   {
-    int status = -1;
-    int mode   = -1;
+    int status          = -1;
+    int mode            = -1;
     int telescopeStatus = -1;
-    int telescopeMode = -1;
+    int telescopeMode   = -1;
 
     State storedState = null;
+
+    void changeState()
+    {
+      status = TelescopeStatus.get();
+      mode = TelescopeStatus.getMode();
+    }
 
     boolean statusChanged()
     {
       // ce od teleskopa status ni enak strojevemu statusu
       return TelescopeStatus.get() != status;
+    }
+
+    boolean modeChanged()
+    {
+      return TelescopeStatus.getMode() != mode;
     }
 
     void reset()
@@ -66,11 +91,10 @@ public abstract class StateMachine implements StateMachineActions
     }
   }
 
-  private boolean isInEdgeState() {
+  private boolean isInEdgeState()
+  {
     return Arrays.asList(edgeStates).contains(TelescopeStatus.get());
   }
-
-  private boolean isInLockedState
 
   private class Runner extends Thread
   {
@@ -81,37 +105,36 @@ public abstract class StateMachine implements StateMachineActions
     @Override
     public void run()
     {
-      Ball b;
       addBalls();
 
       while (running) {
         // ce se status ni spremenil potem zazenemo bunke
         if (!state.statusChanged() && !isInEdgeState()) {
           Ball.executeBall(TelescopeStatus.get());
-        }
-        else {
+        } else {
           Ball.reset();
           if (!TelescopeStatus.locked())
             state.saveState();
           process();
-          if (TelescopeStatus.get() != prevStatus || TelescopeStatus.getMode() != prevMode)
+          if (state.statusChanged() || state.modeChanged())
             updateStatus();
-          prevStatus = TelescopeStatus.get();
-          prevMode = TelescopeStatus.getMode();
+          state.changeState();
         }
 
+        Log.i("pepe", "current status=" + state.status);
+        Log.i("pepe", "teles status=" + TelescopeStatus.get());
         threadSleep();
         monitorState();
       }
     }
 
-
     private void addBalls()
     {
+      // tale moz se lahko zasteka ce se ni v CONNECTED->INIT po 7h sekundah
       Ball.addBall(C.ST_CONNECTED, new Ball(() -> {
         stopProgress();
         onNoAnswer();
-        disconnectBluetooth();
+//        disconnectBluetooth();
         state.reset();
       }, 7));
       Ball.addBall(C.ST_NOT_READY, new Ball(() -> {
@@ -148,6 +171,8 @@ public abstract class StateMachine implements StateMachineActions
 
     private void monitorState()
     {
+      if (C.mStatus)
+        dump("$ status=" + TelescopeStatus.get() + "\n");
     }
   }
 
@@ -166,16 +191,13 @@ public abstract class StateMachine implements StateMachineActions
       TelescopeStatus.lock();
     } else if (statusChanged(C.ST_NOT_CONNECTED, C.ST_CONNECTING)) {
       connect();
-//      } else if (prevStatus == ST_NOT_CONNECTED && TelescopeStatus.get() == ST_CONNECTED) {
-//         startProgress(MainActivity.ProgressType.INITIALIZING);
-//         initTelescope(); ---> iz tega potem pride v READY zato je pa ball na ST_CONNECTED
+    } else if (statusChanged(C.ST_CONNECTING, C.ST_CONNECTED)) {
+      initTelescope();
+    } else if (statusChanged(C.ST_CONNECTED, C.ST_INIT)) {
+      startProgress(ProgressIndicator.ProgressType.INITIALIZING);
+      st();
     } else if (statusChanged(C.ST_CONNECTED, C.ST_READY)) {
       stopProgress();
     }
-  }
-
-  void reset()
-  {
-    for (Integer i : balls.keySet()) balls.get(i).stucked.set(0);
   }
 }
