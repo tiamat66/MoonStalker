@@ -69,4 +69,10 @@ class MyStateMachine extends StateMachine
   {
     act.connect();
   }
+
+  @Override
+  public void notification(String msg)
+  {
+    act.showNotification(msg);
+  }
 }

@@ -1,13 +1,12 @@
 package si.vajnartech.moonstalker.statemachine;
 
-import android.util.Log;
-
 import java.util.Arrays;
 
 import si.vajnartech.moonstalker.C;
 import si.vajnartech.moonstalker.MainActivity;
 import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.ProgressIndicator;
+import si.vajnartech.moonstalker.R;
 import si.vajnartech.moonstalker.TelescopeStatus;
 import si.vajnartech.moonstalker.UI;
 
@@ -28,7 +27,6 @@ public abstract class StateMachine implements StateMachineActions
     userInterface = new UI(act);
 
     state.reset();
-    Log.i("pepe", "zagata");
 
     Thread runner = new Runner();
     runner.start();
@@ -121,8 +119,6 @@ public abstract class StateMachine implements StateMachineActions
           state.changeState();
         }
 
-        Log.i("pepe", "current status=" + state.status);
-        Log.i("pepe", "teles status=" + TelescopeStatus.get());
         threadSleep();
         monitorState();
       }
@@ -130,11 +126,17 @@ public abstract class StateMachine implements StateMachineActions
 
     private void addBalls()
     {
-      // tale moz se lahko zasteka ce se ni v CONNECTED->INIT po 7h sekundah
+      Ball.addBall(C.ST_INIT, new Ball(() -> {
+        stopProgress();
+        onNoAnswer();
+        disconnectBluetooth();
+        state.reset();
+      }, 7));
       Ball.addBall(C.ST_CONNECTED, new Ball(() -> {
         stopProgress();
         onNoAnswer();
-//        disconnectBluetooth();
+        disconnectBluetooth();
+
         state.reset();
       }, 7));
       Ball.addBall(C.ST_NOT_READY, new Ball(() -> {
@@ -192,6 +194,8 @@ public abstract class StateMachine implements StateMachineActions
     } else if (statusChanged(C.ST_NOT_CONNECTED, C.ST_CONNECTING)) {
       connect();
     } else if (statusChanged(C.ST_CONNECTING, C.ST_CONNECTED)) {
+      notification(act.tx(R.string.connected));
+      updateStatus();
       initTelescope();
     } else if (statusChanged(C.ST_CONNECTED, C.ST_INIT)) {
       startProgress(ProgressIndicator.ProgressType.INITIALIZING);

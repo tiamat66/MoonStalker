@@ -23,4 +23,6 @@ public interface StateMachineActions
   void disconnectBluetooth();
 
   void connect();
+
+  void notification(String msg);
 }

@@ -26,6 +26,9 @@ public class UI implements UpdateUI
         frag.updateArrows();
       }
 
+      if (TelescopeStatus.get() == C.ST_CONNECTED)
+        update(R.string.connected);
+
       if (TelescopeStatus.get() == C.ST_READY)
         act.updateFab(R.color.colorOk2, fab);
       else if (TelescopeStatus.get() == C.ST_MOVING)

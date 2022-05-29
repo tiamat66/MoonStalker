@@ -1,8 +1,5 @@
 package si.vajnartech.moonstalker;
 
-import android.widget.Toast;
-
-
 class MyBlueTooth extends BlueTooth
 {
   MyBlueTooth(String url, MainActivity act)
@@ -25,7 +22,6 @@ class MyBlueTooth extends BlueTooth
   @Override
   public void onOk()
   {
-    act.get().showNotification(act.get().tx(R.string.connected));
     TelescopeStatus.set(C.ST_CONNECTED);
   }
 
