@@ -1,9 +1,12 @@
 package si.vajnartech.moonstalker.statemachine;
 
+import android.util.Log;
+
 import java.util.Arrays;
 
 import si.vajnartech.moonstalker.C;
 import si.vajnartech.moonstalker.MainActivity;
+import si.vajnartech.moonstalker.ManualFragment;
 import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.ProgressIndicator;
 import si.vajnartech.moonstalker.R;
@@ -35,28 +38,44 @@ public abstract class StateMachine implements StateMachineActions
 
   private static class State
   {
-    int status          = -1;
-    int mode            = -1;
+    private int status = -1;
+    private int mode   = -1;
     int telescopeStatus = -1;
     int telescopeMode   = -1;
 
     State storedState = null;
 
-    void changeState()
+    void changeStatus()
     {
       status = TelescopeStatus.get();
+    }
+
+    void changeMode()
+    {
       mode = TelescopeStatus.getMode();
     }
 
     boolean statusChanged()
     {
-      // ce od teleskopa status ni enak strojevemu statusu
       return TelescopeStatus.get() != status;
+    }
+
+    boolean statusChanged(int from, int to)
+    {
+      return status == from && TelescopeStatus.get() == to;
     }
 
     boolean modeChanged()
     {
       return TelescopeStatus.getMode() != mode;
+    }
+
+    boolean modeChanged(int from, int to)
+    {
+      // mode se je spremenil iz karkoli v to
+      if (from == C.ANY && TelescopeStatus.getMode() == to)
+        return true;
+      return mode == from && TelescopeStatus.getMode() == to;
     }
 
     void reset()
@@ -114,9 +133,15 @@ public abstract class StateMachine implements StateMachineActions
           if (!TelescopeStatus.locked())
             state.saveState();
           process();
-          if (state.statusChanged() || state.modeChanged())
+          if (state.statusChanged()) {
             updateStatus();
-          state.changeState();
+            state.changeStatus();
+          }
+        }
+
+        if (state.modeChanged()) {
+          processMode();
+          state.changeMode();
         }
 
         threadSleep();
@@ -128,15 +153,14 @@ public abstract class StateMachine implements StateMachineActions
     {
       Ball.addBall(C.ST_INIT, new Ball(() -> {
         stopProgress();
-        onNoAnswer();
+        message(act.tx(R.string.msg_no_answer));
         disconnectBluetooth();
         state.reset();
       }, 7));
       Ball.addBall(C.ST_CONNECTED, new Ball(() -> {
         stopProgress();
-        onNoAnswer();
+        message(act.tx(R.string.msg_no_answer));
         disconnectBluetooth();
-
         state.reset();
       }, 7));
       Ball.addBall(C.ST_NOT_READY, new Ball(() -> {
@@ -155,7 +179,7 @@ public abstract class StateMachine implements StateMachineActions
             TelescopeStatus.set(C.ST_MOVING);
           TelescopeStatus.setAck(C.CLEAR);
         } else {
-          onNoAnswer();
+          message(act.tx(R.string.msg_no_answer));
           TelescopeStatus.setAck(C.CLEAR);
           state.restore();
         }
@@ -178,30 +202,34 @@ public abstract class StateMachine implements StateMachineActions
     }
   }
 
-  private boolean statusChanged(int from, int to)
-  {
-    return state.status == from && TelescopeStatus.get() == to;
-  }
-
   // tukaj so dfinirane akcije ob prehodih stanj
   private void process()
   {
-    if (statusChanged(C.ST_NOT_READY, C.ST_READY)) {
+    if (state.statusChanged(C.ST_NOT_READY, C.ST_READY)) {
       TelescopeStatus.unlock();
       state.restore();
-    } else if (statusChanged(C.ST_READY, C.ST_NOT_READY)) {
+    } else if (state.statusChanged(C.ST_READY, C.ST_NOT_READY)) {
       TelescopeStatus.lock();
-    } else if (statusChanged(C.ST_NOT_CONNECTED, C.ST_CONNECTING)) {
+    } else if (state.statusChanged(C.ST_NOT_CONNECTED, C.ST_CONNECTING)) {
       connect();
-    } else if (statusChanged(C.ST_CONNECTING, C.ST_CONNECTED)) {
+    } else if (state.statusChanged(C.ST_CONNECTING, C.ST_CONNECTED)) {
       notification(act.tx(R.string.connected));
       updateStatus();
       initTelescope();
-    } else if (statusChanged(C.ST_CONNECTED, C.ST_INIT)) {
+    } else if (state.statusChanged(C.ST_CONNECTED, C.ST_INIT)) {
       startProgress(ProgressIndicator.ProgressType.INITIALIZING);
       st();
-    } else if (statusChanged(C.ST_CONNECTED, C.ST_READY)) {
+    } else if (state.statusChanged(C.ST_INIT, C.ST_READY)) {
       stopProgress();
+    }
+  }
+
+  private void processMode()
+  {
+    if (state.modeChanged(C.ANY, C.ST_CALIBRATING)) {
+      updateStatus();
+      setFragment("manual", ManualFragment.class);
+      message(act.tx(R.string.calibration_ntfy));
     }
   }
 }

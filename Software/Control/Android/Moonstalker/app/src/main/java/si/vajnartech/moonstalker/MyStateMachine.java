@@ -1,5 +1,7 @@
 package si.vajnartech.moonstalker;
 
+import android.os.Bundle;
+
 import si.vajnartech.moonstalker.statemachine.StateMachine;
 
 class MyStateMachine extends StateMachine
@@ -53,9 +55,9 @@ class MyStateMachine extends StateMachine
   }
 
   @Override
-  public void onNoAnswer()
+  public void message(String msg)
   {
-    act.myMessage(act.tx(R.string.msg_no_answer));
+    act.myMessage(msg);
   }
 
   @Override
@@ -74,5 +76,11 @@ class MyStateMachine extends StateMachine
   public void notification(String msg)
   {
     act.showNotification(msg);
+  }
+
+  @Override
+  public void setFragment(String tag, Class<? extends MyFragment> frag)
+  {
+    act.setFragment(tag,  frag, new Bundle());
   }
 }

@@ -33,9 +33,8 @@ import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
+// refactor of calibration
 // theme alert dialogi
-// in potem se ce faila init telescope!!!
-// ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo, javi naj se prekinjena BT povezava
 // pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
 // od zgornje postacke FAB rata moder ko premikamo in je kljukica dajmo rajsi krizec
 // naredi premakni na, da bo delalo, in izgled
@@ -168,11 +167,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     new MyBlueTooth(new SharedPref(this).getString("device_name"), this).executeOnExecutor(THREAD_POOL_EXECUTOR);
   }
 
-  private void promptToCalibration()
-  {
-    runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
-  }
-
   public void initControl()
   {
     runOnUiThread(() -> ctrl.init());
@@ -245,8 +239,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
     } else if (id == R.id.calibrate) {
       TelescopeStatus.setMode(ST_CALIBRATING);
-      setFragment("manual", ManualFragment.class, new Bundle());
-      promptToCalibration();
     } else if (id == R.id.manual) {
       if (TelescopeStatus.getMode() != ST_CALIBRATED && TelescopeStatus.getMode() != ST_MOVE_TO_OBJECT) {
         setFragment("manual control", ManualFragment.class, new Bundle());
