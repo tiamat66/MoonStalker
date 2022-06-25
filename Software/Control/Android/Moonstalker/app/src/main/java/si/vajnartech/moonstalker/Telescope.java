@@ -38,7 +38,12 @@ public abstract class Telescope extends PositionCalculus
     az += (vSteps * 360.0) / K;
     h += (hSteps * 360.0) / K;
     Log.i(TAG, "move");
-    mv(hSteps, vSteps, 500); // TODO kako dolociti max speed
+    mv(hSteps, vSteps, setMaxSpeedRPM());
+  }
+
+  private int setMaxSpeedRPM()
+  {
+    return 500;
   }
 
   void move(AstroObject obj)
@@ -76,7 +81,7 @@ public abstract class Telescope extends PositionCalculus
     if (Math.abs(cur_h_steps) >= PRECISION || Math.abs(cur_v_steps) >= PRECISION) {
       hSteps -= cur_h_steps;
       vSteps -= cur_v_steps;
-      mv(cur_h_steps, cur_v_steps, 500);
+      mv(cur_h_steps, cur_v_steps, setMaxSpeedRPM());
     }
   }
 

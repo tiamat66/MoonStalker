@@ -6,9 +6,7 @@ import java.util.Arrays;
 
 import si.vajnartech.moonstalker.C;
 import si.vajnartech.moonstalker.MainActivity;
-import si.vajnartech.moonstalker.ManualFragment;
 import si.vajnartech.moonstalker.OpCodes;
-import si.vajnartech.moonstalker.ProgressIndicator;
 import si.vajnartech.moonstalker.R;
 import si.vajnartech.moonstalker.TelescopeStatus;
 import si.vajnartech.moonstalker.UI;
@@ -16,7 +14,7 @@ import si.vajnartech.moonstalker.UI;
 
 public abstract class StateMachine implements StateMachineActions
 {
-  private static final State state = new State();
+  protected static final State state = new State();
 
   protected MainActivity act;
   protected UI           userInterface;
@@ -36,7 +34,7 @@ public abstract class StateMachine implements StateMachineActions
     updateStatus();
   }
 
-  private static class State
+  protected static class State
   {
     private int status = -1;
     private int mode   = -1;
@@ -60,7 +58,7 @@ public abstract class StateMachine implements StateMachineActions
       return TelescopeStatus.get() != status;
     }
 
-    boolean statusChanged(int from, int to)
+    public boolean statusChanged(int from, int to)
     {
       return status == from && TelescopeStatus.get() == to;
     }
@@ -70,7 +68,7 @@ public abstract class StateMachine implements StateMachineActions
       return TelescopeStatus.getMode() != mode;
     }
 
-    boolean modeChanged(int from, int to)
+    public boolean modeChanged(int from, int to)
     {
       // mode se je spremenil iz karkoli v to
       if (from == C.ANY && TelescopeStatus.getMode() == to)
@@ -86,7 +84,7 @@ public abstract class StateMachine implements StateMachineActions
       TelescopeStatus.setMode(C.ST_READY);
     }
 
-    void restore()
+    public void restore()
     {
       if (storedState != null) {
         status = storedState.status;
@@ -202,34 +200,8 @@ public abstract class StateMachine implements StateMachineActions
     }
   }
 
-  // tukaj so dfinirane akcije ob prehodih stanj
-  private void process()
-  {
-    if (state.statusChanged(C.ST_NOT_READY, C.ST_READY)) {
-      TelescopeStatus.unlock();
-      state.restore();
-    } else if (state.statusChanged(C.ST_READY, C.ST_NOT_READY)) {
-      TelescopeStatus.lock();
-    } else if (state.statusChanged(C.ST_NOT_CONNECTED, C.ST_CONNECTING)) {
-      connect();
-    } else if (state.statusChanged(C.ST_CONNECTING, C.ST_CONNECTED)) {
-      notification(act.tx(R.string.connected));
-      updateStatus();
-      initTelescope();
-    } else if (state.statusChanged(C.ST_CONNECTED, C.ST_INIT)) {
-      startProgress(ProgressIndicator.ProgressType.INITIALIZING);
-      st();
-    } else if (state.statusChanged(C.ST_INIT, C.ST_READY)) {
-      stopProgress();
-    }
-  }
-
-  private void processMode()
-  {
-    if (state.modeChanged(C.ANY, C.ST_CALIBRATING)) {
-      updateStatus();
-      setFragment("manual", ManualFragment.class);
-      message(act.tx(R.string.calibration_ntfy));
-    }
-  }
+  // akcije ob prehodih stanj
+  protected abstract void process();
+  
+  protected abstract  void processMode();
 }

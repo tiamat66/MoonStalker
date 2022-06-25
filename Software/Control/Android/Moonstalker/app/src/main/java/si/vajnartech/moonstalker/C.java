@@ -38,7 +38,7 @@ public final class C
   public static final int ST_CONNECTED     = 12;
   public static final int ST_CALIBRATING   = 13;
   static final int ST_MANUAL   = 14;
-  static final int ST_CALIBRATED   = 17;
+  public static final int ST_CALIBRATED   = 17;
   static final int ST_MOVE_TO_OBJECT = 18;
   public static final int ST_NOT_READY = 19;
   public static final int ST_WAITING_ACK = 20;

@@ -74,8 +74,7 @@ public class Control extends Telescope
   @Override
   void mv(int hSteps, int vSteps, int speed)
   {
-    TelescopeStatus.set(ST_MOVING);
-    outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
+    outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps), Integer.toString(speed));
   }
 
   @Override
@@ -92,6 +91,11 @@ public class Control extends Telescope
   private void outMessageProcess(String opcode, String p1, String p2)
   {
     processor.add(new Instruction(opcode, p1, p2));
+  }
+
+  private void outMessageProcess(String opcode, String p1, String p2, String p3)
+  {
+    processor.add(new Instruction(opcode, p1, p2, p3));
   }
 
   @Override

@@ -33,6 +33,9 @@ import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
 import static si.vajnartech.moonstalker.C.calObj;
+// setMaxSpeedRPM kako to dolociti???
+// ozvezdje in nebesno telo kaze cisto mem
+// gray out action button ko se dogajajo akcije
 // refactor of calibration
 // theme alert dialogi
 // pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
@@ -90,6 +93,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         TelescopeStatus.set(newStat);
       }
 
+      void changeMode(int newStat, int newMode)
+      {
+        TelescopeStatus.setMode(newMode);
+        TelescopeStatus.set(newStat);
+      }
+
       @Override
       public void onClick(View view)
       {
@@ -106,11 +115,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (TelescopeStatus.getMode() == ST_TRACING) {
           update(ST_READY, ST_MOVE_TO_OBJECT);
         } else if (TelescopeStatus.get() == ST_READY && TelescopeStatus.getMode() == ST_CALIBRATING) {
-          ctrl.calibrate();
-          update(ST_READY, ST_CALIBRATED);
-          setFragment("main", MainFragment.class, new Bundle());
+          changeMode(ST_READY, ST_CALIBRATED);
         } else if (TelescopeStatus.get() == ST_READY && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
-          ctrl.move(C.curObj);
+          TelescopeStatus.set(ST_MOVING);
         }
       }
     });
@@ -136,8 +143,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
     monitor.update("$ ");
 
-    // init astro database TODO
-    //  SelectFragment.initAstroObjDatabase(this);
+    SelectFragment.initAstroObjDatabase(this);
 
     // start state machine
     new MyStateMachine(this);
@@ -225,7 +231,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             .setAction("Calibrated", null).show();
       else {
         TelescopeStatus.setMode(ST_MOVE_TO_OBJECT);
-        setFragment("move", SelectFragment.class, new Bundle());
       }
     } else if (id == R.id.track) {
       if (TelescopeStatus.get() != ST_READY)

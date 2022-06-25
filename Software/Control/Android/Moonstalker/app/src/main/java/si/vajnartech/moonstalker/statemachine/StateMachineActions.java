@@ -28,4 +28,6 @@ public interface StateMachineActions
   void notification(String msg);
 
   void setFragment(String tag, Class<? extends MyFragment> frag);
+
+  void calibrate();
 }
