@@ -8,24 +8,4 @@
   android:background="@color/colorPrimary"
   app:layout_behavior="@string/appbar_scrolling_view_behavior"
   tools:context=".MainActivity"
-  tools:showIn="@layout/app_bar_main">
-
-<TextView
-    android:id="@+id/msg_window"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginTop="24dp"
-    android:layout_marginEnd="16dp"
-    android:background="@drawable/border_frame"
-    android:fontFamily="serif-monospace"
-    android:text=""
-    android:textAlignment="center"
-    android:textColor="@color/design_default_color_primary_dark"
-    android:textSize="24sp"
-    android:textStyle="normal"
-    android:visibility="visible"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+  tools:showIn="@layout/app_bar_main"/>
