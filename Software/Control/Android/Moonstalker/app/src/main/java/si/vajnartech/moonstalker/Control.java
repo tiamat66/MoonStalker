@@ -1,5 +1,6 @@
 package si.vajnartech.moonstalker;
 
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -11,9 +12,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import androidx.annotation.NonNull;
+
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.K;
 import static si.vajnartech.moonstalker.C.ST_INIT;
-import static si.vajnartech.moonstalker.C.ST_MOVING;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_WAITING_ACK;
@@ -72,9 +75,32 @@ public class Control extends Telescope
   }
 
   @Override
-  void mv(int hSteps, int vSteps, int speed)
+  void move()
   {
-    outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps), Integer.toString(speed));
+    double dif_az;
+    double dif_hi;
+    double hSteps = 0;
+    double vSteps = 0;
+    int    cur_h_steps;
+    int    cur_v_steps;
+
+    if (TelescopeStatus.locked()) {
+      Log.i(TAG, "cannot execute move, telescope is locked");
+      return;
+    }
+
+    dif_az = newObject.getAzimuth() - skyObject.getAzimuth();
+    dif_hi = newObject.getHeight() - skyObject.getHeight();
+
+    hSteps += (dif_az * K) / 360.0;
+    vSteps += (dif_hi * K) / 360.0;
+
+    cur_h_steps = (int) hSteps;
+    cur_v_steps = (int) vSteps;
+    if (Math.abs(cur_h_steps) >= PRECISION || Math.abs(cur_v_steps) >= PRECISION) {
+      TelescopeStatus.set(ST_WAITING_ACK);
+      outMessageProcess(MOVE, Integer.toString(cur_h_steps), Integer.toString(setMaxSpeedRPM()));
+    }
   }
 
   @Override
@@ -103,6 +129,11 @@ public class Control extends Telescope
   {
     params.putString("opcode", opcode);
     inMessageHandler.obtainMessage(IN_MSG, params).sendToTarget();
+  }
+
+  @Override public void onLocationChanged(@NonNull Location location)
+  {
+
   }
 
   private static class InMessageHandler extends Handler
@@ -230,7 +261,8 @@ public class Control extends Telescope
 
   private static void processMvAck()
   {
-    TelescopeStatus.set(ST_NOT_READY); // TODO.
+    TelescopeStatus.unlock();
+    TelescopeStatus.setAck(OpCodes.MOVE_ACK);
   }
 
   private static void processMvsAck()
