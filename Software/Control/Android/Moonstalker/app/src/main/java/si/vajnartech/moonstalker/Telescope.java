@@ -1,88 +1,76 @@
 package si.vajnartech.moonstalker;
 
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 
-import static si.vajnartech.moonstalker.C.K;
+import androidx.core.content.ContextCompat;
+import si.vajnartech.moonstalker.rest.GetStarInfo;
+
+import static si.vajnartech.moonstalker.C.MINIMUM_DISTANCE;
+import static si.vajnartech.moonstalker.C.MINIMUM_TIME;
 import static si.vajnartech.moonstalker.C.ST_CONNECTING;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.TAG;
-import static si.vajnartech.moonstalker.C.calObj;
-import static si.vajnartech.moonstalker.C.curObj;
-import static si.vajnartech.moonstalker.OpCodes.*;
+import static si.vajnartech.moonstalker.OpCodes.INIT;
 
-@SuppressWarnings({"SameParameterValue", "unused"})
-public abstract class Telescope extends PositionCalculus
+public abstract class Telescope implements LocationListener
 {
-  private double hSteps = 0;
-  private double vSteps = 0;
+  protected MainActivity act;
 
-  private static final int PRECISION  = 1;
+  private final Location curLocation = new Location("GPS");
+
+  protected SkyObject newObject = new SkyObject(() -> {
+    curLocation.setLatitude(C.DEF_LATITUDE);
+    curLocation.setLongitude(C.DEF_LONGITUDE);
+    return curLocation;
+  });
+
+  protected final SkyObject skyObject = new SkyObject(() -> {
+    curLocation.setLatitude(C.DEF_LATITUDE);
+    curLocation.setLongitude(C.DEF_LONGITUDE);
+    return curLocation;
+  });
+
+  protected static final int PRECISION = 1;
 
   Telescope(MainActivity act)
   {
-    super(act);
+    this.act = act;
+  }
+
+  private void enableGPSService(MainActivity act)
+  {
+    LocationManager locationManager = (LocationManager) act.getSystemService(Context.LOCATION_SERVICE);
+
+    if (locationManager == null)
+      Log.d(TAG, "Cannot get the LocationManager");
+    else
+      Log.d(TAG, "The LocationManager successfully granted");
+    if (ContextCompat.checkSelfPermission(act, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
+        PackageManager.PERMISSION_GRANTED
+        || ContextCompat.checkSelfPermission(act, android.Manifest.permission.ACCESS_COARSE_LOCATION) ==
+           PackageManager.PERMISSION_GRANTED)
+      if (locationManager != null)
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MINIMUM_TIME, MINIMUM_DISTANCE, this);
   }
 
   void calibrate()
   {
-    setPosition(curObj);
-    raDec2AltAz();
-    TelescopeStatus.set(ST_READY);
-    curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
-    Log.i(TAG, "Calibration object is " + curObj);
+    new GetStarInfo(C.calObj, (name, constellation, ra, dec) -> {
+      skyObject.set(name, constellation, ra, dec);
+      TelescopeStatus.set(ST_READY);
+      act.userInterface.setPositionString(R.color.colorOk, skyObject);
+    });
   }
 
-  private void move(int hSteps, int vSteps)
-  {
-    az += (vSteps * 360.0) / K;
-    h += (hSteps * 360.0) / K;
-    Log.i(TAG, "move");
-    mv(hSteps, vSteps, setMaxSpeedRPM());
-  }
-
-  private int setMaxSpeedRPM()
+  protected int setMaxSpeedRPM()
   {
     return 500;
-  }
-
-  void move(AstroObject obj)
-  {
-    setPosition(obj);
-    move();
-  }
-
-  private void move()
-  {
-    double dif_az;
-    double dif_hi;
-    double azimuth_tmp;
-    double height_tmp;
-    int    cur_h_steps;
-    int    cur_v_steps;
-
-    if (TelescopeStatus.locked()) {
-      Log.i(TAG, "cannot execute move, telescope is locked");
-      return;
-    }
-
-    azimuth_tmp = az;
-    height_tmp = h;
-
-    raDec2AltAz();
-    dif_az = az - azimuth_tmp;
-    dif_hi = h - height_tmp;
-
-    hSteps += (dif_az * K) / 360.0;
-    vSteps += (dif_hi * K) / 360.0;
-
-    cur_h_steps = (int) hSteps;
-    cur_v_steps = (int) vSteps;
-    if (Math.abs(cur_h_steps) >= PRECISION || Math.abs(cur_v_steps) >= PRECISION) {
-      hSteps -= cur_h_steps;
-      vSteps -= cur_v_steps;
-      mv(cur_h_steps, cur_v_steps, setMaxSpeedRPM());
-    }
   }
 
   protected void connect()
@@ -97,7 +85,17 @@ public abstract class Telescope extends PositionCalculus
 
   public abstract void inMsgProcess(String msg, Bundle bundle);
 
-  abstract void mv(int hSteps, int vSteps, int speed);
+  abstract void move();
 
   abstract void st();
+
+  public SkyObject getNewObject()
+  {
+    return newObject;
+  }
+
+  public SkyObject getSkyObject()
+  {
+    return skyObject;
+  }
 }
