@@ -8,18 +8,6 @@ class MyBlueTooth extends BlueTooth
   }
 
   @Override
-  public void progressOn()
-  {
-    act.get().progressIndicator.progressOn(ProgressIndicator.ProgressType.CONNECTING);
-  }
-
-  @Override
-  public void progressOff()
-  {
-    act.get().progressIndicator.progressStop();
-  }
-
-  @Override
   public void onOk()
   {
     TelescopeStatus.set(C.ST_CONNECTED);

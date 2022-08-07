@@ -1,18 +1,11 @@
 package si.vajnartech.moonstalker;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
 import android.util.Log;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-
-import androidx.core.content.ContextCompat;
 
 import static java.lang.Math.acos;
 import static java.lang.Math.asin;
@@ -20,65 +13,46 @@ import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
-import static si.vajnartech.moonstalker.C.DEF_LATITUDE;
-import static si.vajnartech.moonstalker.C.DEF_LONGITUDE;
-import static si.vajnartech.moonstalker.C.MINIMUM_DISTANCE;
-import static si.vajnartech.moonstalker.C.MINIMUM_TIME;
 import static si.vajnartech.moonstalker.C.TAG;
 
-@SuppressWarnings("unused")
-public class PositionCalculus implements LocationListener
+interface TelescopeLocation
 {
-  private double ra;
-  private double dec;
+  Location getCurrentLocation();
+}
 
-  double az = 0;
-  double h  = 0;
+@SuppressWarnings("unused")
+public abstract class PositionCalculus
+{
+  protected double height;
+  protected double azimuth;
+  private   double ra;
+  private   double dec;
 
-  private final Location curLocation = new Location("GPS");
+  private final TelescopeLocation location;
 
-  PositionCalculus(MainActivity act)
+  PositionCalculus(TelescopeLocation location)
   {
-    enableGPSService(act);
+    this.location = location;
   }
 
-  void setPosition(AstroObject obj)
-  {
-    this.ra = obj.ra;
-    this.dec = obj.dec;
-    curLocation.setLatitude(DEF_LATITUDE);
-    curLocation.setLongitude(DEF_LONGITUDE);
-  }
-
-  void setPosition(double ra, double dec)
+  protected void set(double ra, double dec)
   {
     this.ra = ra;
     this.dec = dec;
-    curLocation.setLatitude(DEF_LATITUDE);
-    curLocation.setLongitude(DEF_LONGITUDE);
     raDec2AltAz();
   }
 
-  private void enableGPSService(MainActivity act)
+  void calculatePosition()
   {
-    LocationManager locationManager = (LocationManager) act.getSystemService(Context.LOCATION_SERVICE);
-
-    if (locationManager == null)
-      Log.d(TAG, "Cannot get the LocationManager");
-    else
-      Log.d(TAG, "The LocationManager successfully granted");
-    if (ContextCompat.checkSelfPermission(act, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
-        PackageManager.PERMISSION_GRANTED
-        || ContextCompat.checkSelfPermission(act, android.Manifest.permission.ACCESS_COARSE_LOCATION) ==
-           PackageManager.PERMISSION_GRANTED)
-      if (locationManager != null)
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MINIMUM_TIME, MINIMUM_DISTANCE, this);
+    raDec2AltAz();
   }
 
-  void altAz2RaDec()
+  private void altAz2RaDec()
   {
-    double A  = toRadians(h);
-    double AZ = toRadians(az);
+    Location curLocation = location.getCurrentLocation();
+
+    double A  = toRadians(height);
+    double AZ = toRadians(azimuth);
     double L  = toRadians(curLocation.getLatitude());
 
     double sinD = sin(A) * sin(L) + cos(A) * cos(L) * cos(AZ);
@@ -90,8 +64,10 @@ public class PositionCalculus implements LocationListener
     ra = toDegrees(RA);
   }
 
-  void raDec2AltAz()
+  private void raDec2AltAz()
   {
+    Location curLocation = location.getCurrentLocation();
+
     Log.i(TAG, "RA=" + convertDec2Hour(ra));
     Log.i(TAG, "DEC=" + convertDec2Hour(dec));
 
@@ -111,19 +87,19 @@ public class PositionCalculus implements LocationListener
     // Altitude
     double sinALT = sin(DEC) * sin(LAT) + cos(DEC) * cos(LAT) * cos(HA);
     double ALT    = asin(sinALT);
-    h = toDegrees(ALT);
+    height = toDegrees(ALT);
 
     // Azimuth
     double b1   = sin(DEC) - sin(ALT) * sin(LAT);
     double b2   = cos(ALT) * cos(LAT);
     double cosA = b1 / b2;
     double A    = acos(cosA);
-    az = toDegrees(A);
+    azimuth = toDegrees(A);
     //If sin(HA) is positive, the angle AZ is 360 - A
-    if (sin(HA) > 0.0) az = 360.0 - az;
+    if (sin(HA) > 0.0) azimuth = 360.0 - azimuth;
 
-    Log.i(TAG, "Altitude=" + h + " " + convertDec2Hour(h));
-    Log.i(TAG, "Azimuth=" + az + " " + convertDec2Hour(az));
+    Log.i(TAG, "Altitude=" + height + " " + convertDec2Hour(height));
+    Log.i(TAG, "Azimuth=" + azimuth + " " + convertDec2Hour(azimuth));
   }
 
   private static double LST(double longitude)
@@ -198,20 +174,19 @@ public class PositionCalculus implements LocationListener
     return convertHour2Dec(d, min, sec);
   }
 
-  @Override
-  public void onLocationChanged(Location location)
+  public double getAzimuth()
   {
+    return azimuth;
   }
 
-  @Override
-  public void onStatusChanged(String provider, int status, Bundle extras)
-  {}
+  public double getHeight()
+  {
+    return height;
+  }
 
-  @Override
-  public void onProviderEnabled(String provider)
-  {}
-
-  @Override
-  public void onProviderDisabled(String provider)
-  {}
+  public void move(int vSteps, int hSteps)
+  {
+    azimuth += (vSteps * 360.0) / C.K;
+    height += (hSteps * 360.0) / C.K;
+  }
 }

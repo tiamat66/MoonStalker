@@ -10,5 +10,6 @@
   <color name="colorNeutral">#59ADF0</color>
   <color name="colorMoving">#0F31EE</color>
   <color name="textInvertedNormal">#dd000000</color>
+  <color name="colorBase">#F48836</color>
 
 </resources>

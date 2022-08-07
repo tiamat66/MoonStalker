@@ -5,7 +5,7 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public final class C
 {
-  public static final String TAG = "MOONSTALKER";
+  public static final String TAG = "pepe";
 
   static final int TRSHLD_BTRY = 11000;  // milivolts
 
@@ -18,7 +18,7 @@ public final class C
   static final double DEF_LATITUDE = 46.45;
 
   // Named of paired BT device which acts like telescope
-  static final String SERVER_NAME = "LG Zoran";
+  static final String SERVER_NAME = "Naprava A32 uporabnika Zoran";
 
   // Mechanical characteristics
   private static final double MOTOR_STEPS_NUM      = 200.0;
@@ -61,14 +61,11 @@ public final class C
   public static final String NONE = "NONE";
   public static final String CLEAR = "";
 
-  public static String curConstellation = "";
   static String calObj = "Polaris";
-  static String calConstellation = "Ursa Major";
-  public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
 
   static boolean monitoring = false;
   public static boolean mStatus = false;
-  static String  curMessage = "";
+
 }
 
 
