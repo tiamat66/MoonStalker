@@ -11,7 +11,8 @@
   <string name="connecting">connecting</string>
   <string name="connected">connected</string>
   <string name="tracing">tracking</string>
-  <string name="moving">Moving</string>
+  <string name="moving">moving</string>
+  <string name="select_object">select object</string>
   <string name="initializing">initializing</string>
   <string name="calibrated">calibrated</string>
   <string name="move">Move</string>
@@ -36,6 +37,7 @@
   <string name="moonstalker">MoonStalker</string>
   <string name="not_ready">busy</string>
   <string name="msg_no_answer">No answer from telescope</string>
+  <string name="error_paired">Error in pairing. Unknown device</string>
 
   <string-array name="sky_objects">
     <item>Polaris</item>

@@ -1,14 +1,15 @@
 package si.vajnartech.moonstalker;
 
 
-import android.os.Bundle;
-
-
 interface UpdateUI
 {
-  void update(String title);
+  void updateMessage(String msg);
 
-  void update(Integer title);
+  void updateMessageColor(int color);
 
-  void update(Integer title, Bundle modes);
+  void updateSideDrawer();
+
+  void setPositionString(int color, SkyObject skyObject);
+
+  void showFab(boolean show);
 }

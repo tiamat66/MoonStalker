@@ -36,5 +36,8 @@
   <string name="moonstalker">MoonStalker</string>
   <string name="not_ready">zaposlen</string>
   <string name="msg_no_answer">Ni odgovora, preveri teleskop!</string>
+  <string name="error_paired">Napaka s seznanjem. Neznana naprava</string>
+  <string name="select_object">select object</string>
+
 
 </resources>
