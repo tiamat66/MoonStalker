@@ -21,7 +21,7 @@ class MyStateMachine extends StateMachine
   @Override
   public void updateUI(int telescopeStatus, int telescopeMode)
   {
-    act.userInterface.updateUI(act.fab, telescopeStatus, telescopeMode);
+    act.userInterface.updateUI(telescopeStatus, telescopeMode);
   }
 
   @Override
