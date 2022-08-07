@@ -4,8 +4,6 @@ import android.os.Bundle;
 
 import si.vajnartech.moonstalker.statemachine.StateMachine;
 
-import static si.vajnartech.moonstalker.C.ST_MOVING;
-
 class MyStateMachine extends StateMachine
 {
 
@@ -21,27 +19,15 @@ class MyStateMachine extends StateMachine
   }
 
   @Override
-  public void updateStatus()
+  public void updateUI(int telescopeStatus, int telescopeMode)
   {
-    userInterface.updateStatus(act.fab);
-  }
-
-  @Override
-  public void startProgress(ProgressIndicator.ProgressType type)
-  {
-    act.progressIndicator.progressOn(type);
-  }
-
-  @Override
-  public void stopProgress()
-  {
-    act.progressIndicator.progressStop();
+    act.userInterface.updateUI(act.fab, telescopeStatus, telescopeMode);
   }
 
   @Override
   public void move()
   {
-    act.ctrl.move(C.curObj);
+    act.ctrl.move();
   }
 
   @Override
@@ -75,12 +61,6 @@ class MyStateMachine extends StateMachine
   }
 
   @Override
-  public void notification(String msg)
-  {
-    act.showNotification(msg);
-  }
-
-  @Override
   public void setFragment(String tag, Class<? extends MyFragment> frag)
   {
     act.setFragment(tag, frag, new Bundle());
@@ -98,21 +78,16 @@ class MyStateMachine extends StateMachine
     if (state.statusChanged(C.ST_NOT_READY, C.ST_READY)) {
       TelescopeStatus.unlock();
       state.restore();
-    } else if (state.statusChanged(C.ST_READY, C.ST_NOT_READY)) {
-      TelescopeStatus.lock();
     } else if (state.statusChanged(C.ST_NOT_CONNECTED, C.ST_CONNECTING)) {
       connect();
     } else if (state.statusChanged(C.ST_CONNECTING, C.ST_CONNECTED)) {
-      notification(act.tx(R.string.connected));
-      updateStatus();
       initTelescope();
     } else if (state.statusChanged(C.ST_CONNECTED, C.ST_INIT)) {
-      startProgress(ProgressIndicator.ProgressType.INITIALIZING);
       st();
-    } else if (state.statusChanged(C.ST_INIT, C.ST_READY)) {
-      stopProgress();
-    } else if (state.statusChanged(C.ST_READY, ST_MOVING)) {
-      move();
+    } else if (state.statusChanged(C.ST_READY, C.ST_MOVING)) {
+      SkyObject newObject = act.ctrl.getNewObject();
+      if (newObject.get() != null)
+        move();
     }
   }
 
@@ -120,11 +95,9 @@ class MyStateMachine extends StateMachine
   protected void processMode()
   {
     if (state.modeChanged(C.ANY, C.ST_CALIBRATING)) {
-      updateStatus();
       setFragment("manual", ManualFragment.class);
       message(act.tx(R.string.calibration_ntfy));
     } else if (state.modeChanged(C.ST_CALIBRATING, C.ST_CALIBRATED)) {
-      updateStatus();
       calibrate();
       setFragment("main", MainFragment.class);
     } else if (state.modeChanged(C.ST_CALIBRATED, C.ST_MOVE_TO_OBJECT)) {

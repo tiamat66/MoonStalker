@@ -16,7 +16,7 @@ public final class OpCodes
   static final String WARNING   = "WARNING";  // <WARNING warning_msg>
   static final String INFO      = "INFO";     // <INFO info_msg>
   static final String NOT_READY = "NOT_RDY";  // <NOT_RDY> pri zasedenosti ob MV, MVS, ME, MVST
-  static final String MOVE_ACK  = "MV_ACK";   // <MV_ACK a b s> potrditev ob MV
+  public static final String MOVE_ACK  = "MV_ACK";   // <MV_ACK a b s> potrditev ob MV
   public static final String MVS_ACK   = "MVS_ACK";  // <MVS_ACK d s> potrditev ob MVS
   public static final String MVE_ACK   = "MVE_ACK";  // <MVE_ACK> ob potrditvi ob MVE
 

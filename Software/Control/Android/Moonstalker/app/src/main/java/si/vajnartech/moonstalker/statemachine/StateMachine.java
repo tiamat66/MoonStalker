@@ -9,7 +9,6 @@ import si.vajnartech.moonstalker.MainActivity;
 import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.R;
 import si.vajnartech.moonstalker.TelescopeStatus;
-import si.vajnartech.moonstalker.UI;
 
 
 public abstract class StateMachine implements StateMachineActions
@@ -17,27 +16,23 @@ public abstract class StateMachine implements StateMachineActions
   protected static final State state = new State();
 
   protected MainActivity act;
-  protected UI           userInterface;
-
 
   Integer[] edgeStates = {C.ST_READY, C.ST_NOT_CONNECTED};
 
   protected StateMachine(MainActivity act)
   {
     this.act = act;
-    userInterface = new UI(act);
 
     state.reset();
 
     Thread runner = new Runner();
     runner.start();
-    updateStatus();
   }
 
   protected static class State
   {
-    private int status = -1;
-    private int mode   = -1;
+    private int status = C.ST_NOT_CONNECTED;
+    private int mode   = C.ST_READY;
     int telescopeStatus = -1;
     int telescopeMode   = -1;
 
@@ -60,6 +55,8 @@ public abstract class StateMachine implements StateMachineActions
 
     public boolean statusChanged(int from, int to)
     {
+      if (from == C.ANY && TelescopeStatus.get() == to)
+        return true;
       return status == from && TelescopeStatus.get() == to;
     }
 
@@ -78,8 +75,6 @@ public abstract class StateMachine implements StateMachineActions
 
     void reset()
     {
-      status = C.ST_NOT_CONNECTED;
-      mode = C.ST_READY;
       TelescopeStatus.set(C.ST_NOT_CONNECTED);
       TelescopeStatus.setMode(C.ST_READY);
     }
@@ -130,58 +125,60 @@ public abstract class StateMachine implements StateMachineActions
           Ball.reset();
           if (!TelescopeStatus.locked())
             state.saveState();
+        }
+
+        if (state.statusChanged()) {
           process();
-          if (state.statusChanged()) {
-            updateStatus();
-            state.changeStatus();
-          }
+          updateUI(TelescopeStatus.get(), TelescopeStatus.getMode());
+          state.changeStatus();
         }
 
         if (state.modeChanged()) {
           processMode();
+          updateUI(TelescopeStatus.get(), TelescopeStatus.getMode());
           state.changeMode();
         }
 
         threadSleep();
         monitorState();
+        Log.i("pepe mode", state.mode + " " + TelescopeStatus.getMode());
+        Log.i("pepe status", state.status + " " + TelescopeStatus.get());
       }
     }
 
     private void addBalls()
     {
       Ball.addBall(C.ST_INIT, new Ball(() -> {
-        stopProgress();
         message(act.tx(R.string.msg_no_answer));
         disconnectBluetooth();
         state.reset();
       }, 7));
       Ball.addBall(C.ST_CONNECTED, new Ball(() -> {
-        stopProgress();
         message(act.tx(R.string.msg_no_answer));
         disconnectBluetooth();
         state.reset();
       }, 7));
-      Ball.addBall(C.ST_NOT_READY, new Ball(() -> {
-        TelescopeStatus.unlock();
-        st();
-      }, 5));
+      Ball.addBall(C.ST_WAITING_ACK, new Ball(this::processAck, 3));
+    }
 
-      Ball.addBall(C.ST_WAITING_ACK, new Ball(() -> {
-        if (TelescopeStatus.getAck().isEmpty()) return;
-        if (TelescopeStatus.getAck().equals(OpCodes.MVS_ACK) ||
-            TelescopeStatus.getAck().equals(OpCodes.MVE_ACK)) {
-          if (OpCodes.MVE_ACK.equals(TelescopeStatus.getAck())) {
-            TelescopeStatus.set(C.ST_READY);
-            TelescopeStatus.setMisc(C.NONE);
-          } else
-            TelescopeStatus.set(C.ST_MOVING);
-          TelescopeStatus.setAck(C.CLEAR);
-        } else {
-          message(act.tx(R.string.msg_no_answer));
-          TelescopeStatus.setAck(C.CLEAR);
-          state.restore();
+    private void processAck()
+    {
+      String[] acks = {OpCodes.MOVE_ACK, OpCodes.MVE_ACK, OpCodes.MVS_ACK};
+
+      if (Arrays.asList(acks).contains(TelescopeStatus.getAck())) {
+        if (OpCodes.MVE_ACK.equals(TelescopeStatus.getAck())) {
+          TelescopeStatus.set(C.ST_READY);
+          TelescopeStatus.setMisc(C.NONE);
+        } else if (OpCodes.MVS_ACK.equals(TelescopeStatus.getAck())) {
+          TelescopeStatus.set(C.ST_MOVING);
         }
-      }, 3));
+
+        TelescopeStatus.setAck(C.CLEAR);
+      } else {
+        message(act.tx(R.string.msg_no_answer));
+        TelescopeStatus.setAck(C.CLEAR);
+        state.restore();
+      }
     }
 
     private void threadSleep()
