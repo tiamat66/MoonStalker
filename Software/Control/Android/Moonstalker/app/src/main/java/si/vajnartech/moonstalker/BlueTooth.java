@@ -59,6 +59,7 @@ class BlueTooth extends AsyncTask<String, Void, Void>
       if (btAdapter.isEnabled())
         Log.i(TAG, "Bluetooth ON");
       else {
+
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         ActivityResultLauncher<Intent> myActivityResultLauncher = act.registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),

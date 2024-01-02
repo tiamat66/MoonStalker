@@ -1,10 +1,16 @@
 package si.vajnartech.moonstalker;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -22,6 +28,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -43,6 +51,7 @@ import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.C.ST_TRACING;
+import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.C.calObj;
 import static si.vajnartech.moonstalker.C.curObj;
 // ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo
@@ -252,7 +261,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     });
     // init current astro object
     new GetStarInfo(C.calObj, null);
-    connect(false);
+//    connect(false);
+
+    BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+    if (!btAdapter.isEnabled()) {
+      if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_DENIED) {
+        Log.i(TAG, "TODO: Enable permission on app on device");
+      } else {
+        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        ActivityResultLauncher<Intent> myActivityResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                  if (result.getResultCode() == Activity.RESULT_OK) {
+                    Log.i(TAG, "Enabled BT service");
+                  } else {
+                    Log.i(TAG, "Error Enabling BT service");
+                  }
+                });
+        myActivityResultLauncher.launch(enableBtIntent);
+      }
+    }
     // TODO: tole naredi animacije na androidov nacin na drug nacin
   }
 

@@ -17,3 +17,5 @@
 .idea/dictionaries/
 .idea/misc.xml
 .idea/jarRepositories.xml
+/.idea/migrations.xml
+/.idea/deploymentTargetDropDown.xml
