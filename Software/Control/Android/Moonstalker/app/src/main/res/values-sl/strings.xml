@@ -36,5 +36,6 @@
   <string name="moonstalker">MoonStalker</string>
   <string name="not_ready">zaposlen</string>
   <string name="msg_no_answer">Ni odgovora, preveri teleskop!</string>
+  <string name="waiting">čakam…</string>
 
 </resources>

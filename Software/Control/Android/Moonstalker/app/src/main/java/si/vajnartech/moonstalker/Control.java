@@ -118,7 +118,7 @@ public class Control extends Telescope
   void mv(int hSteps, int vSteps, int speed)
   {
     TelescopeStatus.set(ST_MOVING);
-    outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
+//    outMessageProcess(MOVE, Integer.toString(hSteps), Integer.toString(vSteps));
   }
 
   @Override
@@ -162,6 +162,7 @@ public class Control extends Telescope
     {
       if (message.what != IN_MSG)
         return;
+
 
       Bundle parms  = (Bundle) message.obj;
       String opcode = "";
@@ -257,7 +258,7 @@ public class Control extends Telescope
                   }
                 });
               }
-            }).executeOnExecutor(THREAD_POOL_EXECUTOR);
+            }).execute();
           }
         }
       }.start();

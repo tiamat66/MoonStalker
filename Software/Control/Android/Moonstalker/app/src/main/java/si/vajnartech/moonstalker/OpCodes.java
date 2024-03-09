@@ -1,10 +1,10 @@
 package si.vajnartech.moonstalker;
 
 @SuppressWarnings("unused")
-final class OpCodes
+public final class OpCodes
 {
-  static final int OUT_MSG = 1;
-  static final int IN_MSG  = 2;
+  public static final int OUT_MSG = 1;
+  public static final int IN_MSG  = 2;
 
   // in messages
   static final String WAITING = "NA";
@@ -23,7 +23,24 @@ final class OpCodes
   // out messages
   static final String MOVE_START  = "MVS";    // <MVS d s> d=direction (N, S, W, E, NW, NE, SW, SE); s=speed in RPM
   static final String MOVE_STOP   = "MVE";    // <MVE>
-  static final String MOVE        = "MV";     // <MV a b s> a=h steps; b=v steps; s=max speed in RPM
-  static final String GET_STATUS  = "MVST?";  // <MVST?>
+//  public static final String MOVE        = "MV";     // <MV a b s> a=h steps; b=v steps; s=max speed in RPM
+  public static final String GET_STATUS  = "MVST?";  // <MVST?>
   static final String GET_BATTERY = "BTRY?";  // <BTRY?>
+
+  // out messages
+  public static final int MSG_CONNECT = 1;
+  public static final int MSG_MOVE = 2;
+  // in messages
+  public static final int MSG_CONN_ERROR = 3;
+  public static final int MSG_READY = 4;
+  public static final int MSG_NOT_READY = 5;
+  public static final int MSG_MV_ACK = 6;
+  public static final int MSG_ERROR = 7;
+  public static final int MSG_WARNING = 8;
+  public static final int MSG_INFO = 9;
+  public static final int MSG_BATTERY = 10;
+  public static final int MSG_BATTERY_RES = 11;
+  public static final int MSG_PING = 12;
+
+
 }

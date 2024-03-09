@@ -7,11 +7,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static si.vajnartech.moonstalker.C.ST_ERROR;
 import static si.vajnartech.moonstalker.C.TAG;
 
-@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final class TelescopeStatus
+@SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"}) final public class TelescopeStatus
 {
   private static int btryVoltage = -1;
 
   private static int    status = -1;
+
+  private static String   status1;
   private static int    mode   = -1;
   private static String error  = "";
   private static String ack = "";
@@ -60,10 +62,15 @@ import static si.vajnartech.moonstalker.C.TAG;
     return mode;
   }
 
-  static void set(int st)
+  public static void set(int st)
   {
     status = st;
     Log.i("STATUS", "ST=" + get());
+  }
+
+  public static void set(String st)
+  {
+    status1 = st;
   }
 
   static int get()

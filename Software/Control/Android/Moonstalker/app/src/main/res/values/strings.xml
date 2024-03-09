@@ -36,6 +36,7 @@
   <string name="moonstalker">MoonStalker</string>
   <string name="not_ready">busy</string>
   <string name="msg_no_answer">No answer from telescope</string>
+  <string name="waiting">waiting…</string>
 
   <string-array name="sky_objects">
     <item>Polaris</item>

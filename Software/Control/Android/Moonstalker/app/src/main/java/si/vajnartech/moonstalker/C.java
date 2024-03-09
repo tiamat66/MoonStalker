@@ -14,8 +14,8 @@ public final class C
   static final int MINIMUM_TIME = 10000;  // 10s
   static final int MINIMUM_DISTANCE = 50; // 50m
 
-  static final double DEF_LONGITUDE = 13.82;
-  static final double DEF_LATITUDE = 46.45;
+  public static final double DEF_LONGITUDE = 13.82;
+  public static final double DEF_LATITUDE = 46.45;
 
   // Named of paired BT device which acts like telescope
   static final String SERVER_NAME = "Naprava A32 uporabnika Zoran";
@@ -27,20 +27,25 @@ public final class C
   static final         double K                    = MOTOR_STEPS_NUM * REDUCTOR_TRANSLATION * BELT_TRANSLATION;
 
   // Telescope status values
-  static final int ST_READY =    1;
-  static final int ST_ERROR =    2;
+  public static final int ST_READY =    1;
+  public static final int ST_ERROR =    2;
   static final int ST_TRACING =  5;
-  static final int ST_MOVING =   6;
+  public static final int ST_MOVING =   6;
   static final int ST_BTRY_LOW = 7;
   static final int ST_NOT_CAL =  9;
-  static final int ST_NOT_CONNECTED = 10;
+  public static final int ST_NOT_CONNECTED = 10;
   static final int ST_CONNECTED     = 12;
-  static final int ST_CALIBRATING   = 13;
+  public static final int ST_CALIBRATING   = 13;
   static final int ST_MANUAL   = 14;
   static final int ST_CALIBRATED   = 17;
   static final int ST_MOVE_TO_OBJECT = 18;
-  static final int ST_NOT_READY = 19;
+  public static final int ST_NOT_READY = 19;
   static final int ST_WAITING_ACK = 20;
+  public static final int ST_WAITING = 21;
+  public static final int ST_CONNECTION_ERROR = 22;
+  public static final int ST_WARNING = 23;
+  public static final int ST_INFO = 24;
+  public static final int ST_BATTERY = 25;
 
   // Triggers
   static final int ST_MOVING_S = 16;

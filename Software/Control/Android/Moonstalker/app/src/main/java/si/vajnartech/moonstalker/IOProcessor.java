@@ -12,7 +12,9 @@ import java.io.OutputStream;
 import static si.vajnartech.moonstalker.C.TAG;
 import static si.vajnartech.moonstalker.OpCodes.*;
 
-public class IOProcessor extends AsyncTask<String, Void, String>
+import si.vajnartech.moonstalker.rest.AsyncTaskExecutor;
+
+public class IOProcessor extends AsyncTaskExecutor<String, Void, String>
 {
   private final Instruction      instruction;
   private final BluetoothSocket  socket;
@@ -27,7 +29,7 @@ public class IOProcessor extends AsyncTask<String, Void, String>
   }
 
   @Override
-  protected String doInBackground(String... params)
+  protected String doInBackground(String params)
   {
     if (instruction == null || socket == null)
       return null;

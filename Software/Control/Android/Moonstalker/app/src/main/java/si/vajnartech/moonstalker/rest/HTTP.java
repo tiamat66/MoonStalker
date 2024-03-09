@@ -1,6 +1,5 @@
 package si.vajnartech.moonstalker.rest;
 
-import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
 
@@ -24,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import si.vajnartech.moonstalker.C;
 
-public class HTTP extends AsyncTask<String, Void, String>
+public class HTTP extends AsyncTaskExecutor<String, Void, String>
 {
   protected String                  url;
   protected File                    destinationFile   = null;
@@ -80,7 +79,7 @@ public class HTTP extends AsyncTask<String, Void, String>
   }
 
   @Override
-  protected String doInBackground(String... params)
+  protected String doInBackground(String params)
   {
     try {
       URL               url  = new URL(this.url);

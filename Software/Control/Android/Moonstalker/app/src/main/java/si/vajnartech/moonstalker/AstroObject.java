@@ -2,7 +2,6 @@ package si.vajnartech.moonstalker;
 
 import androidx.annotation.NonNull;
 
-@SuppressWarnings("unused")
 public class AstroObject
 {
   public String name;

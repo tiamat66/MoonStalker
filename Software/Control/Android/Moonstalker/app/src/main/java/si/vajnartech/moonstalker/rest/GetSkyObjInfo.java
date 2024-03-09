@@ -21,13 +21,13 @@ public abstract class GetSkyObjInfo<T>
   {
     HTTP.GetCompleteEvent ce = (http, data) -> process(data);
     this.name = name;
-    new HTTP(URL + name, ce).executeOnExecutor(TPE.THREAD_POOL_EXECUTOR);
+    new HTTP(URL + name, ce).execute();
   }
 
   GetSkyObjInfo(String URL)
   {
     HTTP.GetCompleteEvent ce = (http, data) -> process(data);
-    new HTTP(URL, ce).executeOnExecutor(TPE.THREAD_POOL_EXECUTOR);
+    new HTTP(URL, ce).execute();
   }
 
   protected abstract void process(String data);

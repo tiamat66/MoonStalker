@@ -1,16 +1,25 @@
 package si.vajnartech.moonstalker;
 
-import android.Manifest;
+import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
+import static si.vajnartech.moonstalker.C.SERVER_NAME;
+import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
+import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
+import static si.vajnartech.moonstalker.C.ST_MANUAL;
+import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
+import static si.vajnartech.moonstalker.C.ST_MOVING;
+import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
+import static si.vajnartech.moonstalker.C.ST_READY;
+import static si.vajnartech.moonstalker.C.ST_TRACING;
+import static si.vajnartech.moonstalker.C.ST_WAITING;
+import static si.vajnartech.moonstalker.C.calObj;
+import static si.vajnartech.moonstalker.OpCodes.MSG_CONNECT;
+import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE;
+
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -24,12 +33,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -38,22 +41,15 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
-import si.vajnartech.moonstalker.rest.GetStarInfo;
 
-import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
-import static si.vajnartech.moonstalker.C.SERVER_NAME;
-import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
-import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
-import static si.vajnartech.moonstalker.C.ST_MANUAL;
-import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
-import static si.vajnartech.moonstalker.C.ST_MOVING;
-import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
-import static si.vajnartech.moonstalker.C.ST_NOT_READY;
-import static si.vajnartech.moonstalker.C.ST_READY;
-import static si.vajnartech.moonstalker.C.ST_TRACING;
-import static si.vajnartech.moonstalker.C.TAG;
-import static si.vajnartech.moonstalker.C.calObj;
-import static si.vajnartech.moonstalker.C.curObj;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
+
+import si.vajnartech.moonstalker.processor.Command;
+import si.vajnartech.moonstalker.processor.QueueUI;
+import si.vajnartech.moonstalker.telescope.Actions;
+import si.vajnartech.moonstalker.telescope.StateMachine;
 // ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo
 // pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
 // od zgornje postacke FAB rata moder ko premikamo in je kljukica dajmo rajsi krizec
@@ -74,12 +70,56 @@ import static si.vajnartech.moonstalker.C.curObj;
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
+  protected  StateMachine machine = new StateMachine(this);
+
+  protected QueueUI queueUI = new QueueUI(new Actions() {
+    @Override
+    public void updateStatus(int val) {
+      machine.status.set(val);
+    }
+
+    @Override
+    public void updateStatus(int val, String msg)
+    {
+      updateStatus(val);
+      machine.status.message = msg;
+    }
+  });
+
   MyFragment currentFragment = null;
   Control    ctrl;
   Menu       menu;
 
   TerminalWindow terminal;
   Monitor        monitor;
+  FloatingActionButton fab;
+  DrawerLayout drawer;
+
+  public void setInfoMessage(int val)
+  {
+    terminal.setText(tx(val));
+  }
+
+  public void updateFab(int color)
+  {
+    fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
+  }
+
+  public void updateMenu(boolean ca, boolean ma, boolean tr, boolean mo) {
+    runOnUiThread(() -> {
+      menu.findItem(R.id.calibrate).setEnabled(ca);
+      menu.findItem(R.id.manual).setEnabled(ma);
+      menu.findItem(R.id.track).setEnabled(tr);
+      menu.findItem(R.id.move).setEnabled(mo);
+      drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+    });
+  }
+
+  public void promptToCalibration()
+  {
+    runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @SuppressLint("InflateParams")
   @Override
@@ -94,8 +134,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     SharedPref.setDefault("device_name", SERVER_NAME);
     SharedPref.setDefault("calibration_obj", calObj);
-    final FloatingActionButton fab = findViewById(R.id.fab);
-    updateFab(R.color.colorError, fab);
+    fab = findViewById(R.id.fab);
     fab.setOnClickListener(new View.OnClickListener()
     {
       @SuppressWarnings("SameParameterValue")
@@ -113,14 +152,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           ctrl.moveStop();
         } else if (currentFragment instanceof SettingsFragment) {
           setFragment("main", MainFragment.class, new Bundle());
-        } else if (TelescopeStatus.get() == ST_NOT_CONNECTED) {
-          connect(true);
+        } else if (machine.status.get() == ST_NOT_CONNECTED) {
+          connect();
         } else if (TelescopeStatus.getMode() == ST_MANUAL) {
           update(ST_READY, ST_READY);
           setFragment("main", MainFragment.class, new Bundle());
         } else if (TelescopeStatus.getMode() == ST_TRACING) {
           update(ST_READY, ST_MOVE_TO_OBJECT);
-        } else if (TelescopeStatus.get() == ST_READY && TelescopeStatus.getMode() == ST_CALIBRATING) {
+        } else if (machine.status.get() == ST_CALIBRATING) {
+          machine.mode.set(ST_CALIBRATED);
           ctrl.calibrate();
           update(ST_READY, ST_CALIBRATED);
           setFragment("main", MainFragment.class, new Bundle());
@@ -130,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       }
     });
 
-    final DrawerLayout drawer = findViewById(R.id.drawer_layout);
+    drawer = findViewById(R.id.drawer_layout);
     ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
         this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
     drawer.addDrawerListener(toggle);
@@ -152,148 +192,163 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // init astro database
     SelectFragment.initAstroObjDatabase(this);
     // start state machine
-    new StatusSM(new Nucleus()
-    {
-      @Override
-      public void initTelescope()
-      {
-        initControl();
-      }
-
-      @SuppressWarnings("SameParameterValue")
-      void update(Integer title, boolean ca, boolean ma, boolean tr, boolean mo)
-      {
-        if (title != null) {
-          terminal.setText(tx(title));
-          if (title == R.string.calibrated)
-            setPositionString();
-        }
-        menu.findItem(R.id.calibrate).setEnabled(ca);
-        menu.findItem(R.id.manual).setEnabled(ma);
-        menu.findItem(R.id.track).setEnabled(tr);
-        menu.findItem(R.id.move).setEnabled(mo);
-        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-      }
-
-      @SuppressWarnings("SameParameterValue")
-      void update(String title)
-      {
-        if (title != null)
-          terminal.setText(title);
-      }
-
-      void update(Integer title)
-      {
-        if (title != null)
-          terminal.setText(tx(title));
-      }
-
-      @Override
-      public void updateStatus()
-      {
-        runOnUiThread(() -> {
-          if (currentFragment instanceof ManualFragment) {
-            ManualFragment frag = (ManualFragment) currentFragment;
-            frag.updateArrows();
-          }
-
-          // FAB
-          if (TelescopeStatus.get() == ST_READY)
-            updateFab(R.color.colorOk2, fab);
-          else if (TelescopeStatus.get() == ST_MOVING)
-            updateFab(R.color.colorMoving, fab);
-
-          if (TelescopeStatus.get() == ST_MOVING)
-            update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
-          else if (TelescopeStatus.get() == ST_NOT_READY)
-            update(R.string.not_ready);
-          else if (TelescopeStatus.getMode() == ST_TRACING)
-            update(R.string.tracing);
-          else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT)
-            update(R.string.ready, false, true, true, false);
-          else if (TelescopeStatus.getMode() == ST_MANUAL)
-            update(R.string.manual);
-          else if (TelescopeStatus.getMode() == ST_CALIBRATED)
-            update(R.string.calibrated, false, true, true, true);
-          else if (TelescopeStatus.getMode() == ST_CALIBRATING)
-            update(R.string.calibrating);
-          else if (TelescopeStatus.get() == ST_READY)
-            update(R.string.ready, true, true, false, false);
-        });
-      }
-
-      @Override
-      public void startProgress(ProgressType pt)
-      {
-        pOn(pt);
-      }
-
-      @Override
-      public void stopProgress()
-      {
-        pOff();
-      }
-
-      @Override
-      public void move()
-      {
-        ctrl.move(curObj);
-        runOnUiThread(() -> setPositionString());
-      }
-
-      @Override
-      public void st()
-      {
-        ctrl.st();
-      }
-
-      @Override
-      public void dump(final String str)
-      {
-        runOnUiThread(() -> monitor.update(str));
-      }
-
-      @Override
-      public void onNoAnswer()
-      {
-        myMessage(tx(R.string.msg_no_answer));
-      }
-    });
-    // init current astro object
-    new GetStarInfo(C.calObj, null);
+//    new StatusSM(new Nucleus()
+//    {
+//      @Override
+//      public void initTelescope()
+//      {
+//        initControl();
+//      }
+//
+//      @SuppressWarnings("SameParameterValue")
+//      void update(Integer title, boolean ca, boolean ma, boolean tr, boolean mo)
+//      {
+//        if (title != null) {
+//          terminal.setText(tx(title));
+//          if (title == R.string.calibrated)
+//            setPositionString();
+//        }
+//        menu.findItem(R.id.calibrate).setEnabled(ca);
+//        menu.findItem(R.id.manual).setEnabled(ma);
+//        menu.findItem(R.id.track).setEnabled(tr);
+//        menu.findItem(R.id.move).setEnabled(mo);
+//        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+//      }
+//
+//      @SuppressWarnings("SameParameterValue")
+//      void update(String title)
+//      {
+//        if (title != null)
+//          terminal.setText(title);
+//      }
+//
+//      void update(Integer title)
+//      {
+//        if (title != null)
+//          terminal.setText(tx(title));
+//      }
+//
+//      @Override
+//      public void updateStatus()
+//      {
+//        runOnUiThread(() -> {
+//          if (currentFragment instanceof ManualFragment) {
+//            ManualFragment frag = (ManualFragment) currentFragment;
+//            frag.updateArrows();
+//          }
+//
+//          // FAB
+//          if (TelescopeStatus.get() == ST_READY)
+//            updateFab(R.color.colorOk2, fab);
+//          else if (TelescopeStatus.get() == ST_MOVING)
+//            updateFab(R.color.colorMoving, fab);
+//
+//          if (TelescopeStatus.get() == ST_MOVING)
+//            update(String.format("%s: %s", tx(R.string.moving), TelescopeStatus.getMisc()));
+//          else if (TelescopeStatus.get() == ST_NOT_READY)
+//            update(R.string.not_ready);
+//          else if (TelescopeStatus.getMode() == ST_TRACING)
+//            update(R.string.tracing);
+//          else if (TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT)
+//            update(R.string.ready, false, true, true, false);
+//          else if (TelescopeStatus.getMode() == ST_MANUAL)
+//            update(R.string.manual);
+//          else if (TelescopeStatus.getMode() == ST_CALIBRATED)
+//            update(R.string.calibrated, false, true, true, true);
+//          else if (TelescopeStatus.getMode() == ST_CALIBRATING)
+//            update(R.string.calibrating);
+//          else if (TelescopeStatus.get() == ST_READY)
+//            update(R.string.ready, true, true, false, false);
+//        });
+//      }
+//
+//      @Override
+//      public void startProgress(ProgressType pt)
+//      {
+//        pOn(pt);
+//      }
+//
+//      @Override
+//      public void stopProgress()
+//      {
+//        pOff();
+//      }
+//
+//      @Override
+//      public void move()
+//      {
+//        ctrl.move(curObj);
+//        runOnUiThread(() -> setPositionString());
+//      }
+//
+//      @Override
+//      public void st()
+//      {
+//        ctrl.st();
+//      }
+//
+//      @Override
+//      public void dump(final String str)
+//      {
+//        runOnUiThread(() -> monitor.update(str));
+//      }
+//
+//      @Override
+//      public void onNoAnswer()
+//      {
+//        myMessage(tx(R.string.msg_no_answer));
+//      }
+//    });
+////     init current astro object
+//    new GetStarInfo(C.calObj, null);
 //    connect(false);
-
-    BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-    if (!btAdapter.isEnabled()) {
-      if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_DENIED) {
-        Log.i(TAG, "TODO: Enable permission on app on device");
-      } else {
-        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        ActivityResultLauncher<Intent> myActivityResultLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                  if (result.getResultCode() == Activity.RESULT_OK) {
-                    Log.i(TAG, "Enabled BT service");
-                  } else {
-                    Log.i(TAG, "Error Enabling BT service");
-                  }
-                });
-        myActivityResultLauncher.launch(enableBtIntent);
-      }
-    }
+//
+//    BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+//    if (!btAdapter.isEnabled()) {
+//      if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_DENIED) {
+//        Log.i(TAG, "TODO: Enable permission on app on device");
+//      } else {
+//        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//        ActivityResultLauncher<Intent> myActivityResultLauncher = registerForActivityResult(
+//                new ActivityResultContracts.StartActivityForResult(),
+//                result -> {
+//                  if (result.getResultCode() == Activity.RESULT_OK) {
+//                    Log.i(TAG, "Enabled BT service");
+//                  } else {
+//                    Log.i(TAG, "Error Enabling BT service");
+//                  }
+//                });
+//        myActivityResultLauncher.launch(enableBtIntent);
+//      }
+//    }
     // TODO: tole naredi animacije na androidov nacin na drug nacin
+  }
+  ///////////////////////////////////////////////////////////////////////////
+  private void connect()
+  {
+    queueUI.obtainMessage(MSG_CONNECT, null).sendToTarget();
+    machine.status.set(ST_WAITING);
+  }
+
+  private void calibrate()
+  {
+    machine.mode.set(ST_CALIBRATING);
+    setFragment("manual", ManualFragment.class, new Bundle());
+    promptToCalibration();
+  }
+
+
+
+  private void move(double ra, double dec)
+  {
+    queueUI.obtainMessage(MSG_MOVE, new Command(ra, dec)).sendToTarget();
+    machine.status.set(ST_WAITING);
   }
 
 
   private void setPositionString()
   {
     SelectFragment.setPositionString(this);
-  }
-
-  private void updateFab(int color, FloatingActionButton fab)
-  {
-    fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
-
   }
 
   private void connect(boolean exe)
@@ -341,10 +396,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
       b.executeOnExecutor(THREAD_POOL_EXECUTOR);
   }
 
-  private void promptToCalibration()
-  {
-    runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
-  }
+
 
   private void initControl()
   {
@@ -420,9 +472,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
       }
     } else if (id == R.id.calibrate) {
-      TelescopeStatus.setMode(ST_CALIBRATING);
-      setFragment("manual", ManualFragment.class, new Bundle());
-      promptToCalibration();
+     calibrate();
     } else if (id == R.id.manual) {
       if (TelescopeStatus.getMode() != ST_CALIBRATED && TelescopeStatus.getMode() != ST_MOVE_TO_OBJECT) {
         setFragment("manual control", ManualFragment.class, new Bundle());
