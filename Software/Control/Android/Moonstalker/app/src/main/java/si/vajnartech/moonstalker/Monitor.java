@@ -4,29 +4,28 @@ import android.view.View;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 
 class Monitor extends PopupWindow
 {
   private final TextView tv;
 
-  private final LinkedList<String> content = new LinkedList<>();
+  private final ArrayList<String> content = new ArrayList<>();
 
   Monitor(View ctxView)
   {
-    super(ctxView, 600, 300);
+    super(ctxView, 800, 700);
     tv = ctxView.findViewById(R.id.sys_monitor);
   }
 
   void update(String el)
   {
-    content.add(el);
-    int           size = content.size();
-    StringBuilder p    = new StringBuilder();
-    for (int i = 7; i > 0; i--)
-      p.append((size > i) ? content.get(size - (i + 1)) : "\n");
-    p.append(content.isEmpty() ? "" : content.getLast());
-    tv.setText(p.toString());
+    content.add(el + "\n");
+    StringBuilder res = new StringBuilder();
+    for (String str: content) {
+      res.append(str);
+    }
+    tv.setText(res.toString());
   }
 }

@@ -25,7 +25,7 @@ public abstract class Telescope extends PositionCalculus
 
   void calibrate()
   {
-    setPosition(curObj);
+    setPosition(curObj); // setCurrent object
     raDec2AltAz();
     TelescopeStatus.set(ST_READY);
     curObj = new AstroObject(calObj, 0.0, 0.0, "", "");

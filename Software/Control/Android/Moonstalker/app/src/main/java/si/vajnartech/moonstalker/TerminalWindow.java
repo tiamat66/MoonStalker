@@ -24,7 +24,6 @@ final class TerminalWindow
   {
     C.curMessage = msg;
     act.refreshCurrentFragment();
-//    tv.setText(msg);
   }
 
   void show(boolean sh)

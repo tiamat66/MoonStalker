@@ -28,7 +28,7 @@ public class ManualFragment extends MyFragment implements View.OnTouchListener
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
   {
-    view = inflater.inflate(R.layout.keypad_arrows, container, false);
+    view = super.onCreateView(inflater, container, savedInstanceState);
     updateArrows();
 
     return view;
@@ -37,7 +37,7 @@ public class ManualFragment extends MyFragment implements View.OnTouchListener
   void updateArrows()
   {
     if (view == null) return;
-    SVGImageView iv = view.findViewById(R.id.keypad_arrows);
+    SVGImageView iv = view.findViewById(R.id.keypad);
     iv.setImageDrawable(new SVGDrawable(getResources(), R.raw.keyboard_arrows, 800, 800));
     iv.setOnTouchListener(this);
   }

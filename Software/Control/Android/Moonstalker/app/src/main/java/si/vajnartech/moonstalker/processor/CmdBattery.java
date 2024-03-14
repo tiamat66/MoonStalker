@@ -19,9 +19,9 @@ public class CmdBattery extends Controller<String>
         String msg = getParams(cmdResult);
 
         if (cmdResult.startsWith("BTRY")) {
-            queue.obtainMessage(MSG_BATTERY_RES, msg);
+            queue.obtainMessage(MSG_BATTERY_RES, msg).sendToTarget();
         }  else if (cmdResult.equals("TIMEOUT")) {
-            queue.obtainMessage(MSG_CONN_ERROR, null);
+            queue.obtainMessage(MSG_CONN_ERROR).sendToTarget();
         }
     }
 

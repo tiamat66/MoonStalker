@@ -1,10 +1,7 @@
 package si.vajnartech.moonstalker.processor;
 
-import static si.vajnartech.moonstalker.C.ST_NOT_CONNECTED;
-import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.MSG_NOT_READY;
-import static si.vajnartech.moonstalker.OpCodes.MSG_READY;
 
 import com.google.gson.Gson;
 
@@ -22,11 +19,11 @@ public class CmdStatus extends Controller<String>
     {
         if (cmdResult != null) {
             if (cmdResult.equals("RDY")) {
-                queue.obtainMessage(MSG_READY, null).sendToTarget();
+                new CmdGetAstroData(queue);
             } else if (cmdResult.equals("NOT_RDY")) {
-                queue.obtainMessage(MSG_NOT_READY, null);
+                queue.obtainMessage(MSG_NOT_READY).sendToTarget();
             }  else if (cmdResult.equals("TIMEOUT")) {
-                queue.obtainMessage(MSG_CONN_ERROR, null);
+                queue.obtainMessage(MSG_CONN_ERROR).sendToTarget();
             }
         }
     }

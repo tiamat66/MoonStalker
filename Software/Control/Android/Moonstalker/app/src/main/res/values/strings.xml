@@ -23,7 +23,7 @@
   <string name="calibrating">calibration</string>
   <string name="ready">ready</string>
   <string name="warning">Warning</string>
-  <string name="connection_failed">Connection failed. Check the BlueTooth</string>
+  <string name="connection_failed">Connection failed</string>
   <string name="connect">Connect</string>
   <string name="communicate">Communicate</string>
   <string name="to_calibrate">move to %s</string>

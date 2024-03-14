@@ -41,6 +41,7 @@ public final class OpCodes
   public static final int MSG_BATTERY = 10;
   public static final int MSG_BATTERY_RES = 11;
   public static final int MSG_PING = 12;
+  public static final int MSG_GET_ASTRO_DATA = 13;
 
 
 }

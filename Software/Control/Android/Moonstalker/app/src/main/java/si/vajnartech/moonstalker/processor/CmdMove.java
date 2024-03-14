@@ -23,11 +23,11 @@ public class CmdMove extends Controller<String>
     {
         if (cmdResult != null) {
             if (cmdResult.equals("NOT_RDY")) {
-                queue.obtainMessage(MSG_NOT_READY, null).sendToTarget();
+                queue.obtainMessage(MSG_NOT_READY).sendToTarget();
             } else if (cmdResult.equals("TIMEOUT")) {
-                queue.obtainMessage(MSG_CONN_ERROR, null);
+                queue.obtainMessage(MSG_CONN_ERROR).sendToTarget();
             } else if (cmdResult.startsWith("MV_ACK")) {
-                queue.obtainMessage(MSG_MV_ACK, null).sendToTarget();
+                queue.obtainMessage(MSG_MV_ACK).sendToTarget();
             }
         }
     }

@@ -23,15 +23,15 @@ public class CmdPing extends Controller<String>
         String msg = getParams(cmdResult);
 
         if (cmdResult.equals("RDY")) {
-            queue.obtainMessage(MSG_READY);
+            queue.obtainMessage(MSG_READY).sendToTarget();
         } else if (cmdResult.equals("TIMEOUT")) {
-            queue.obtainMessage(MSG_CONN_ERROR, null);
+            queue.obtainMessage(MSG_CONN_ERROR).sendToTarget();
         } else if (cmdResult.startsWith("ERROR")) {
-            queue.obtainMessage(MSG_ERROR, msg);
+            queue.obtainMessage(MSG_ERROR, msg).sendToTarget();
         }  else if (cmdResult.startsWith("WARNING")) {
-            queue.obtainMessage(MSG_WARNING, msg);
+            queue.obtainMessage(MSG_WARNING, msg).sendToTarget();
         } else if (cmdResult.startsWith("INFO")) {
-            queue.obtainMessage(MSG_INFO, msg);
+            queue.obtainMessage(MSG_INFO, msg).sendToTarget();
         }
     }
 

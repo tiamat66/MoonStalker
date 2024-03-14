@@ -4,6 +4,7 @@ import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CALIBRATING;
+import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
 import static si.vajnartech.moonstalker.C.ST_MANUAL;
 import static si.vajnartech.moonstalker.C.ST_MOVE_TO_OBJECT;
 import static si.vajnartech.moonstalker.C.ST_MOVING;
@@ -47,6 +48,8 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
 import si.vajnartech.moonstalker.processor.Command;
+import si.vajnartech.moonstalker.processor.DataAstroObj;
+import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.QueueUI;
 import si.vajnartech.moonstalker.telescope.Actions;
 import si.vajnartech.moonstalker.telescope.StateMachine;
@@ -70,7 +73,9 @@ import si.vajnartech.moonstalker.telescope.StateMachine;
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
-  protected  StateMachine machine = new StateMachine(this);
+  public DataAstroObj astroData;
+
+  protected StateMachine machine = new StateMachine(this);
 
   protected QueueUI queueUI = new QueueUI(new Actions() {
     @Override
@@ -83,6 +88,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     {
       updateStatus(val);
       machine.status.message = msg;
+    }
+
+    @Override
+    public void updateStatus(int val, Object msg) {
+      updateStatus(val);
+      machine.status.data = (DataAstroObj) msg;
     }
   });
 
@@ -98,6 +109,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
   public void setInfoMessage(int val)
   {
     terminal.setText(tx(val));
+  }
+
+  public void logMessage(String val)
+  {
+    monitor.update(val);
   }
 
   public void updateFab(int color)
@@ -152,18 +168,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
           ctrl.moveStop();
         } else if (currentFragment instanceof SettingsFragment) {
           setFragment("main", MainFragment.class, new Bundle());
-        } else if (machine.status.get() == ST_NOT_CONNECTED) {
+        } else if (machine.status.get() == ST_NOT_CONNECTED ||
+                   machine.status.get() == ST_CONNECTION_ERROR) {
           connect();
         } else if (TelescopeStatus.getMode() == ST_MANUAL) {
           update(ST_READY, ST_READY);
           setFragment("main", MainFragment.class, new Bundle());
         } else if (TelescopeStatus.getMode() == ST_TRACING) {
           update(ST_READY, ST_MOVE_TO_OBJECT);
-        } else if (machine.status.get() == ST_CALIBRATING) {
+        } else if (machine.mode.get() == ST_CALIBRATING) {
           machine.mode.set(ST_CALIBRATED);
-          ctrl.calibrate();
-          update(ST_READY, ST_CALIBRATED);
-          setFragment("main", MainFragment.class, new Bundle());
+//          ctrl.calibrate();
         } else if (TelescopeStatus.get() == ST_READY && TelescopeStatus.getMode() == ST_MOVE_TO_OBJECT) {
           ctrl.move(C.curObj);
         }
@@ -187,10 +202,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     terminal = new TerminalWindow(this);
     LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
-    monitor.update("$ ");
 
     // init astro database
-    SelectFragment.initAstroObjDatabase(this);
+//    SelectFragment.initAstroObjDatabase(this);
     // start state machine
 //    new StatusSM(new Nucleus()
 //    {
@@ -322,27 +336,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 //      }
 //    }
     // TODO: tole naredi animacije na androidov nacin na drug nacin
+    new Ping(queueUI);
   }
   ///////////////////////////////////////////////////////////////////////////
   private void connect()
   {
     queueUI.obtainMessage(MSG_CONNECT, null).sendToTarget();
-    machine.status.set(ST_WAITING);
   }
-
-  private void calibrate()
-  {
-    machine.mode.set(ST_CALIBRATING);
-    setFragment("manual", ManualFragment.class, new Bundle());
-    promptToCalibration();
-  }
-
-
 
   private void move(double ra, double dec)
   {
     queueUI.obtainMessage(MSG_MOVE, new Command(ra, dec)).sendToTarget();
-    machine.status.set(ST_WAITING);
   }
 
 
@@ -472,7 +476,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
       }
     } else if (id == R.id.calibrate) {
-     calibrate();
+      machine.mode.set(ST_CALIBRATING);
     } else if (id == R.id.manual) {
       if (TelescopeStatus.getMode() != ST_CALIBRATED && TelescopeStatus.getMode() != ST_MOVE_TO_OBJECT) {
         setFragment("manual control", ManualFragment.class, new Bundle());

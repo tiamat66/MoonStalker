@@ -136,7 +136,7 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
 
     protected void onFailure()
     {
-        queue.obtainMessage(MSG_CONN_ERROR, null).sendToTarget();
+        queue.obtainMessage(MSG_CONN_ERROR).sendToTarget();
     }
 
     @Override
