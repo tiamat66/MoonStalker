@@ -4,9 +4,9 @@ import si.vajnartech.moonstalker.rest.RestBase;
 
 public abstract class Controller<R> extends RestBase<String, R>
 {
-    public static String URL = "http://192.168.1.10:8001/";
-    public static String PWD = "AldebaraN7";
-    public static String USR = "vajnar";
+    public static String URL = "http://192.168.1.101:8001/";
+    public static String PWD = "moonstalker";
+    public static String USR = "moonstalker";
 
     public Controller(String cmd, Processor machine)
     {

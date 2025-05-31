@@ -223,7 +223,7 @@ public class Processor extends Thread
                 () -> {
                     act.setInfoMessage(R.string.ready);
                     status.set(ST_READY);
-                    act.updateFab(R.color.colorOk);
+                    act.updateFab(R.color.design_default_color_primary);
                 }));
     }
 
