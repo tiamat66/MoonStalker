@@ -1,13 +1,50 @@
 // StepperController
 //
-// Class for controlling both horizontal and
-// vertical stepper motor.
-// Class can run the steppers in a continous
-// free run mode, or it can run them with the
-// specified number of steps.
+// Class for controlling both horizontal (azimuth) and
+// vertical (altitude) stepper motors on the MoonStalker
+// telescope drive unit.
+//
+// The class provides two movement modes:
+//   1. FREE_RUN_MODE  - Continuous rotation at a fixed speed (for manual
+//                       guiding via Bluetooth directional commands)
+//   2. MOVE_MODE      - Move a specified number of steps at a given RPM,
+//                       with optional acceleration ramping and sync finish
+//   3. IDLE_MODE      - Motors stopped, ready for next command
+//
+// Hardware: ATmega32u4 (Arduino Micro)
+//   - Horizontal motor driven by Timer1 (16-bit) on pin 2 (PD1)
+//   - Vertical motor   driven by Timer3 (16-bit) on pin 5 (PC6)
+//   - Timers use CTC mode with 1/64 prescaler (250 kHz tick rate = 4 us/tick)
+//   - Step pulses are 1 timer tick wide (~4 us) via COMPB compare match
+//
+// Speed control:
+//   Speed is specified in RPM (revolutions per minute).
+//   The OCRxA register is calculated as:
+//     OCR = 7,500,000 / (RPM x steps_per_revolution)
+//   This gives the half-period in timer ticks at 250 kHz.
+//
+// Ramping (optional):
+//   Smooth acceleration/deceleration by linearly interpolating the OCR
+//   value between a slow start value and the target speed over a
+//   configurable number of steps.
+//
+// Sync mode (optional):
+//   When enabled, the motor with fewer steps is proportionally slowed
+//   so both motors finish their moves simultaneously.
+
+#ifndef STEPPER_CONTROLLER_H
+#define STEPPER_CONTROLLER_H
 
 #include <stdint.h>
 
+// ---------------------------------------------------------------------------
+// StepperDirection
+// ---------------------------------------------------------------------------
+// Controls the rotation direction of a stepper motor.
+//   CW    - Clockwise rotation
+//   CCW   - Counter-clockwise rotation
+//   IGNORE - Leave this axis unchanged (used in free_run_start to
+//            move only one axis while the other keeps its current state)
 enum class StepperDirection
 {
   CW,
@@ -15,6 +52,19 @@ enum class StepperDirection
   IGNORE
 };
 
+// ---------------------------------------------------------------------------
+// RunningMode
+// ---------------------------------------------------------------------------
+// Tracks the current operational state of the stepper controller.
+//   FREE_RUN_MODE - Continuous rotation (started by MVS command).
+//                   The motors run indefinitely until MVE (free_run_stop)
+//                   is called. No ramping is applied.
+//   MOVE_MODE     - Finite-step move (started by MV command).
+//                   Motors run for the configured number of steps then
+//                   stop. Ramping and sync mode apply in this mode.
+//   IDLE_MODE     - Motors are stopped. Only in this state can a new
+//                   move_steppers() command be accepted. free_run_start()
+//                   is also allowed (replaces previous free run).
 enum class RunningMode
 {
   FREE_RUN_MODE,
@@ -22,47 +72,167 @@ enum class RunningMode
   IDLE_MODE
 };
 
+// ---------------------------------------------------------------------------
+// StepperController class
+// ---------------------------------------------------------------------------
 class StepperController
 {
   public:
 
+  // -------------------------------------------------------------------------
   // Constructor
+  // -------------------------------------------------------------------------
+  // steps_per_revolution: Number of full steps per motor revolution
+  //   (typically 200 for a standard NEMA-17 stepper with 1.8 deg/step).
+  //   This value is used in calculate_ocr_reg_value() to convert RPM
+  //   into timer compare values.
   StepperController(int16_t steps_per_revolution);
 
-  // Start running the motors with the specified
-  // speed and direction
+  // -------------------------------------------------------------------------
+  // free_run_start
+  // -------------------------------------------------------------------------
+  // Start continuous rotation of one or both motors at the specified RPM.
+  // The motors will run indefinitely until free_run_stop() is called.
+  //
+  // Use StepperDirection::IGNORE for an axis you don't want to change.
+  // For example, to move only North (vertical CW), call:
+  //   free_run_start(0, IGNORE, rpm, CW)
+  //
+  // This mode is used for manual telescope guiding via the MVS command.
+  // Returns false if currently in MOVE_MODE (must stop first).
   bool free_run_start(int16_t speed_horiz,
                       StepperDirection horiz_direction,
                       int16_t speed_vert,
                       StepperDirection vert_direction);
- 
-  // Stop both motors
+
+  // -------------------------------------------------------------------------
+  // free_run_stop
+  // -------------------------------------------------------------------------
+  // Stop continuous rotation. Returns immediately to IDLE_MODE.
+  // Disables COMPB interrupts to let any pending pulses finish cleanly.
   bool free_run_stop();
 
-  // Move both steppers with the specified speed,
-  // direction and number of steps
-  // speed is specified in RPM
+  // -------------------------------------------------------------------------
+  // move_steppers
+  // -------------------------------------------------------------------------
+  // Move both steppers a finite number of steps at the specified RPM.
+  // Speed is specified in RPM (revolutions per minute).
+  //
+  // Parameters:
+  //   speed_horiz    - Target speed for the horizontal axis (RPM)
+  //   horiz_direction- CW or CCW
+  //   horiz_steps    - Number of steps for horizontal axis (0 = no move)
+  //   speed_vert     - Target speed for the vertical axis (RPM)
+  //   vert_direction - CW or CCW
+  //   vert_steps     - Number of steps for vertical axis (0 = no move)
+  //
+  // Ramping: If ramp_steps was set > 0, speed accelerates from slow to
+  //   target over the first ramp_steps, cruises, then decelerates over
+  //   the last ramp_steps.
+  //
+  // Sync: If sync mode is enabled, the axis with fewer steps runs slower
+  //   so both axes complete at the same time.
+  //
+  // Returns false if not in IDLE_MODE.
   bool move_steppers(int16_t speed_horiz,
-                     StepperDirection horiz_direction, 
+                     StepperDirection horiz_direction,
                      int16_t horiz_steps,
                      int16_t speed_vert,
                      StepperDirection vert_direction,
                      int16_t vert_steps);
 
-  // calculation of ocr register value
-  // for pulse timing
+  // -------------------------------------------------------------------------
+  // set_ramp_steps
+  // -------------------------------------------------------------------------
+  // Set the number of steps used for acceleration (ramp up) and
+  // deceleration (ramp down) at the start and end of a move.
+  // Set to 0 (default) to disable ramping.
+  //
+  // The ramp length is automatically capped to half the total step count
+  // so there is always a steady-state cruise phase in between.
+  void set_ramp_steps(uint16_t steps);
+
+  // -------------------------------------------------------------------------
+  // set_sync_mode
+  // -------------------------------------------------------------------------
+  // Enable synchronized finish mode. When enabled, both motors in a
+  // move_steppers() call will complete their step counts at the same
+  // time. The motor with fewer steps is proportionally slowed:
+  //   new_speed = target_speed * (my_steps / max_steps)
+  // Set to false (default) for independent per-axis speed control.
+  void set_sync_mode(bool enabled);
+
+  // -------------------------------------------------------------------------
+  // calculate_ocr_reg_value
+  // -------------------------------------------------------------------------
+  // Convert RPM to an OCR compare register value for the timer.
+  // Formula (with 1/64 prescaler, 16 MHz clock, half-period pulse):
+  //   OCR = 7,500,000 / (RPM x steps_per_revolution)
+  // Returns a safe default of 100 if RPM <= 0.
   int16_t calculate_ocr_reg_value(int16_t rpm_speed);
-  
-  // Return current running mode
+
+  // -------------------------------------------------------------------------
+  // get_running_mode
+  // -------------------------------------------------------------------------
+  // Returns the current running mode (FREE_RUN_MODE, MOVE_MODE, IDLE_MODE).
+  // Used by command handlers to check if the system is ready for a new
+  // command, and by the DEBUG command for diagnostics.
   RunningMode get_running_mode();
 
-  // methods for timer initialization
+  // -------------------------------------------------------------------------
+  // Timer initialization
+  // -------------------------------------------------------------------------
+  // Configure Timer1 (horizontal) and Timer3 (vertical) for CTC mode
+  // with a 1/64 prescaler. Must be called once during setup().
   void initialize_timer1();
   void initialize_timer3();
+
+  // -------------------------------------------------------------------------
+  // Static variables (accessible from ISR context)
+  // -------------------------------------------------------------------------
+  // These must be static and volatile because they are read/written by
+  // both the main loop and the interrupt service routines.
+  //
+  // Steps tracking:
+  //   horiz_steps_remain / vert_steps_remain - steps left to execute
+  //   horiz_steps_current / vert_steps_current - steps completed so far
+  //   horiz_direction_state / vert_direction_state - current direction
+  //
+  // Ramping state (set by move_steppers, read by ISRs):
+  //   ramp_steps_horiz/vert - how many steps the ramp covers
+  //   target_ocr_horiz/vert_isr - steady-state speed OCR (sync-aware)
+  //   start_ocr_horiz/vert_isr - slow speed OCR at ramp start
+  //   total_steps_horiz/vert - total steps in this move
+  //   scaled_ocr_horiz/vert - sync-adjusted OCR (before ramp overwrite)
+  //   sync_mode_enabled - whether sync mode is active
+  static volatile uint16_t horiz_steps_remain;
+  static volatile uint16_t vert_steps_remain;
+  static volatile uint16_t horiz_steps_current;
+  static volatile uint16_t vert_steps_current;
+  static volatile StepperDirection horiz_direction_state;
+  static volatile StepperDirection vert_direction_state;
+  static volatile uint16_t ramp_steps_horiz;
+  static volatile uint16_t ramp_steps_vert;
+  static volatile uint16_t target_ocr_horiz_isr;
+  static volatile uint16_t target_ocr_vert_isr;
+  static volatile uint16_t start_ocr_horiz_isr;
+  static volatile uint16_t start_ocr_vert_isr;
+  static volatile uint16_t total_steps_horiz;
+  static volatile uint16_t total_steps_vert;
+  static volatile uint16_t scaled_ocr_horiz;
+  static volatile uint16_t scaled_ocr_vert;
+  static volatile bool sync_mode_enabled;
+
   private:
-  
+
   RunningMode running_mode;
   int16_t     steps_per_revolution;
   char        error[256];
 
+  // Number of steps for acceleration/deceleration ramp.
+  // Set via set_ramp_steps(). 0 = no ramping.
+  uint16_t ramp_steps;
 };
+
+#endif
+

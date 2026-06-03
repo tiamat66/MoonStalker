@@ -46,8 +46,12 @@ void setup()
     ; // Wait for serial port to connect
   }
   Serial1.println("<INFO System start>");
-  
+
   initialize_pins();
+
+  // Initialize hardware timers for stepper pulse generation
+  stepper_controller.initialize_timer1();
+  stepper_controller.initialize_timer3();
 }
 
 void loop()
@@ -133,7 +137,6 @@ void handle_incoming_command(char *command_buff)
     StepperDirection horiz_direction;
     StepperDirection vert_direction;
 
-    
     if (stepper_controller.get_running_mode() != RunningMode::IDLE_MODE)
     {
       Serial1.println("<NOT_RDY>");
@@ -177,7 +180,7 @@ void handle_incoming_command(char *command_buff)
                                      horiz_steps,
                                      rpm_speed,
                                      vert_direction,
-                                     vert_steps);                                    
+                                     vert_steps);
   }
   else if (!strcmp(cmd, "MVS"))
   {
@@ -193,7 +196,7 @@ void handle_incoming_command(char *command_buff)
       Serial1.println("<NOT_RDY>");
       return;
     }
-    
+
     direction_str = strtok(NULL, " ");
     rpm_speed_str = strtok(NULL, " ");
 
@@ -234,7 +237,7 @@ void handle_incoming_command(char *command_buff)
     {
       Serial1.println("<ERROR UNKNOWN_DIRECTION>");
       return;
-    }   
+    }
     Serial1.print("<MVS_ACK ");
     Serial1.print(direction_str);
     Serial1.print(" ");
@@ -251,7 +254,7 @@ void handle_incoming_command(char *command_buff)
     else
     {
       stepper_controller.free_run_stop();
-      Serial1.println("<MVE_ACK");
+      Serial1.println("<MVE_ACK>");
     }
   }
   else if (!strcmp(cmd, "BTRY?"))
@@ -263,38 +266,46 @@ void handle_incoming_command(char *command_buff)
   }
   else if (!strcmp(cmd, "MVST?"))
   {
-    char ret_msg[32];
+    RunningMode mode = stepper_controller.get_running_mode();
 
-    if (1) // TODO - Do the coorect thing here
+    if (mode == RunningMode::IDLE_MODE)
     {
-      strcpy(ret_msg, "<NOT_RDY>");
+      Serial1.println("<RDY>");
     }
     else
     {
-      strcpy(ret_msg, "<RDY>");
+      Serial1.println("<NOT_RDY>");
     }
-    Serial1.println(ret_msg);
   }
   else if (!strcmp(cmd, "SYS_CHK"))
   {
     system_check();
-    Serial1.println("Would execute system check");
+    Serial1.println("<SYS_CHK_DONE>");
   }
   else if (!strcmp(cmd, "DEBUG"))
   {
-    uint16_t x;
-    uint16_t y;
-    
     Serial1.print("<MV_REMAIN X: ");
-    Serial1.print(x);
+    Serial1.print(StepperController::horiz_steps_remain);
     Serial1.print(" Y: ");
-    Serial1.print(y);
+    Serial1.print(StepperController::vert_steps_remain);
+    Serial1.println(">");
+    Serial1.print("<MV_CURRENT X: ");
+    Serial1.print(StepperController::horiz_steps_current);
+    Serial1.print(" Y: ");
+    Serial1.print(StepperController::vert_steps_current);
     Serial1.println(">");
   }
   else if (!strcmp(cmd, "STOP"))
   {
     noInterrupts();
-    // TODO - stop the movement
+    // Stop the movement - clear all step counts and disable timer interrupts
+    StepperController::horiz_steps_remain = 0;
+    StepperController::vert_steps_remain = 0;
+    TIMSK1 &= ~(1 << OCIE1A) & ~(1 << OCIE1B);
+    TIMSK3 &= ~(1 << OCIE3A) & ~(1 << OCIE3B);
+    // Pull step pins low
+    PORTD &= ~(1 << 1);
+    PORTC &= ~(1 << 6);
     interrupts();
     Serial1.println("<STOP_ACK>");
   }
