@@ -58,7 +58,9 @@ enum class StepperDirection
 // Tracks the current operational state of the stepper controller.
 //   FREE_RUN_MODE - Continuous rotation (started by MVS command).
 //                   The motors run indefinitely until MVE (free_run_stop)
-//                   is called. No ramping is applied.
+//                   is called. Ramping is applied during start and stop:
+//                   - Start: accelerates over free_run_ramp_steps
+//                   - Stop:  decelerates over free_run_ramp_steps
 //   MOVE_MODE     - Finite-step move (started by MV command).
 //                   Motors run for the configured number of steps then
 //                   stop. Ramping and sync mode apply in this mode.
@@ -105,12 +107,33 @@ class StepperController
                       int16_t speed_vert,
                       StepperDirection vert_direction);
 
-  // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
   // free_run_stop
   // -------------------------------------------------------------------------
-  // Stop continuous rotation. Returns immediately to IDLE_MODE.
-  // Disables COMPB interrupts to let any pending pulses finish cleanly.
+  // Initiate a ramped stop in FREE_RUN_MODE.
+  // Instead of stopping instantly, the motors decelerate smoothly over
+  // free_run_ramp_steps steps. Once the ramp-down completes, the controller
+  // transitions to IDLE_MODE automatically.
+  // Returns false if not in FREE_RUN_MODE.
   bool free_run_stop();
+
+  // -------------------------------------------------------------------------
+  // check_free_run_complete
+  // -------------------------------------------------------------------------
+  // Called periodically from the main loop. Detects when a free-run ramp-down
+  // has finished and transitions the controller to IDLE_MODE.
+  // Without this, free_run_stop() would keep the mode as FREE_RUN even after
+  // the motors have stopped ramping down.
+  void check_free_run_complete();
+
+  // -------------------------------------------------------------------------
+  // set_free_run_ramp_steps
+  // -------------------------------------------------------------------------
+  // Sets the number of steps used for acceleration when starting a free run
+  // and deceleration when stopping (via free_run_stop()).
+  // Default is 50 steps, which provides a smooth start/stop without being
+  // too slow. Set to 0 to disable ramping in free run mode.
+  void set_free_run_ramp_steps(uint16_t steps);
 
   // -------------------------------------------------------------------------
   // move_steppers
@@ -223,15 +246,29 @@ class StepperController
   static volatile uint16_t scaled_ocr_vert;
   static volatile bool sync_mode_enabled;
 
+  // Free-run ramping state
+  //   free_run_ramp_steps_horiz/vert - steps allocated for free-run ramp
+  //   free_run_ramping_down - true after free_run_stop() initiates ramp-down
+  //   free_run_target_ocr_horiz/vert - the steady-speed OCR for free run
+  static volatile uint16_t free_run_ramp_steps_horiz;
+  static volatile uint16_t free_run_ramp_steps_vert;
+  static volatile bool     free_run_ramping_down;
+  static volatile uint16_t free_run_target_ocr_horiz;
+  static volatile uint16_t free_run_target_ocr_vert;
+
   private:
 
   RunningMode running_mode;
   int16_t     steps_per_revolution;
   char        error[256];
 
-  // Number of steps for acceleration/deceleration ramp.
+    // Number of steps for acceleration/deceleration ramp.
   // Set via set_ramp_steps(). 0 = no ramping.
   uint16_t ramp_steps;
+
+  // Number of steps for free run ramp (accel + decel).
+  // Set via set_free_run_ramp_steps(). Default 50.
+  uint16_t free_run_ramp_steps;
 };
 
 #endif

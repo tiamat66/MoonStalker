@@ -98,8 +98,11 @@ void loop()
     }
   }
 
-  // Poll limit switches every loop iteration
+    // Poll limit switches every loop iteration
   check_limit_switches();
+
+  // Check if free-run ramp-down has completed
+  stepper_controller.check_free_run_complete();
 }
 
 int get_battery_voltage()
@@ -381,19 +384,22 @@ void handle_incoming_command(char *command_buff)
     Serial1.println(">");
   }
     else if (!strcmp(cmd, "STOP"))
-  {
-    noInterrupts();
-    // Stop the movement - clear all step counts and disable timer interrupts
-    StepperController::horiz_steps_remain = 0;
-    StepperController::vert_steps_remain = 0;
-    TIMSK1 &= ~(1 << OCIE1A) & ~(1 << OCIE1B);
-    TIMSK3 &= ~(1 << OCIE3A) & ~(1 << OCIE3B);
-    // Pull step pins low
-    PORTD &= ~(1 << 1);
-    PORTC &= ~(1 << 6);
-    interrupts();
-    Serial1.println("<STOP_ACK>");
-  }
+    {
+      noInterrupts();
+      // Stop the movement - clear all step counts and disable timer interrupts
+      StepperController::horiz_steps_remain = 0;
+      StepperController::vert_steps_remain = 0;
+      TIMSK1 &= ~(1 << OCIE1A) & ~(1 << OCIE1B);
+      TIMSK3 &= ~(1 << OCIE3A) & ~(1 << OCIE3B);
+      // Pull step pins low
+      PORTD &= ~(1 << 1);
+      PORTC &= ~(1 << 6);
+      interrupts();
+      // Clear any ongoing free-run ramp-down state
+      StepperController::free_run_ramping_down = false;
+      stepper_controller.free_run_stop(); // Ensures IDLE_MODE
+      Serial1.println("<STOP_ACK>");
+    }
     else if (!strcmp(cmd, "LIM?"))
   {
     // Query and report the current state of all four limit switches over Bluetooth.
@@ -515,7 +521,7 @@ void check_limit_switches()
     RunningMode mode = stepper_controller.get_running_mode();
     if (mode != RunningMode::IDLE_MODE)
     {
-      // Force stop: disable timer interrupts and clear step counts
+                  // Force stop: disable timer interrupts and clear step counts
       noInterrupts();
       StepperController::horiz_steps_remain = 0;
       StepperController::vert_steps_remain = 0;
@@ -524,9 +530,14 @@ void check_limit_switches()
       // Pull step pins low
       PORTD &= ~(1 << 1);
       PORTC &= ~(1 << 6);
+      // Clear any free-run ramp-down state so free_run_stop() doesn't
+      // try to start a new ramp-down on already-stopped motors
+      StepperController::free_run_ramping_down = false;
+      StepperController::free_run_ramp_steps_horiz = 0;
+      StepperController::free_run_ramp_steps_vert = 0;
       interrupts();
 
-      // Set mode to IDLE via free_run_stop (also handles FREE_RUN -> IDLE)
+      // Transition to IDLE_MODE (handles both FREE_RUN and MOVE modes)
       stepper_controller.free_run_stop();
 
       // Report which limit was hit

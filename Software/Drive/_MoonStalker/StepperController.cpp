@@ -80,6 +80,20 @@ volatile uint16_t StepperController::scaled_ocr_horiz = 0;
 volatile uint16_t StepperController::scaled_ocr_vert = 0;
 volatile bool StepperController::sync_mode_enabled = false;
 
+// Free-run ramping state:
+//   free_run_ramp_steps_horiz/vert - Number of steps allocated for the
+//       free-run acceleration and deceleration ramps.
+//   free_run_ramping_down - Set to true by free_run_stop() to indicate
+//       that the motors should decelerate to a stop.
+//   free_run_target_ocr_horiz/vert - The steady-speed OCR value for the
+//       free run. Stored separately from target_ocr_horiz_isr so that
+//       MOVE_MODE ramping does not interfere with FREE_RUN_MODE.
+volatile uint16_t StepperController::free_run_ramp_steps_horiz = 0;
+volatile uint16_t StepperController::free_run_ramp_steps_vert = 0;
+volatile bool     StepperController::free_run_ramping_down = false;
+volatile uint16_t StepperController::free_run_target_ocr_horiz = 0;
+volatile uint16_t StepperController::free_run_target_ocr_vert = 0;
+
 // ============================================================================
 // Hardware pin assignments
 // ============================================================================
@@ -128,7 +142,8 @@ StepperController::StepperController(int16_t steps_per_revolution)
 {
   this->steps_per_revolution = steps_per_revolution;
   running_mode = RunningMode::IDLE_MODE;
-  ramp_steps = 0; // Ramping disabled by default
+  ramp_steps = 0; // Ramping disabled by default for MOVE_MODE
+  free_run_ramp_steps = 50; // ~50 steps ramp for smooth free-run start/stop
 }
 
 // ============================================================================
@@ -169,14 +184,17 @@ void StepperController::set_sync_mode(bool enabled)
 // ============================================================================
 // free_run_start
 // ============================================================================
-// Begins continuous rotation of one or both motors.
+// Begins continuous rotation of one or both motors with optional ramp-up.
 //
-// Unlike move_steppers(), free_run mode does NOT use ramping or sync mode.
-// The motor(s) run at the configured speed indefinitely until
-// free_run_stop() is called.
+// If free_run_ramp_steps > 0, the motor accelerates smoothly from
+// MAX_OCR_RAMP (slow) to the target speed over the configured number of
+// steps, using the same interpolation logic as move_steppers().
 //
-// Steps remain is set to 65535 (effectively unlimited), so the COMPA
-// interrupt stays enabled until manually disabled.
+// After ramp-up, the motor runs at steady speed until free_run_stop()
+// initiates a ramped deceleration.
+//
+// Steps remain is set to 65535 (effectively unlimited) for the steady
+// phase, but during ramp-up it starts lower so the ISR can track progress.
 //
 // Returns false if currently in MOVE_MODE (must not interrupt a finite
 // step sequence). Can restart if already in FREE_RUN_MODE (replaces
@@ -192,6 +210,9 @@ bool StepperController::free_run_start(int16_t speed_horiz,
     return false;
   }
 
+  // Clear any previous ramp-down state
+  free_run_ramping_down = false;
+
   // Handle horizontal axis (if not IGNORE)
   if (horiz_direction != StepperDirection::IGNORE)
   {
@@ -200,9 +221,27 @@ bool StepperController::free_run_start(int16_t speed_horiz,
     int16_t ocr_val = calculate_ocr_reg_value(speed_horiz);
     if (ocr_val > 0)
     {
-      OCR1A = (uint16_t)ocr_val;
-      horiz_steps_remain = 65535; // Unlimited: runs until free_run_stop()
-      TIMSK1 |= (1 << OCIE1A);    // Enable COMPA interrupt
+      free_run_target_ocr_horiz = (uint16_t)ocr_val;
+      horiz_steps_current = 0;
+
+      if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767)
+      {
+        // Ramp-up: start slow, accelerate over free_run_ramp_steps
+        free_run_ramp_steps_horiz = free_run_ramp_steps;
+        start_ocr_horiz_isr = MAX_OCR_RAMP;
+        target_ocr_horiz_isr = free_run_target_ocr_horiz;
+        OCR1A = start_ocr_horiz_isr;
+        // Use ramp steps as the initial count so the ISR can track progress
+        horiz_steps_remain = free_run_ramp_steps_horiz;
+      }
+      else
+      {
+        // No ramp: go directly to target speed, unlimited steps
+        free_run_ramp_steps_horiz = 0;
+        OCR1A = (uint16_t)ocr_val;
+        horiz_steps_remain = 65535;
+      }
+      TIMSK1 |= (1 << OCIE1A); // Enable COMPA interrupt
     }
   }
 
@@ -214,9 +253,26 @@ bool StepperController::free_run_start(int16_t speed_horiz,
     int16_t ocr_val = calculate_ocr_reg_value(speed_vert);
     if (ocr_val > 0)
     {
-      OCR3A = (uint16_t)ocr_val;
-      vert_steps_remain = 65535;  // Unlimited
-      TIMSK3 |= (1 << OCIE3A);    // Enable COMPA interrupt
+      free_run_target_ocr_vert = (uint16_t)ocr_val;
+      vert_steps_current = 0;
+
+      if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767)
+      {
+        // Ramp-up: start slow, accelerate over free_run_ramp_steps
+        free_run_ramp_steps_vert = free_run_ramp_steps;
+        start_ocr_vert_isr = MAX_OCR_RAMP;
+        target_ocr_vert_isr = free_run_target_ocr_vert;
+        OCR3A = start_ocr_vert_isr;
+        vert_steps_remain = free_run_ramp_steps_vert;
+      }
+      else
+      {
+        // No ramp: go directly to target speed, unlimited steps
+        free_run_ramp_steps_vert = 0;
+        OCR3A = (uint16_t)ocr_val;
+        vert_steps_remain = 65535;
+      }
+      TIMSK3 |= (1 << OCIE3A); // Enable COMPA interrupt
     }
   }
 
@@ -227,17 +283,134 @@ bool StepperController::free_run_start(int16_t speed_horiz,
 // ============================================================================
 // free_run_stop
 // ============================================================================
-// Stops continuous rotation. Resets step counts to zero and disables
-// COMPB interrupts to let any pending short pulses finish cleanly.
-// Returns to IDLE_MODE.
+// Initiates a ramped deceleration in FREE_RUN_MODE.
+//
+// If free_run_ramp_steps > 0, the motor decelerates smoothly from its
+// current target speed down to MAX_OCR_RAMP (slow) over the configured
+// number of steps. Once the ramp-down completes, the ISR automatically
+// disables the COMPA interrupt.
+//
+// The check_free_run_complete() method, called from the main loop,
+// detects when the ramp-down has finished and transitions the controller
+// to IDLE_MODE.
+//
+// If free_run_ramp_steps is 0, the motors stop immediately (instant stop).
 bool StepperController::free_run_stop(void)
 {
-  running_mode = RunningMode::IDLE_MODE;
-  horiz_steps_remain = 0;
-  vert_steps_remain = 0;
-  TIMSK1 &= ~(1 << OCIE1B);
-  TIMSK3 &= ~(1 << OCIE3B);
+  // Allow stopping from both FREE_RUN and MOVE modes
+  if (running_mode == RunningMode::IDLE_MODE)
+  {
+    return false;
+  }
+
+  // Set the ramp-down flag so the ISR knows to decelerate
+  free_run_ramping_down = true;
+
+  if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767)
+  {
+    // --- Ramp-down setup ---
+
+    // Horizontal axis: set up ramp-down steps and target
+    if (free_run_ramp_steps_horiz > 0 || horiz_steps_remain > 0)
+    {
+      // The steady-state phase uses 65535 steps. Replace with ramp steps
+      // so the ISR can count down and stop when done.
+      // Use the current OCR as the starting fast speed for ramp-down.
+      uint16_t current_ocr_h = OCR1A;
+      // Clamp the computed ramp steps
+      uint16_t ramp_steps = free_run_ramp_steps;
+      if (ramp_steps > 10000) ramp_steps = 10000;
+
+      // Re-purpose start_ocr/target_ocr for ramp-down:
+      // We interpolate from current_ocr (fast) to MAX_OCR_RAMP (slow).
+      // Store the start (current speed) in target_ocr_*, and the
+      // end (slow) in start_ocr_* so the ISR ramp-down code works.
+      free_run_ramp_steps_horiz = ramp_steps;
+      start_ocr_horiz_isr = MAX_OCR_RAMP;          // End of ramp = slow
+      target_ocr_horiz_isr = current_ocr_h;        // Start of ramp = current
+      horiz_steps_remain = ramp_steps;              // Count down
+      horiz_steps_current = 0;                      // Reset for ramp tracking
+    }
+
+    // Vertical axis: same logic
+    if (free_run_ramp_steps_vert > 0 || vert_steps_remain > 0)
+    {
+      uint16_t current_ocr_v = OCR3A;
+      uint16_t ramp_steps = free_run_ramp_steps;
+      if (ramp_steps > 10000) ramp_steps = 10000;
+
+      free_run_ramp_steps_vert = ramp_steps;
+      start_ocr_vert_isr = MAX_OCR_RAMP;
+      target_ocr_vert_isr = current_ocr_v;
+      vert_steps_remain = ramp_steps;
+      vert_steps_current = 0;
+    }
+  }
+  else
+  {
+    // No ramp: stop immediately
+    noInterrupts();
+    horiz_steps_remain = 0;
+    vert_steps_remain = 0;
+    TIMSK1 &= ~(1 << OCIE1A) & ~(1 << OCIE1B);
+    TIMSK3 &= ~(1 << OCIE3A) & ~(1 << OCIE3B);
+    PORTD &= ~(1 << 1);
+    PORTC &= ~(1 << 6);
+    interrupts();
+    running_mode = RunningMode::IDLE_MODE;
+  }
+
   return true;
+}
+
+// ============================================================================
+// check_free_run_complete
+// ============================================================================
+// Called from the main loop. Detects when a free-run ramp-down has finished
+// and transitions the controller to IDLE_MODE.
+//
+// When free_run_stop() initiates a ramp-down, it sets free_run_ramping_down
+// to true and replaces the step counts with finite ramp steps. The ISRs
+// count these down normally. When both axes reach zero, this function
+// cleans up and sets the mode.
+//
+// Must be called frequently (every loop iteration) to ensure prompt
+// detection of the ramp-down completion.
+void StepperController::check_free_run_complete()
+{
+  if (free_run_ramping_down)
+  {
+    // Check if both axes have finished their ramp-down steps
+    bool horiz_done = (horiz_steps_remain == 0 ||
+                       free_run_ramp_steps_horiz == 0);
+    bool vert_done  = (vert_steps_remain == 0 ||
+                       free_run_ramp_steps_vert == 0);
+
+    if (horiz_done && vert_done)
+    {
+      // Both axes have stopped; final cleanup
+      noInterrupts();
+      TIMSK1 &= ~(1 << OCIE1A) & ~(1 << OCIE1B);
+      TIMSK3 &= ~(1 << OCIE3A) & ~(1 << OCIE3B);
+      PORTD &= ~(1 << 1);
+      PORTC &= ~(1 << 6);
+      interrupts();
+      free_run_ramping_down = false;
+      running_mode = RunningMode::IDLE_MODE;
+    }
+  }
+}
+
+// ============================================================================
+// set_free_run_ramp_steps
+// ============================================================================
+// Sets the number of steps used for acceleration when starting a free run
+// and deceleration when stopping (via free_run_stop()).
+// Default is 50 steps, which provides a smooth start/stop without being
+// too slow. Set to 0 to disable ramping in free run mode (instant start/stop).
+void StepperController::set_free_run_ramp_steps(uint16_t steps)
+{
+  free_run_ramp_steps = steps;
 }
 
 // ============================================================================
@@ -603,47 +776,84 @@ ISR(TIMER1_COMPA_vect)
     uint16_t step_idx = StepperController::horiz_steps_current;
 
     // Generate the step pulse: set pin HIGH
-    // PD1 = bit 1 of PORTD = Arduino digital pin 2
     PORTD |= (1 << 1);
 
     // Update step counters
     StepperController::horiz_steps_remain--;
     StepperController::horiz_steps_current++;
 
-    // Schedule the falling edge: COMPB fires at TCNT1 + 1 (~4 us later)
+    // Schedule the falling edge
     OCR1B = TCNT1 + 1;
     TIMSK1 |= (1 << OCIE1B);
 
-    // --- Update OCR1A for ramping ---
-    // Three possible states:
-    //   1. RAMP UP:   step_idx < ramp_steps_horiz -> accelerate
-    //   2. RAMP DOWN: steps_remain <= ramp_steps_horiz -> decelerate
-    //   3. CRUISE:    between ramps -> steady target speed
-    if (StepperController::ramp_steps_horiz > 0 &&
-        step_idx < StepperController::ramp_steps_horiz)
+    // --- Determine if this is MOVE_MODE or FREE_RUN_MODE ramping ---
+    bool is_free_run = (StepperController::free_run_ramp_steps_horiz > 0);
+
+    if (is_free_run)
     {
-      // Ramp-up: interpolate from slow (start) to fast (target)
-      OCR1A = compute_ramp_ocr(step_idx,
-                                StepperController::ramp_steps_horiz,
-                                StepperController::start_ocr_horiz_isr,
-                                StepperController::target_ocr_horiz_isr);
+      if (StepperController::free_run_ramping_down)
+      {
+        // FREE-RUN RAMP-DOWN: decelerate from target (current) to slow (start)
+        // current_step counts forward 0..ramp_steps-1 during ramp-down
+        if (step_idx < StepperController::free_run_ramp_steps_horiz)
+        {
+          // Interpolate from target_ocr (fast) to start_ocr (slow)
+          OCR1A = compute_ramp_ocr(step_idx,
+                                    StepperController::free_run_ramp_steps_horiz,
+                                    StepperController::target_ocr_horiz_isr,
+                                    StepperController::start_ocr_horiz_isr);
+        }
+        // When ramp steps exhausted, the steps_remain check at the top
+        // will prevent further entries
+      }
+      else
+      {
+        // FREE-RUN RAMP-UP: accelerate from start_ocr (slow) to target_ocr (fast)
+        if (step_idx < StepperController::free_run_ramp_steps_horiz)
+        {
+          OCR1A = compute_ramp_ocr(step_idx,
+                                    StepperController::free_run_ramp_steps_horiz,
+                                    StepperController::start_ocr_horiz_isr,
+                                    StepperController::target_ocr_horiz_isr);
+        }
+        else
+        {
+          // Ramp-up complete: switch to unlimited steady-state
+          OCR1A = StepperController::target_ocr_horiz_isr;
+          StepperController::free_run_ramp_steps_horiz = 0;
+          StepperController::horiz_steps_remain = 65535;
+        }
+      }
     }
-    else if (StepperController::ramp_steps_horiz > 0 &&
-             StepperController::horiz_steps_remain > 0 &&
-             StepperController::horiz_steps_remain <= StepperController::ramp_steps_horiz)
+    else
     {
-      // Ramp-down: interpolate from fast (target) to slow (start)
-      uint16_t ramp_down_step = StepperController::ramp_steps_horiz -
-                                 StepperController::horiz_steps_remain;
-      OCR1A = compute_ramp_ocr(ramp_down_step,
-                                StepperController::ramp_steps_horiz,
-                                StepperController::target_ocr_horiz_isr,
-                                StepperController::start_ocr_horiz_isr);
-    }
-    else if (StepperController::horiz_steps_remain > 0)
-    {
-      // Cruise phase: constant speed
-      OCR1A = StepperController::target_ocr_horiz_isr;
+      // --- MOVE_MODE ramping (existing logic) ---
+      if (StepperController::ramp_steps_horiz > 0 &&
+          step_idx < StepperController::ramp_steps_horiz)
+      {
+        // Ramp-up
+        OCR1A = compute_ramp_ocr(step_idx,
+                                  StepperController::ramp_steps_horiz,
+                                  StepperController::start_ocr_horiz_isr,
+                                  StepperController::target_ocr_horiz_isr);
+      }
+      else if (StepperController::ramp_steps_horiz > 0 &&
+               StepperController::horiz_steps_remain > 0 &&
+               StepperController::horiz_steps_remain <= StepperController::ramp_steps_horiz)
+      {
+        // Ramp-down
+        uint16_t ramp_down_step = StepperController::ramp_steps_horiz -
+                                   StepperController::horiz_steps_remain;
+        OCR1A = compute_ramp_ocr(ramp_down_step,
+                                  StepperController::ramp_steps_horiz,
+                                  StepperController::target_ocr_horiz_isr,
+                                  StepperController::start_ocr_horiz_isr);
+      }
+      else if (StepperController::horiz_steps_remain > 0)
+      {
+        // Cruise phase
+        OCR1A = StepperController::target_ocr_horiz_isr;
+      }
     }
 
     // If this was the last step, disable further interrupts
@@ -666,7 +876,6 @@ ISR(TIMER3_COMPA_vect)
     uint16_t step_idx = StepperController::vert_steps_current;
 
     // Generate the step pulse: set pin HIGH
-    // PC6 = bit 6 of PORTC = Arduino digital pin 5
     PORTC |= (1 << 6);
 
     // Update step counters
@@ -677,29 +886,67 @@ ISR(TIMER3_COMPA_vect)
     OCR3B = TCNT3 + 1;
     TIMSK3 |= (1 << OCIE3B);
 
-    // --- Ramping logic (identical to horizontal) ---
-    if (StepperController::ramp_steps_vert > 0 &&
-        step_idx < StepperController::ramp_steps_vert)
+    // --- Determine if this is MOVE_MODE or FREE_RUN_MODE ramping ---
+    bool is_free_run = (StepperController::free_run_ramp_steps_vert > 0);
+
+    if (is_free_run)
     {
-      OCR3A = compute_ramp_ocr(step_idx,
-                                StepperController::ramp_steps_vert,
-                                StepperController::start_ocr_vert_isr,
-                                StepperController::target_ocr_vert_isr);
+      if (StepperController::free_run_ramping_down)
+      {
+        // FREE-RUN RAMP-DOWN: decelerate from target (current) to slow (start)
+        if (step_idx < StepperController::free_run_ramp_steps_vert)
+        {
+          OCR3A = compute_ramp_ocr(step_idx,
+                                    StepperController::free_run_ramp_steps_vert,
+                                    StepperController::target_ocr_vert_isr,
+                                    StepperController::start_ocr_vert_isr);
+        }
+      }
+      else
+      {
+        // FREE-RUN RAMP-UP: accelerate from start_ocr (slow) to target_ocr (fast)
+        if (step_idx < StepperController::free_run_ramp_steps_vert)
+        {
+          OCR3A = compute_ramp_ocr(step_idx,
+                                    StepperController::free_run_ramp_steps_vert,
+                                    StepperController::start_ocr_vert_isr,
+                                    StepperController::target_ocr_vert_isr);
+        }
+        else
+        {
+          // Ramp-up complete: switch to unlimited steady-state
+          OCR3A = StepperController::target_ocr_vert_isr;
+          StepperController::free_run_ramp_steps_vert = 0;
+          StepperController::vert_steps_remain = 65535;
+        }
+      }
     }
-    else if (StepperController::ramp_steps_vert > 0 &&
-             StepperController::vert_steps_remain > 0 &&
-             StepperController::vert_steps_remain <= StepperController::ramp_steps_vert)
+    else
     {
-      uint16_t ramp_down_step = StepperController::ramp_steps_vert -
-                                 StepperController::vert_steps_remain;
-      OCR3A = compute_ramp_ocr(ramp_down_step,
-                                StepperController::ramp_steps_vert,
-                                StepperController::target_ocr_vert_isr,
-                                StepperController::start_ocr_vert_isr);
-    }
-    else if (StepperController::vert_steps_remain > 0)
-    {
-      OCR3A = StepperController::target_ocr_vert_isr;
+      // --- MOVE_MODE ramping (existing logic) ---
+      if (StepperController::ramp_steps_vert > 0 &&
+          step_idx < StepperController::ramp_steps_vert)
+      {
+        OCR3A = compute_ramp_ocr(step_idx,
+                                  StepperController::ramp_steps_vert,
+                                  StepperController::start_ocr_vert_isr,
+                                  StepperController::target_ocr_vert_isr);
+      }
+      else if (StepperController::ramp_steps_vert > 0 &&
+               StepperController::vert_steps_remain > 0 &&
+               StepperController::vert_steps_remain <= StepperController::ramp_steps_vert)
+      {
+        uint16_t ramp_down_step = StepperController::ramp_steps_vert -
+                                   StepperController::vert_steps_remain;
+        OCR3A = compute_ramp_ocr(ramp_down_step,
+                                  StepperController::ramp_steps_vert,
+                                  StepperController::target_ocr_vert_isr,
+                                  StepperController::start_ocr_vert_isr);
+      }
+      else if (StepperController::vert_steps_remain > 0)
+      {
+        OCR3A = StepperController::target_ocr_vert_isr;
+      }
     }
 
     if (StepperController::vert_steps_remain == 0)
