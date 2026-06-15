@@ -32,6 +32,7 @@ import static si.vajnartech.moonstalker.OpCodes.MSG_WARNING;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 
 import java.util.HashMap;
@@ -44,9 +45,8 @@ import si.vajnartech.moonstalker.ManualMoveFragment;
 import si.vajnartech.moonstalker.R;
 import si.vajnartech.moonstalker.telescope.Status;
 
-public class Processor extends Thread
+public class Processor
 {
-    protected boolean running;
     public Status status = new Status();
     public Status mode = new Status();
 
@@ -58,22 +58,16 @@ public class Processor extends Thread
     public Processor(MainActivity act)
     {
         this.act = act;
-        running = true;
         uxQueue = new Handler(Looper.getMainLooper());
+        
+        HandlerThread thread = new HandlerThread("ProcessorIO");
+        thread.start();
+        ioQueue = new Handler(thread.getLooper());
+
         initTable(this);
         mode.set(MD_NOT_CALIBRATED);
-        start();
     }
 
-    @Override
-    public void run()
-    {
-        Looper.prepare();
-
-        ioQueue = new Handler(Objects.requireNonNull(Looper.myLooper()));
-
-        Looper.loop();
-    }
     public void set(int id)
     {
         Ball ball = actions.get(id);
@@ -85,6 +79,11 @@ public class Processor extends Thread
                 uxQueue.post(ball.uxAction);
             }
         }
+    }
+
+    public Handler getIoQueue()
+    {
+        return ioQueue;
     }
 
     public void set(int id, DataAstroObj data)
@@ -99,7 +98,6 @@ public class Processor extends Thread
         set(id);
     }
 
-    // poglej za vse state TODO state je lahk samo ready, not ready error batery low ostale so mode
     private void initTable(Processor machine)
     {
         // MSG_CONNECT
@@ -175,7 +173,7 @@ public class Processor extends Thread
         // MSG_ERROR
         actions.put(MSG_ERROR, new Ball(null,
                 () -> {
-                    if (status.message.equals("END_LIMIT_SW_TRIG"))
+                    if (Objects.equals(status.message, "END_LIMIT_SW_TRIG"))
                         act.setInfoMessage(R.string.end_limit_sw_trig);
                     status.set(ST_ERROR);
                 }
@@ -183,7 +181,7 @@ public class Processor extends Thread
         // MSG_WARNING
         actions.put(MSG_WARNING, new Ball(null,
                 () -> {
-                    if (status.message.equals("BTRY_LOW"))
+                    if (Objects.equals(status.message, "BTRY_LOW"))
                         act.setInfoMessage(R.string.btry_low);
                 }
                 ));

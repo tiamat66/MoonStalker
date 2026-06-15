@@ -7,6 +7,7 @@ import static si.vajnartech.moonstalker.OpCodes.MSG_NOT_READY;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
+import java.util.Objects;
 
 public class CmdStatus extends Controller<String>
 {
@@ -20,12 +21,12 @@ public class CmdStatus extends Controller<String>
     protected void onPostExecute(String cmdResult)
     {
         if (cmdResult != null) {
-            if (cmdResult.equals("RDY")) {
+            if (Objects.equals(cmdResult, "RDY")) {
                 machine.set(MSG_GET_ASTRO_DATA);
             }
-            else if (cmdResult.equals("NOT_RDY")) {
+            else if (Objects.equals(cmdResult, "NOT_RDY")) {
                 machine.set(MSG_NOT_READY);
-            } else if (cmdResult.equals("TIMEOUT")) {
+            } else if (Objects.equals(cmdResult, "TIMEOUT")) {
                 machine.set(MSG_CONN_ERROR);
             }
         }

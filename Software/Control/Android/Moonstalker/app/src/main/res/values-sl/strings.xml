@@ -23,7 +23,7 @@
   <string name="calibrating">kalibracija</string>
   <string name="ready">pripravljen</string>
   <string name="warning">Opozorilo</string>
-  <string name="connection_failed">napaka v povezavi</string>
+  <string name="connection_failed">napaka v povezavi server pomoje ne lavfa</string>
   <string name="connect">Poveži</string>
   <string name="communicate">Komunikacija</string>
   <string name="to_calibrate">premakni na %s</string>

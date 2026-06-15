@@ -10,6 +10,7 @@ import static si.vajnartech.moonstalker.OpCodes.MSG_WARNING;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
+import java.util.Objects;
 
 public class CmdPing extends Controller<String>
 {
@@ -21,11 +22,13 @@ public class CmdPing extends Controller<String>
     @Override
     protected void onPostExecute(String cmdResult)
     {
+        if (cmdResult == null) return;
+        
         String msg = getParams(cmdResult);
 
-        if (cmdResult.equals("RDY")) {
+        if (Objects.equals(cmdResult, "RDY")) {
             machine.set(MSG_READY);
-        } else if (cmdResult.equals("TIMEOUT")) {
+        } else if (Objects.equals(cmdResult, "TIMEOUT")) {
             machine.set(MSG_CONN_TIMEOUT);
         } else if (cmdResult.startsWith("ERROR")) {
             machine.set(ST_ERROR, msg);

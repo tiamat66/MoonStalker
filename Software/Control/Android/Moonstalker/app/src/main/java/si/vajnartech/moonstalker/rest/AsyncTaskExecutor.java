@@ -1,43 +1,39 @@
 package si.vajnartech.moonstalker.rest;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class AsyncTaskExecutor<Params, Progress, Result>
 {
-    private final ExecutorService executor;
+    private static final ExecutorService SHARED_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        return t;
+    });
 
-    private Handler handler;
+    private volatile Handler handler;
 
     private volatile Result result;
 
     protected AsyncTaskExecutor()
     {
-        executor = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            return t;
-        });
-    }
-
-    public ExecutorService getExecutor()
-    {
-        return executor;
     }
 
     public Handler getHandler()
     {
-        if (handler == null) {
+        Handler h = handler;
+        if (h == null) {
             synchronized(AsyncTaskExecutor.class) {
-                handler = new Handler(Looper.getMainLooper());
+                h = handler;
+                if (h == null) {
+                    h = handler = new Handler(Looper.getMainLooper());
+                }
             }
         }
-        return handler;
+        return h;
     }
 
     public void execute()
@@ -48,23 +44,20 @@ public abstract class AsyncTaskExecutor<Params, Progress, Result>
     public void execute(Params params)
     {
         onPreExecute();
-        executor.execute(() -> {
+        SHARED_EXECUTOR.execute(() -> {
             result = doInBackground(params);
             getHandler().post(() -> onPostExecute(result));
         });
     }
 
-    public void cancel(boolean mayInterruptIfRunning)
+    public void cancel(@SuppressWarnings("unused") boolean mayInterruptIfRunning)
     {
-        if (executor != null) {
-            executor.shutdownNow();
-            onCancelled();
-        }
+        onCancelled();
     }
 
     public boolean isCancelled()
     {
-        return executor == null || executor.isTerminated() || executor.isShutdown();
+        return false;
     }
 
     protected void onPreExecute()
@@ -72,13 +65,13 @@ public abstract class AsyncTaskExecutor<Params, Progress, Result>
         // Override this method whereever you want to perform task before background execution get started
     }
 
-    // used for push progress resport to UI
+    @SuppressWarnings("unused")
     public void publishProgress(Progress value)
     {
         getHandler().post(() -> onProgressUpdate(value));
     }
 
-    protected void onProgressUpdate(Progress value)
+    protected void onProgressUpdate(@SuppressWarnings("unused") Progress value)
     {
         // Override this method whereever you want update a progress result
     }
@@ -90,6 +83,3 @@ public abstract class AsyncTaskExecutor<Params, Progress, Result>
 
     protected void onCancelled() {}
 }
-
-
-

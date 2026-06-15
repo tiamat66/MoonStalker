@@ -21,10 +21,11 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
 {
     protected Processor machine;
     private final Gson gson = new Gson();
-    public static final String TAG                = "REST";
     public static final int    SOCKET_TIMEOUT     = -100;
     public static final int    CONNECT_EXCEPTION  = -101;
     public static final int    IO_EXCEPTION       = -102;
+
+    private static String cachedToken = "";
 
     protected       int       READ_TIMEOUT    = 0;
     protected       String    REQUEST_METHOD  = "POST";
@@ -40,7 +41,15 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
         super();
         this.url = url;
         this.machine = machine;
-        new RestLogin(this, auth, user, pwd).execute();
+        if (cachedToken.isEmpty()) {
+            new RestLogin(this, auth, user, pwd).execute();
+        } else {
+            this.execute(cachedToken);
+        }
+    }
+
+    public static void setCachedToken(String token) {
+        cachedToken = token;
     }
 
     @Override
@@ -54,57 +63,55 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
 
     protected R callServer(P params)
     {
+        HttpURLConnection conn = null;
         try {
-            HttpURLConnection conn = null;
-            try {
-                conn = new GetHttpConnection(url)
+            conn = new GetHttpConnection(url)
+            {
+                @Override public void setConnParams(HttpURLConnection conn) throws IOException
                 {
-                    @Override public void setConnParams(HttpURLConnection conn) throws IOException
-                    {
-                        conn.setRequestMethod(REQUEST_METHOD);
-                        if ("POST".equals(REQUEST_METHOD))
-                            conn.setDoOutput(true);
+                    conn.setRequestMethod(REQUEST_METHOD);
+                    if ("POST".equals(REQUEST_METHOD))
+                        conn.setDoOutput(true);
 
-                        conn.setConnectTimeout(READ_TIMEOUT);
-                        conn.setReadTimeout(READ_TIMEOUT);
-                        conn.setRequestProperty("Authorization", "Token " + token);
-                        conn.setRequestProperty("Content-Type", "application/json");
-                        conn.setRequestProperty("Content-Encoding", "utf-8");
+                    conn.setConnectTimeout(READ_TIMEOUT);
+                    conn.setReadTimeout(READ_TIMEOUT);
+                    conn.setRequestProperty("Authorization", "Token " + token);
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("Content-Encoding", "utf-8");
 
-                        if (params != null) {
-                            OutputStream os = conn.getOutputStream();
-                            synchronized (params) {
-                                os.write(gson.toJson(params).getBytes());
-                            }
-                            os.close();
+                    if (params != null) {
+                        OutputStream os = conn.getOutputStream();
+                        synchronized (params) {
+                            os.write(gson.toJson(params).getBytes());
                         }
+                        os.close();
                     }
-                }.get();
+                }
+            }.get();
 
-                R result = null;
-                responseCode = conn.getResponseCode();
-                responseMessage = conn.getResponseMessage();
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    InputStream is = conn.getInputStream();
-                    BufferedReader br = new BufferedReader(new InputStreamReader(is), 512);
-                    result = deserialize(br);
-                    br.close();
-                } else {
-                    BufferedInputStream is   = new BufferedInputStream(conn.getErrorStream());
-                    BufferedReader      br   = new BufferedReader(new InputStreamReader(is));
-                    String              l;
-                    StringBuilder       resj = new StringBuilder();
+            R result = null;
+            responseCode = conn.getResponseCode();
+            responseMessage = conn.getResponseMessage();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                InputStream is = conn.getInputStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(is), 512);
+                result = deserialize(br);
+                br.close();
+            } else {
+                InputStream errorStream = conn.getErrorStream();
+                if (errorStream != null) {
+                    BufferedInputStream is = new BufferedInputStream(errorStream);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                    String l;
+                    StringBuilder resj = new StringBuilder();
                     while ((l = br.readLine()) != null)
                         resj.append(l);
                     responseData = resj.toString();
                     br.close();
                     is.close();
                 }
-                return result;
-            } finally {
-                if (conn != null)
-                    conn.disconnect();
             }
+            return result;
         } catch (SocketTimeoutException e) {
             responseCode = SOCKET_TIMEOUT;
             serverException = e;
@@ -121,6 +128,9 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
             serverException = e;
             responseMessage = "IO exception";
             onFailure();
+        } finally {
+            if (conn != null)
+                conn.disconnect();
         }
         return null;
     }
@@ -129,7 +139,7 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
 
     public abstract R backgroundFunc();
 
-    public void fail(Integer responseCode)
+    public void fail(@SuppressWarnings("unused") Integer responseCode)
     {
         onFailure();
     }
@@ -145,4 +155,3 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
         onFailure();
     }
 }
-

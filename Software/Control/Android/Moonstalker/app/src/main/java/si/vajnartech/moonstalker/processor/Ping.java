@@ -1,28 +1,18 @@
 package si.vajnartech.moonstalker.processor;
 
-public class Ping extends Thread
+public class Ping
 {
-    protected boolean running;
-    protected Processor machine;
+    private static final int PING_INTERVAL = 7000;
 
     public Ping(Processor machine)
     {
-        this.machine = machine;
-        running = true;
-        start();
-    }
-
-    /** @noinspection BusyWait*/
-    @Override
-    public void run()
-    {
-        while(running) {
-            try {
-                sleep(7000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        Runnable pingRunnable = new Runnable() {
+            @Override
+            public void run() {
+                new CmdPing(machine);
+                machine.getIoQueue().postDelayed(this, PING_INTERVAL);
             }
-            new CmdPing(machine);
-        }
+        };
+        machine.getIoQueue().postDelayed(pingRunnable, PING_INTERVAL);
     }
 }

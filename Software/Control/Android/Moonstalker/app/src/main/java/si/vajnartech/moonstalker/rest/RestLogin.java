@@ -90,6 +90,7 @@ public class RestLogin extends AsyncTaskExecutor<String, Void, Integer>
     {
         try {
             if (responseCode != null && responseCode == HttpURLConnection.HTTP_OK && task != null) {
+                RestBase.setCachedToken(token);
                 task.execute(token);
             } else if (task != null) {
                 task.fail(responseCode);

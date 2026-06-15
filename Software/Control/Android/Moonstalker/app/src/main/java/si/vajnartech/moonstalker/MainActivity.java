@@ -2,9 +2,7 @@ package si.vajnartech.moonstalker;
 
 import static si.vajnartech.moonstalker.C.CALIBRATOR;
 import static si.vajnartech.moonstalker.C.MD_CALIBRATING;
-import static si.vajnartech.moonstalker.C.MD_MANUAL;
 import static si.vajnartech.moonstalker.C.MD_MOVING;
-import static si.vajnartech.moonstalker.C.MD_TRACING;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
@@ -19,6 +17,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -38,22 +37,6 @@ import com.google.android.material.navigation.NavigationView;
 import si.vajnartech.moonstalker.processor.DataAstroObj;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
-// ko ugasnem emulator nic kient ne zazna da se je kaj zgodilo
-// pri rocnem premikanju kako narediti da ustavimo premikanje, sedaj je to finger up event, a se da v FAB?
-// od zgornje postacke FAB rata moder ko premikamo in je kljukica dajmo rajsi krizec
-// naredi premakni na, da bo delalo, in izgled
-// dodaj v rocne komande tudi diagonalne premike in lepso slikco s puscicami krog!!!!
-// ko je operabilen in naenkrat se prekine BT, connection lost
-// ko je operabilen in naenkrat dobi error
-// daj statuse v enum
-// kako dolociti max speed
-// delam na MVS/MVE in hendlanje responsev (acknowledges delajo!!!! preveri se NOT_READY),
-// takoj postimat kako bo sploh tole premikanje zgledalo
-// naredi samo eno opcijo rocno vodenje z moznostjo kalibracijenehal premikati se ni zgodil move end
-// rocno vodenje, vcasih se puscica ugasne teleskop pa se ni
-// select fragment popravi
-// naj javi, da se ni mogel povezati s podatkovno bazo
-// ko je teleskop kalibriran naj to vpise kot toast, v terminal window pa naj gre ime objekta?
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -71,7 +54,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     FloatingActionButton fab;
     DrawerLayout drawer;
 
-    ///////////////////////////////////////////////////////////////////////////
     public void setPosMessage()
     {
         terminal.writePosition(curObject);
@@ -107,7 +89,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     {
         runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
     }
-    //////////////////////////////////////////////////////////////////////////////////////////////////
 
     @SuppressLint("InflateParams")
     @Override
@@ -118,7 +99,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("");
+
+        terminal = new TerminalWindow(this);
         C.curMessage = tx(R.string.not_connected);
+        terminal.setText(C.curMessage);
 
         SharedPref.setDefault("device_name", SERVER_NAME);
         fab = findViewById(R.id.fab);
@@ -130,8 +114,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     machine.status.get() == ST_NOT_READY
             ) {
                 connect();
-            } else if (machine.mode.get() == MD_MANUAL) {
-            } else if (machine.mode.get() == MD_TRACING) {
             } else if (machine.mode.get() == MD_CALIBRATING) {
                 calibrated();
             }
@@ -150,24 +132,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         setFragment("main", MainFragment.class, new Bundle());
 
-        // init terminal window
-        terminal = new TerminalWindow(this);
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
 
         new Ping(machine);
     }
 
-    ///////////////////////////////////////////////////////////////////////////
     private void connect()
     {
         machine.set(MSG_CONNECT);
     }
-
-//    private void move(double ra, double dec)
-//    {
-//        queueUI.obtainMessage(MSG_MOVE, new Command(ra, dec)).sendToTarget();
-//    }
 
     private void calibrated()
     {
@@ -177,11 +151,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void calibrating()
     {
         machine.set(MSG_CALIBRATING);
-    }
-
-    private void setPositionString()
-    {
-        SelectFragment.setPositionString(this);
     }
 
     public void moveStart(String direction)
@@ -197,16 +166,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public void onBackPressed()
     {
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -214,9 +182,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         if (id == R.id.action_settings) {
@@ -241,14 +206,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     {
         int id = item.getItemId();
 
-        if (id == R.id.move) {
-        } else if (id == R.id.track) {
-        } else if (id == R.id.calibrate) {
+        if (id == R.id.calibrate) {
             calibrating();
-        } else if (id == R.id.manual) {
         }
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        drawerLayout.closeDrawer(GravityCompat.START);
         return true;
     }
 
@@ -266,6 +228,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
     }
 
+    @SuppressWarnings("unused")
     void myMessage(final String msg, final Runnable action)
     {
         runOnUiThread(() -> {
@@ -290,21 +253,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return getString(stringId);
     }
 
-    /***********************************************************************************************
-     *
-     * Fragment section
-     *
-     ***********************************************************************************************/
-
     private MyFragment createFragment(String tag, Class<? extends MyFragment> cls, Bundle params)
     {
-        MyFragment frag;
-        frag = (MyFragment) getSupportFragmentManager().findFragmentByTag(tag);
+        MyFragment frag = (MyFragment) getSupportFragmentManager().findFragmentByTag(tag);
         if (frag == null && cls != null) try {
             frag = MyFragment.instantiate(cls, this);
             frag.setArguments(params);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("MainActivity", "Error creating fragment", e);
             return null;
         }
         return frag;
@@ -318,19 +274,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.content, currentFragment);
         transaction.addToBackStack(null);
-        transaction.commit();
-    }
-
-    public void refreshCurrentFragment()
-    {
-        MyFragment f = currentFragment;
-
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.detach(f);
-        transaction.commit();
-
-        transaction = getSupportFragmentManager().beginTransaction();
-        transaction.attach(f);
         transaction.commit();
     }
 }
