@@ -21,6 +21,8 @@ public class ControlFragment extends MyFragment
         assert res != null;
         skyObjects = res.findViewById(R.id.aimed_sky_object);
         skyObjects.setVisibility(View.VISIBLE);
+        res.findViewById(R.id.spinner_container).setVisibility(View.VISIBLE);
+        res.findViewById(R.id.label_aimed_object).setVisibility(View.VISIBLE);
         initAstroObjDropDown();
 
         return res;

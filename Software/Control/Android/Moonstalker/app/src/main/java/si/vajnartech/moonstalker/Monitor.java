@@ -17,6 +17,10 @@ class Monitor extends PopupWindow
   {
     super(ctxView, 800, 700);
     tv = ctxView.findViewById(R.id.sys_monitor);
+    setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+    setOutsideTouchable(true);
+    setFocusable(true);
+    setElevation(10.0f);
   }
 
   void update(String el)
@@ -27,5 +31,11 @@ class Monitor extends PopupWindow
       res.append(str);
     }
     tv.setText(res.toString());
+    
+    // Auto-scroll to bottom
+    View parent = (View) tv.getParent();
+    if (parent instanceof android.widget.ScrollView) {
+        parent.post(() -> ((android.widget.ScrollView) parent).fullScroll(View.FOCUS_DOWN));
+    }
   }
 }

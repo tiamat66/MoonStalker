@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <color name="colorPrimary">#3E9C92</color>
-  <color name="colorPrimaryDark">#00574B</color>
-  <color name="colorAccent">#D82E1B</color>
-  <color name="colorAccent2">#91a415</color>
-  <color name="colorError">#F62B15</color>
-  <color name="colorOk">#15F620</color>
-  <color name="colorOk2">#15b620</color>
-  <color name="colorNeutral">#59ADF0</color>
-  <color name="colorMoving">#0F31EE</color>
+  <color name="colorPrimary">#1A237E</color> <!-- Deep Indigo -->
+  <color name="colorPrimaryDark">#121858</color>
+  <color name="colorAccent">#FF5252</color> <!-- Soft Red -->
 
+  <color name="colorError">#D32F2F</color>
+  <color name="colorOk">#43A047</color>
+  <color name="colorMoving">#2196F3</color>
+  <color name="colorNeutral">#757575</color>
+
+  <color name="windowBackground">#000000</color>
+  <color name="panelBackground">#1C1C1E</color>
+  <color name="textColorPrimary">#FFFFFF</color>
+  <color name="textColorSecondary">#B0B0B0</color>
+  <color name="displayText">#00E676</color> <!-- Neon Green for the "Terminal" feel -->
 </resources>

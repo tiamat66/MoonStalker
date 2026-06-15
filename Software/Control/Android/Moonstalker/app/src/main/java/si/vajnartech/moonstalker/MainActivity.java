@@ -71,7 +71,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void updateFab(int color)
     {
-        fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
+        runOnUiThread(() -> {
+            fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
+            
+            // Update icon based on state
+            if (machine.mode.get() == MD_MOVING) {
+                fab.setImageResource(android.R.drawable.ic_media_pause);
+            } else if (machine.status.get() == ST_CONNECTION_ERROR || machine.status.get() == ST_NOT_READY) {
+                fab.setImageResource(android.R.drawable.stat_sys_data_bluetooth);
+            } else if (machine.mode.get() == MD_CALIBRATING) {
+                fab.setImageResource(android.R.drawable.ic_menu_save);
+            } else {
+                fab.setImageResource(android.R.drawable.ic_menu_directions);
+            }
+        });
     }
 
     public void updateMenu(boolean ca, boolean ma, boolean tr, boolean mo)
