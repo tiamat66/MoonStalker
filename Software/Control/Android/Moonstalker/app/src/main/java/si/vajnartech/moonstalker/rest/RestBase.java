@@ -42,7 +42,7 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
         this.url = url;
         this.machine = machine;
         if (cachedToken.isEmpty()) {
-            new RestLogin(this, auth, user, pwd).execute();
+            new RestLogin(this, auth).execute(new ObjLogin(user, pwd));
         } else {
             this.execute(cachedToken);
         }
@@ -72,9 +72,9 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
                     conn.setRequestMethod(REQUEST_METHOD);
                     if ("POST".equals(REQUEST_METHOD))
                         conn.setDoOutput(true);
-
                     conn.setConnectTimeout(READ_TIMEOUT);
                     conn.setReadTimeout(READ_TIMEOUT);
+
                     conn.setRequestProperty("Authorization", "Token " + token);
                     conn.setRequestProperty("Content-Type", "application/json");
                     conn.setRequestProperty("Content-Encoding", "utf-8");
