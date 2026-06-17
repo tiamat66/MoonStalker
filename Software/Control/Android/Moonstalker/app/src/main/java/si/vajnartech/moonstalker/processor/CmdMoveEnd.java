@@ -7,7 +7,9 @@ import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 
-public class CmdMoveEnd extends Controller<String>
+import si.vajnartech.moonstalker.rest.RObjController;
+
+public class CmdMoveEnd extends Controller<RObjController>
 {
     public CmdMoveEnd(Processor queue)
     {
@@ -15,26 +17,34 @@ public class CmdMoveEnd extends Controller<String>
     }
 
     @Override
-    protected void onPostExecute(String cmdResult)
+    protected RObjController deserialize(BufferedReader br)
     {
-        if (cmdResult != null) {
-           if (cmdResult.equals("TIMEOUT")) {
-               machine.set(MSG_CONN_ERROR) ;
-            } else if (cmdResult.startsWith("MVE_ACK")) {
-               machine.set(MSG_MVE_ACK);
-            }
-        }
+        return gson.fromJson(br, RObjController.class);
     }
 
     @Override
-    protected String deserialize(BufferedReader br)
-    {
-        return new Gson().fromJson(br, String.class);
-    }
-
-    @Override
-    public String backgroundFunc()
+    public RObjController backgroundFunc()
     {
         return callServer(null);
     }
+
+    @Override
+    protected void onPostExecute(RObjController rObjController)
+    {
+
+    }
+
+//    @Override
+//    protected void onPostExecute(String cmdResult)
+//    {
+//        if (cmdResult != null) {
+//           if (cmdResult.equals("TIMEOUT")) {
+//               machine.set(MSG_CONN_ERROR) ;
+//            } else if (cmdResult.startsWith("MVE_ACK")) {
+//               machine.set(MSG_MVE_ACK);
+//            }
+//        }
+//    }
+
+
 }

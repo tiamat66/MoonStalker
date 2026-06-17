@@ -37,6 +37,7 @@ import com.google.android.material.navigation.NavigationView;
 import si.vajnartech.moonstalker.processor.DataAstroObj;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
+import si.vajnartech.moonstalker.rest.ObjController;
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -158,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void calibrated()
     {
-        machine.set(MSG_CALIBRATED, CALIBRATOR.toString());
+        machine.set(MSG_CALIBRATED, new ObjController(CALIBRATOR.toString(), "", ""));
     }
 
     private void calibrating()
@@ -168,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void moveStart(String direction)
     {
-        machine.set(MSG_MOVE_START, direction);
+        machine.set(MSG_MOVE_START, new ObjController(direction, "", ""));
     }
 
     public void moveEnd()

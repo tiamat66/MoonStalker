@@ -2,6 +2,7 @@ package si.vajnartech.moonstalker.rest;
 
 
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
+import static si.vajnartech.moonstalker.processor.Controller.URL;
 
 import com.google.gson.Gson;
 
@@ -17,35 +18,42 @@ import java.net.SocketTimeoutException;
 
 import si.vajnartech.moonstalker.processor.Processor;
 
-public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
+// Body so parametri, ki jih posljemo v telesu requesta
+public abstract class RestBase<Body, R> extends AsyncTaskExecutor<String, Void, R>
 {
     protected Processor machine;
-    private final Gson gson = new Gson();
+    protected final Gson gson = new Gson();
     public static final int    SOCKET_TIMEOUT     = -100;
     public static final int    CONNECT_EXCEPTION  = -101;
     public static final int    IO_EXCEPTION       = -102;
 
     private static String cachedToken = "";
 
-    protected       int       READ_TIMEOUT    = 0;
+    protected int readTimeout = 5000;
     protected       String    REQUEST_METHOD  = "POST";
     protected       String    url;
-    protected       String    token           = "";
+    private String token = "";
     protected       int       responseCode    = 0;
     protected       String    responseData    = "";
     protected       String    responseMessage = "";
     protected       Exception serverException = null;
 
-    public RestBase(String url, String user, String pwd, String auth, Processor machine)
+    public RestBase(String url, Processor machine)
     {
-        super();
         this.url = url;
         this.machine = machine;
         if (cachedToken.isEmpty()) {
-            new RestLogin(this, auth).execute(new ObjLogin(user, pwd));
+            new Login(this, machine).execute(null);
         } else {
             this.execute(cachedToken);
         }
+    }
+
+    // login
+    public RestBase(Processor machine)
+    {
+        url =  URL + "login";
+        this.machine = machine;
     }
 
     public static void setCachedToken(String token) {
@@ -55,27 +63,31 @@ public abstract class RestBase<P, R> extends AsyncTaskExecutor<String, Void, R>
     @Override
     protected R doInBackground(String params)
     {
-        if (params == null || params.isEmpty())
-            return null;
-        token = params;
+        token = params; // token je null ob loginu sele sedaj se logiramo
         return backgroundFunc();
     }
 
-    protected R callServer(P params)
+    protected R callServer(Body params)
     {
         HttpURLConnection conn = null;
         try {
             conn = new GetHttpConnection(url)
             {
-                @Override public void setConnParams(HttpURLConnection conn) throws IOException
+                @Override
+                public void setConnParams(HttpURLConnection conn) throws IOException
                 {
+                    // not login
+                    if (token != null) {
+                        readTimeout = 0;
+                        conn.setRequestProperty("Authorization", "Bearer " + token);
+                    }
+
                     conn.setRequestMethod(REQUEST_METHOD);
                     if ("POST".equals(REQUEST_METHOD))
                         conn.setDoOutput(true);
-                    conn.setConnectTimeout(READ_TIMEOUT);
-                    conn.setReadTimeout(READ_TIMEOUT);
+                    conn.setConnectTimeout(readTimeout);
+                    conn.setReadTimeout(readTimeout);
 
-                    conn.setRequestProperty("Authorization", "Token " + token);
                     conn.setRequestProperty("Content-Type", "application/json");
                     conn.setRequestProperty("Content-Encoding", "utf-8");
 

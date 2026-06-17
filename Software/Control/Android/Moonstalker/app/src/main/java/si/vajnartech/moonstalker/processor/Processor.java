@@ -43,6 +43,7 @@ import si.vajnartech.moonstalker.ControlFragment;
 import si.vajnartech.moonstalker.MainActivity;
 import si.vajnartech.moonstalker.ManualMoveFragment;
 import si.vajnartech.moonstalker.R;
+import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.telescope.Status;
 
 public class Processor
@@ -92,7 +93,7 @@ public class Processor
         set(id);
     }
 
-    public void set(int id, String message)
+    public void set(int id, ObjController message)
     {
         status.message = message;
         set(id);
@@ -187,11 +188,11 @@ public class Processor
                 ));
         // MSG_INFO
         actions.put(MSG_INFO, new Ball(null,
-                () -> act.logMessage(status.message)));
+                () -> act.logMessage(String.format("...%s", status.message))));
         // MSG_POSITION
         actions.put(MSG_POSITION, new Ball(null,
                 () -> {
-                    String[] res = status.message.split(" ");
+                    String[] res = status.message.p1.split(" "); // TODO
                     act.curObject.setPosition(res[0], res[1]);
                     act.setPosMessage();
                 }));

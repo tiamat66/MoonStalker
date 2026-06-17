@@ -6,6 +6,7 @@ import android.os.Looper;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// Params so parametri ki jih potrebujemo da vzpostavimo povezavo npr. token
 public abstract class AsyncTaskExecutor<Params, Progress, Result>
 {
     private static final ExecutorService SHARED_EXECUTOR = Executors.newFixedThreadPool(4, r -> {

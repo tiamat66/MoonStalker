@@ -8,39 +8,47 @@ import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 
-public class CmdMove extends Controller<String>
+import si.vajnartech.moonstalker.rest.ObjController;
+
+public class CmdMove extends Controller<ObjController>
 {
-    protected String object;
-    public CmdMove(Processor machine, String object)
+    protected ObjController object;
+    public CmdMove(Processor machine, ObjController object)
     {
         super("move", machine);
         this.object = object;
     }
 
     @Override
-    protected void onPostExecute(String cmdResult)
+    protected ObjController deserialize(BufferedReader br)
     {
-        if (cmdResult != null) {
-            if (cmdResult.equals("NOT_RDY")) {
-                machine.set(MSG_NOT_READY);
-            } else if (cmdResult.equals("TIMEOUT")) {
-                machine.set(MSG_CONN_ERROR);
-            } else if (cmdResult.startsWith("MV_ACK")) {
-                machine.set(MSG_MV_ACK);
-            }
-        }
+        return gson.fromJson(br, ObjController.class);
     }
 
     @Override
-    protected String deserialize(BufferedReader br)
-    {
-        return new Gson().fromJson(br, String.class);
-    }
-
-    @Override
-    public String backgroundFunc()
+    public ObjController backgroundFunc()
     {
         return callServer(object);
     }
+
+    @Override
+    protected void onPostExecute(ObjController objController) {
+
+    }
+
+//    @Override
+//    protected void onPostExecute(String cmdResult)
+//    {
+//        if (cmdResult != null) {
+//            if (cmdResult.equals("NOT_RDY")) {
+//                machine.set(MSG_NOT_READY);
+//            } else if (cmdResult.equals("TIMEOUT")) {
+//                machine.set(MSG_CONN_ERROR);
+//            } else if (cmdResult.startsWith("MV_ACK")) {
+//                machine.set(MSG_MV_ACK);
+//            }
+//        }
+//    }
+
 }
 

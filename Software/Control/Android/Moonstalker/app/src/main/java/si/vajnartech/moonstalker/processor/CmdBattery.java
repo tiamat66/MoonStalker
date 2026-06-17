@@ -7,32 +7,43 @@ import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 
-public class CmdBattery extends Controller<String>
+import si.vajnartech.moonstalker.rest.RObjController;
+
+public class CmdBattery extends Controller<RObjController>
 {
     public CmdBattery(Processor queue) {
         super("battery", queue);
     }
 
     @Override
-    protected void onPostExecute(String cmdResult)
+    protected RObjController deserialize(BufferedReader br)
     {
-        String msg = getParams(cmdResult);
-
-        if (cmdResult.startsWith("BTRY")) {
-            machine.set(MSG_BATTERY_RES, msg);
-        }  else if (cmdResult.equals("TIMEOUT")) {
-            machine.set(MSG_CONN_ERROR);
-        }
+        return gson.fromJson(br, RObjController.class);
     }
 
     @Override
-    protected String deserialize(BufferedReader br)
+    public RObjController backgroundFunc()
     {
-        return new Gson().fromJson(br, String.class);
-    }
-
-    @Override
-    public String backgroundFunc() {
         return callServer(null);
     }
+
+    @Override
+    protected void onPostExecute(RObjController rObjController)
+    {
+        // TODO
+    }
+
+//    @Override
+//    protected void onPostExecute(String cmdResult)
+//    {
+//        String msg = getParams(cmdResult);
+//
+//        if (cmdResult.startsWith("BTRY")) {
+//            machine.set(MSG_BATTERY_RES, msg);
+//        }  else if (cmdResult.equals("TIMEOUT")) {
+//            machine.set(MSG_CONN_ERROR);
+//        }
+//    }
+
+
 }
