@@ -15,9 +15,6 @@ const int BATTERY_LOW_LIMIT_MV = 10000;
 // battery input pin
 const int battery_voltage_pin = A0;
 
-// bluetooth serial input and output
-const int bluetooth_tx_pin = 1;
-const int bluetooth_rx_pin = 0;
 
 // output pins
 const int horiz_step_pin = 2;
@@ -50,13 +47,9 @@ StepperController stepper_controller = StepperController(200);
 
 void setup()
 {
-  /* Open bluetooth serial port */
-  Serial1.begin(115200);
-  while (!Serial1)
-  {
-    ; // Wait for serial port to connect
-  }
-  Serial1.println("<INFO System start>");
+    /* Open USB serial port */
+  Serial.begin(115200);
+  Serial.println("<INFO System start>");
 
   initialize_pins();
 
@@ -71,13 +64,13 @@ void loop()
   static int num_recv_char = 0;
   char incoming_char = 0;
 
-  if (Serial1.available() > 0)
+  if (Serial.available() > 0)
   {
     if (num_recv_char == 64)
     {
-      Serial1.println(F("<FATAL_ERROR RCV_BUFFER_OVERFLOW>"));
+      Serial.println(F("<FATAL_ERROR RCV_BUFFER_OVERFLOW>"));
     }
-    incoming_char = Serial1.read();
+    incoming_char = Serial.read();
     // ignore newline characters
     if ((incoming_char != 10) && (incoming_char != 13))
     {
@@ -86,9 +79,9 @@ void loop()
       num_recv_char++;
       if (incoming_char == '>')
       {
-        Serial1.print("<INFO Handling command: ");
-        Serial1.print(command_buffer);
-        Serial1.println(">");
+        Serial.print("<INFO Handling command: ");
+        Serial.print(command_buffer);
+        Serial.println(">");
         handle_incoming_command(command_buffer);
 
         // clear command buffer, NULL terminate
@@ -156,7 +149,7 @@ void handle_incoming_command(char *command_buff)
 
     if (stepper_controller.get_running_mode() != RunningMode::IDLE_MODE)
     {
-      Serial1.println("<NOT_RDY>");
+      Serial.println("<NOT_RDY>");
       return;
     }
     horiz_steps_str = strtok(NULL, " ");
@@ -166,13 +159,13 @@ void handle_incoming_command(char *command_buff)
     horiz_steps = atoi(horiz_steps_str);
     vert_steps = atoi(vert_steps_str);
     rpm_speed = atoi(rpm_speed_str);
-    Serial1.print("<MV_ACK ");
-    Serial1.print(horiz_steps);
-    Serial1.print(" ");
-    Serial1.print(vert_steps);
-    Serial1.print(" ");
-    Serial1.print(rpm_speed);
-    Serial1.println(">");
+    Serial.print("<MV_ACK ");
+    Serial.print(horiz_steps);
+    Serial.print(" ");
+    Serial.print(vert_steps);
+    Serial.print(" ");
+    Serial.print(rpm_speed);
+    Serial.println(">");
 
     if (horiz_steps < 0)
     {
@@ -222,7 +215,7 @@ void handle_incoming_command(char *command_buff)
     }
     if (limit_blocked)
     {
-      Serial1.println("<LIMIT_BLOCKED>");
+      Serial.println("<LIMIT_BLOCKED>");
       return;
     }
 
@@ -244,7 +237,7 @@ void handle_incoming_command(char *command_buff)
     // be modified with new parameters.
     if (stepper_controller.get_running_mode() == RunningMode::MOVE_MODE)
     {
-      Serial1.println("<NOT_RDY>");
+      Serial.println("<NOT_RDY>");
       return;
     }
 
@@ -316,41 +309,41 @@ void handle_incoming_command(char *command_buff)
     }
     else
     {
-      Serial1.println("<ERROR UNKNOWN_DIRECTION>");
+      Serial.println("<ERROR UNKNOWN_DIRECTION>");
       return;
     }
 
     if (limit_blocked)
     {
-      Serial1.println("<LIMIT_BLOCKED>");
+      Serial.println("<LIMIT_BLOCKED>");
       return;
     }
 
-    Serial1.print("<MVS_ACK ");
-    Serial1.print(direction_str);
-    Serial1.print(" ");
-    Serial1.print(rpm_speed);
-    Serial1.println(">");
+    Serial.print("<MVS_ACK ");
+    Serial.print(direction_str);
+    Serial.print(" ");
+    Serial.print(rpm_speed);
+    Serial.println(">");
   }
   else if (!strcmp(cmd, "MVE"))
   {
     if (stepper_controller.get_running_mode() != RunningMode::FREE_RUN_MODE)
     {
-      Serial1.println("<NOT_RDY>");
+      Serial.println("<NOT_RDY>");
       return;
     }
     else
     {
       stepper_controller.free_run_stop();
-      Serial1.println("<MVE_ACK>");
+      Serial.println("<MVE_ACK>");
     }
   }
   else if (!strcmp(cmd, "BTRY?"))
   {
     int volt_mv = get_battery_voltage();
-    Serial1.print("<BTRY ");
-    Serial1.print(volt_mv);
-    Serial1.println(">");
+    Serial.print("<BTRY ");
+    Serial.print(volt_mv);
+    Serial.println(">");
   }
   else if (!strcmp(cmd, "MVST?"))
   {
@@ -358,30 +351,30 @@ void handle_incoming_command(char *command_buff)
 
     if (mode == RunningMode::IDLE_MODE)
     {
-      Serial1.println("<RDY>");
+      Serial.println("<RDY>");
     }
     else
     {
-      Serial1.println("<NOT_RDY>");
+      Serial.println("<NOT_RDY>");
     }
   }
   else if (!strcmp(cmd, "SYS_CHK"))
   {
     system_check();
-    Serial1.println("<SYS_CHK_DONE>");
+    Serial.println("<SYS_CHK_DONE>");
   }
   else if (!strcmp(cmd, "DEBUG"))
   {
-    Serial1.print("<MV_REMAIN X: ");
-    Serial1.print(StepperController::horiz_steps_remain);
-    Serial1.print(" Y: ");
-    Serial1.print(StepperController::vert_steps_remain);
-    Serial1.println(">");
-    Serial1.print("<MV_CURRENT X: ");
-    Serial1.print(StepperController::horiz_steps_current);
-    Serial1.print(" Y: ");
-    Serial1.print(StepperController::vert_steps_current);
-    Serial1.println(">");
+    Serial.print("<MV_REMAIN X: ");
+    Serial.print(StepperController::horiz_steps_remain);
+    Serial.print(" Y: ");
+    Serial.print(StepperController::vert_steps_remain);
+    Serial.println(">");
+    Serial.print("<MV_CURRENT X: ");
+    Serial.print(StepperController::horiz_steps_current);
+    Serial.print(" Y: ");
+    Serial.print(StepperController::vert_steps_current);
+    Serial.println(">");
   }
     else if (!strcmp(cmd, "STOP"))
     {
@@ -398,7 +391,7 @@ void handle_incoming_command(char *command_buff)
       // Clear any ongoing free-run ramp-down state
       StepperController::free_run_ramping_down = false;
       stepper_controller.free_run_stop(); // Ensures IDLE_MODE
-      Serial1.println("<STOP_ACK>");
+      Serial.println("<STOP_ACK>");
     }
     else if (!strcmp(cmd, "LIM?"))
   {
@@ -415,12 +408,12 @@ void handle_incoming_command(char *command_buff)
     bool vert_north_active  = (digitalRead(LIMIT_VERT_NORTH)  == LOW);
     bool vert_south_active  = (digitalRead(LIMIT_VERT_SOUTH)  == LOW);
 
-    Serial1.print("<LIM");
-    if (horiz_west_active) Serial1.print(" HORIZ_WEST");  else Serial1.print(" horiz_west");
-    if (horiz_east_active) Serial1.print(" HORIZ_EAST");  else Serial1.print(" horiz_east");
-    if (vert_north_active) Serial1.print(" VERT_NORTH");  else Serial1.print(" vert_north");
-    if (vert_south_active) Serial1.print(" VERT_SOUTH");  else Serial1.print(" vert_south");
-    Serial1.println(">");
+    Serial.print("<LIM");
+    if (horiz_west_active) Serial.print(" HORIZ_WEST");  else Serial.print(" horiz_west");
+    if (horiz_east_active) Serial.print(" HORIZ_EAST");  else Serial.print(" horiz_east");
+    if (vert_north_active) Serial.print(" VERT_NORTH");  else Serial.print(" vert_north");
+    if (vert_south_active) Serial.print(" VERT_SOUTH");  else Serial.print(" vert_south");
+    Serial.println(">");
   }
 }
 
@@ -435,7 +428,7 @@ void system_check()
 
   if (battery_volt_mv < BATTERY_LOW_LIMIT_MV)
   {
-    Serial1.println("<ALARM_LOW_BTRY>");
+    Serial.println("<ALARM_LOW_BTRY>");
   }
 
   // check drv fault pins
@@ -444,12 +437,12 @@ void system_check()
 
   if (horiz_fault == LOW)
   {
-    Serial1.println("<ALARM_DRV_HORIZ_FAULT>");
+    Serial.println("<ALARM_DRV_HORIZ_FAULT>");
   }
 
   if (vert_fault == LOW)
   {
-    Serial1.println("<ALARM_DRV_VERT_FAULT>");
+    Serial.println("<ALARM_DRV_VERT_FAULT>");
   }
 }
 
@@ -541,12 +534,12 @@ void check_limit_switches()
       stepper_controller.free_run_stop();
 
       // Report which limit was hit
-      Serial1.print("<LIMIT");
-      if (horiz_west_active)  Serial1.print(" HORIZ_WEST");
-      if (horiz_east_active)  Serial1.print(" HORIZ_EAST");
-      if (vert_north_active)  Serial1.print(" VERT_NORTH");
-      if (vert_south_active)  Serial1.print(" VERT_SOUTH");
-      Serial1.println(">");
+      Serial.print("<LIMIT");
+      if (horiz_west_active)  Serial.print(" HORIZ_WEST");
+      if (horiz_east_active)  Serial.print(" HORIZ_EAST");
+      if (vert_north_active)  Serial.print(" VERT_NORTH");
+      if (vert_south_active)  Serial.print(" VERT_SOUTH");
+      Serial.println(">");
     }
   }
 }

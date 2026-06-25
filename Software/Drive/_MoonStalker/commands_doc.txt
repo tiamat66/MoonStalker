@@ -1,0 +1,350 @@
+================================================================================
+  MoonStalker Drive Unit - Serial Command Interface Documentation
+================================================================================
+
+  Author  : MoonStalker Project
+  Hardware: ATmega32u4 (Arduino Micro)
+  Serial  : Serial1 (Bluetooth), 115200 baud
+
+  All commands and responses are enclosed in angle brackets '<' and '>'.
+  The '>' character signals end of command and triggers processing.
+  Parameters are space-separated.
+
+--------------------------------------------------------------------------------
+  TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+
+  1.  <MV>            - Move (finite step movement)
+  2.  <MVS>           - Move Start (free run / continuous movement)
+  3.  <MVE>           - Move End (stop free run)
+  4.  <STOP>          - Emergency stop
+  5.  <BTRY?>         - Query battery voltage
+  6.  <MVST?>         - Query motor status (ready / not ready)
+  7.  <LIM?>          - Query limit switch states
+  8.  <SYS_CHK>       - System check
+  9.  <DEBUG>         - Debug information
+  10. Automatic / Unsolicited Responses
+  11. Error Responses
+
+
+================================================================================
+  1.  <MV> - Move (finite step movement)
+================================================================================
+
+  Command:
+    <MV horiz_steps vert_steps rpm_speed>
+
+  Description:
+    Moves both axes by the specified number of steps at the given speed.
+    The sign of horiz_steps and vert_steps determines direction:
+      positive = CW, negative = CCW.
+    The motors run for exactly the specified number of steps and then stop.
+    Ramping (acceleration/deceleration) applies if configured via the
+    set_ramp_steps() method (default: off).
+
+  Parameters:
+    horiz_steps  : int  - Number of azimuth steps. Positive = CW, negative
+                          = CCW. Zero = no horizontal movement.
+    vert_steps   : int  - Number of altitude steps. Positive = CW, negative
+                          = CCW. Zero = no vertical movement.
+    rpm_speed    : int  - Motor speed in revolutions per minute. Applied to
+                          both axes. Must be > 0.
+
+  Example:
+    <MV 200 100 60>   Move 200 steps horizontal CW, 100 steps vertical CW,
+                      at 60 RPM.
+    <MV -200 50 30>   Move 200 steps horizontal CCW, 50 steps vertical CW,
+                      at 30 RPM.
+
+  Prerequisite:
+    Controller must be in IDLE_MODE.
+    <MVST?> returns <RDY>.
+
+  Responses:
+    <MV_ACK horiz_steps vert_steps rpm_speed>
+      Sent immediately upon accepting the command, before movement starts.
+
+    <LIMIT_BLOCKED>
+      Sent instead of <MV_ACK> if a limit switch is pressed in the direction
+      of travel. No movement occurs.
+
+    <NOT_RDY>
+      Sent if not in IDLE_MODE (a move or free run is already in progress).
+
+
+================================================================================
+  2.  <MVS> - Move Start (free run / continuous movement)
+================================================================================
+
+  Command:
+    <MVS direction rpm_speed>
+
+  Description:
+    Starts continuous (free run) movement in the specified direction at the
+    given speed. The motors run indefinitely until <MVE> or <STOP> is sent.
+    Ramping (acceleration) applies if configured via set_free_run_ramp_steps()
+    (default: 50 steps). Previously in FREE_RUN_MODE, a new <MVS> command
+    changes speed/direction on the fly.
+
+  Parameters:
+    direction  : string - One of the eight cardinal and intercardinal
+                          directions:
+       N   - North  (vertical CW)
+       S   - South  (vertical CCW)
+       W   - West   (horizontal CW)
+       E   - East   (horizontal CCW)
+       NW  - North-west  (vertical CW + horizontal CW)
+       NE  - North-east  (vertical CW + horizontal CCW)
+       SW  - South-west  (vertical CCW + horizontal CW)
+       SE  - South-east  (vertical CCW + horizontal CCW)
+
+    rpm_speed : int - Motor speed in RPM. Must be > 0.
+
+  Example:
+    <MVS N 30>      Move North (vertical CW) at 30 RPM.
+    <MVS NE 60>     Move North-East at 60 RPM (both axes).
+    <MVS W 120>     Move West (horizontal CW) at 120 RPM.
+
+  Prerequisite:
+    Controller must NOT be in MOVE_MODE.
+    Can be used in FREE_RUN_MODE or IDLE_MODE.
+
+  Responses:
+    <MVS_ACK direction rpm_speed>
+      Sent upon accepting the command. Movement begins immediately.
+
+    <LIMIT_BLOCKED>
+      Sent instead of <MVS_ACK> if a limit switch is pressed in the direction
+      of travel. No movement occurs.
+
+    <NOT_RDY>
+      Sent if currently in MOVE_MODE (a finite step move is in progress).
+
+    <ERROR UNKNOWN_DIRECTION>
+      Sent if the direction string is not one of: N, S, W, E, NW, NE, SW, SE.
+
+
+================================================================================
+  3.  <MVE> - Move End (stop free run)
+================================================================================
+
+  Command:
+    <MVE>
+
+  Description:
+    Stops free run (continuous) movement. The motors decelerate smoothly
+    over free_run_ramp_steps (default: 50) and then stop. Once the ramp-down
+    is complete, the controller transitions to IDLE_MODE automatically.
+
+  Parameters:
+    None.
+
+  Prerequisite:
+    Controller must be in FREE_RUN_MODE.
+
+  Responses:
+    <MVE_ACK>
+      Sent upon accepting the stop command. The motors begin decelerating
+      immediately. The actual stop occurs after the ramp-down completes
+      (a few hundred milliseconds at typical speeds).
+
+    <NOT_RDY>
+      Sent if not in FREE_RUN_MODE.
+
+
+================================================================================
+  4.  <STOP> - Emergency stop
+================================================================================
+
+  Command:
+    <STOP>
+
+  Description:
+    Immediately halts all motor movement, regardless of current mode
+    (FREE_RUN or MOVE). Disables timer interrupts, clears step counts,
+    and pulls step pins low. Any pending free-run ramp-down is cancelled.
+    The controller immediately transitions to IDLE_MODE.
+
+  Parameters:
+    None.
+
+  Responses:
+    <STOP_ACK>
+      Sent after the stop is complete. The motors stop instantly
+      (no ramp-down).
+
+
+================================================================================
+  5.  <BTRY?> - Query battery voltage
+================================================================================
+
+  Command:
+    <BTRY?>
+
+  Description:
+    Reads the battery voltage through a voltage divider on analog pin A0.
+    The ADC value is converted to millivolts, accounting for the divider
+    ratio (5.088 kohm / 14.93 kohm).
+
+  Parameters:
+    None.
+
+  Responses:
+    <BTRY voltage_mv>
+      voltage_mv : int - Battery voltage in millivolts (mV).
+        Example: <BTRY 12400>  means 12.4 V
+
+
+================================================================================
+  6.  <MVST?> - Query motor status
+================================================================================
+
+  Command:
+    <MVST?>
+
+  Description:
+    Queries whether the controller is ready to accept a new <MV> or <MVS>
+    command.
+
+  Parameters:
+    None.
+
+  Responses:
+    <RDY>
+      Controller is in IDLE_MODE. Ready for <MV> or <MVS>.
+
+    <NOT_RDY>
+      Controller is in MOVE_MODE or FREE_RUN_MODE. Must stop first
+      (<STOP> or <MVE>).
+
+
+================================================================================
+  7.  <LIM?> - Query limit switch states
+================================================================================
+
+  Command:
+    <LIM?>
+
+  Description:
+    Reads and reports the current state of all four limit switches.
+    This is an informational command only - it does not stop the motors.
+    Each switch name is printed in UPPERCASE if active (pressed / pin LOW)
+    or lowercase if inactive (not pressed / pin HIGH).
+
+  Parameters:
+    None.
+
+  Responses:
+    <LIM HORIZ_WEST horiz_east vert_north VERT_SOUTH>
+      Four switch names, each either UPPERCASE or lowercase:
+        HORIZ_WEST  - West azimuth limit
+        HORIZ_EAST  - East azimuth limit
+        VERT_NORTH  - North altitude limit
+        VERT_SOUTH  - South altitude limit
+      Example: <LIM HORIZ_WEST horiz_east vert_north VERT_SOUTH>
+        Means: HORIZ_WEST and VERT_SOUTH are pressed,
+               HORIZ_EAST and VERT_NORTH are not pressed.
+
+
+================================================================================
+  8.  <SYS_CHK> - System check
+================================================================================
+
+  Command:
+    <SYS_CHK>
+
+  Description:
+    Performs a system diagnostic check. Checks the battery voltage and
+    the fault status of both DRV stepper drivers. Any detected issues
+    are reported as alarm messages, followed by a completion response.
+
+  Parameters:
+    None.
+
+  Responses:
+    <ALARM_LOW_BTRY>   - Sent if battery voltage < 10000 mV (10.0 V).
+    <ALARM_DRV_HORIZ_FAULT> - Sent if horizontal DRV fault pin is LOW.
+    <ALARM_DRV_VERT_FAULT>  - Sent if vertical DRV fault pin is LOW.
+
+    <SYS_CHK_DONE>
+      Always sent at the end of the system check, regardless of whether
+      any alarms were triggered.
+
+
+================================================================================
+  9.  <DEBUG> - Debug information
+================================================================================
+
+  Command:
+    <DEBUG>
+
+  Description:
+    Reports the current step counters for both axes. Useful for diagnostics
+    and testing.
+
+  Parameters:
+    None.
+
+  Responses:
+    <MV_REMAIN X: horiz_steps Y: vert_steps>
+      Steps remaining on each axis.
+      For free run mode, remaining = 65535 during steady-state.
+
+    <MV_CURRENT X: horiz_steps Y: vert_steps>
+      Steps completed so far on each axis since the last command start.
+      Resets to 0 on each new <MV> or <MVS> command.
+
+
+================================================================================
+  10. AUTOMATIC / UNSOLICITED RESPONSES
+================================================================================
+
+  These responses are generated by the system automatically, not in direct
+  response to a command.
+
+  <INFO System start>
+    Sent once on boot / setup completion.
+
+  <INFO Handling command: <...>>
+    Sent before processing any incoming command (echo for debugging).
+
+  <FATAL_ERROR RCV_BUFFER_OVERFLOW>
+    Sent if the incoming command buffer (64 characters) is exceeded.
+    The system continues running but the current buffered data is lost.
+
+  <LIMIT HORIZ_WEST>  (or HORIZ_EAST, VERT_NORTH, VERT_SOUTH)
+    Sent automatically when a limit switch is triggered during movement.
+    The motors are stopped immediately (emergency stop equivalent to <STOP>).
+    Multiple switch names can appear if more than one limit is active.
+
+  <INITIAL OCR1A: value> and <INITIAL OCR3A: value>
+    Sent once during timer initialization at boot. Reports the initial OCR
+    value set for each timer. For diagnostic purposes only.
+
+
+================================================================================
+  11. ERROR RESPONSES
+================================================================================
+
+  These responses can be returned by multiple commands.
+
+  <NOT_RDY>
+    The controller is busy with another operation and cannot accept the
+    requested command. Wait for it to become ready (<RDY> via <MVST?>).
+
+  <LIMIT_BLOCKED>
+    The requested movement would travel toward an active (pressed) limit
+    switch. The command is rejected and no movement occurs.
+
+  <LIMIT HORIZ_WEST>  (and variants)
+    An active limit switch triggered an emergency stop. Sent automatically
+    by check_limit_switches() polling function.
+
+  <ERROR UNKNOWN_DIRECTION>
+    The direction parameter for <MVS> is not one of the valid values
+    (N, S, W, E, NW, NE, SW, SE).
+
+
+================================================================================
+  END OF DOCUMENT
+================================================================================
