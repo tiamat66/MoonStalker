@@ -1,22 +1,14 @@
 package si.vajnartech.moonstalker.processor;
 
-import static si.vajnartech.moonstalker.C.ST_ERROR;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
-import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
-import static si.vajnartech.moonstalker.OpCodes.MSG_POSITION;
-import static si.vajnartech.moonstalker.OpCodes.MSG_READY;
-import static si.vajnartech.moonstalker.OpCodes.MSG_WARNING;
 
 import android.util.Log;
 
-import com.google.gson.Gson;
-
 import java.io.BufferedReader;
-import java.util.Objects;
 
-import si.vajnartech.moonstalker.rest.ObjController;
+import si.vajnartech.moonstalker.OpCodes;
+import si.vajnartech.moonstalker.rest.RObjController;
 
-public class CmdPing extends Controller<ObjController>
+public class CmdPing extends Controller<RObjController>
 {
     public CmdPing(Processor machine)
     {
@@ -24,21 +16,35 @@ public class CmdPing extends Controller<ObjController>
     }
 
     @Override
-    protected ObjController deserialize(BufferedReader br)
+    protected RObjController deserialize(BufferedReader br)
     {
-        return gson.fromJson(br, ObjController.class);
+        return gson.fromJson(br, RObjController.class);
     }
 
     @Override
-    public ObjController backgroundFunc()
+    public RObjController backgroundFunc()
     {
         return callServer(null);
     }
 
     @Override
-    protected void onPostExecute(ObjController res)
+    protected void onPostExecute(RObjController res)
     {
-        Log.i("Tatatat", "Frtolin");
+        if (res != null) {
+           Log.i("CmdPing", "onPostExecute: " + res.state + " " + res.message + " " + res.data);
+
+           switch(res.state) {
+               case "ready":
+                   machine.set(OpCodes.READY);
+                   break;
+               case "connecting":
+                   machine.set(OpCodes.CONNECTING);
+                   break;
+               case "connected":
+                   machine.set(OpCodes.CONNECTED);
+                   break;
+           }
+        }
     }
 
 //    @Override

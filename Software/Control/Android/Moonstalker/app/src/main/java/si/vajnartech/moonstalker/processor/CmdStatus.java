@@ -11,7 +11,7 @@ public class CmdStatus extends Controller<RObjController>
 {
     public CmdStatus(Processor machine)
     {
-        super("get_status", machine);
+        super("connect", machine);
     }
 
     @Override
@@ -46,11 +46,11 @@ public class CmdStatus extends Controller<RObjController>
     @Override
     protected void onPostExecute(RObjController res)
     {
-        // TODO
-        if (res.success) {
-            machine.set(MSG_GET_ASTRO_DATA);
-        } else {
-            machine.set(MSG_CONN_ERROR);
-        }
+        // TODO: zaenkrat, ko se connect izvede dobimo success, pol pa naprej!!
+//        if (res.success) {
+//            machine.set(MSG_GET_ASTRO_DATA);
+//        } else {
+//            machine.set(MSG_CONN_ERROR);
+//        }
     }
 }

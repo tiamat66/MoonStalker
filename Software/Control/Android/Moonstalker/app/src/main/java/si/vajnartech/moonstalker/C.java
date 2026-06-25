@@ -29,7 +29,6 @@ public final class C
   static final         double K                    = MOTOR_STEPS_NUM * REDUCTOR_TRANSLATION * BELT_TRANSLATION;
 
   // Telescope status values
-  public static final int ST_READY =    1;
   public static final int ST_ERROR =    2;
   public static final int ST_NOT_READY = 3;
   public static final int ST_CONNECTION_ERROR = 4;

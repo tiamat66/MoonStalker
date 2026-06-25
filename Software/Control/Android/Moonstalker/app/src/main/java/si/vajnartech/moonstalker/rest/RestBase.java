@@ -78,7 +78,6 @@ public abstract class RestBase<Body, R> extends AsyncTaskExecutor<String, Void, 
                 {
                     // not login
                     if (token != null) {
-                        readTimeout = 0;
                         conn.setRequestProperty("Authorization", "Bearer " + token);
                     }
 
@@ -93,9 +92,7 @@ public abstract class RestBase<Body, R> extends AsyncTaskExecutor<String, Void, 
 
                     if (params != null) {
                         OutputStream os = conn.getOutputStream();
-                        synchronized (params) {
-                            os.write(gson.toJson(params).getBytes());
-                        }
+                        os.write(gson.toJson(params).getBytes());
                         os.close();
                     }
                 }

@@ -17,7 +17,7 @@ public class CmdMoveStart extends Controller<RObjController>
 
     public CmdMoveStart(Processor machine, ObjController direction)
     {
-        super("start_move", machine);
+        super("move", machine);
         this.direction = direction;
     }
 

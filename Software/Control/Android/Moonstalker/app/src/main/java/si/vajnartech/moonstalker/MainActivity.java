@@ -6,12 +6,10 @@ import static si.vajnartech.moonstalker.C.MD_MOVING;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
-import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE_END;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE_START;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -122,11 +120,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> {
             if (machine.mode.get() == MD_MOVING &&
-                    machine.status.get() == ST_READY) {
+                    machine.status.get() == OpCodes.READY) {
                 moveEnd();
-            } else if (machine.status.get() == ST_CONNECTION_ERROR ||
-                    machine.status.get() == ST_NOT_READY
-            ) {
+            } else if (machine.status.get() == OpCodes.READY) {
                 connect();
             } else if (machine.mode.get() == MD_CALIBRATING) {
                 calibrated();
@@ -169,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void moveStart(String direction)
     {
-        machine.set(MSG_MOVE_START, new ObjController(direction, "", ""));
+        machine.set(OpCodes.MOVE_START, new ObjController(direction, "", ""));
     }
 
     public void moveEnd()
@@ -222,7 +218,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         if (id == R.id.calibrate) {
             calibrating();
-        }
+        } else if (id == R.id.manual) {
+//            setFragment("manual", ManualMoveFragment.class, new Bundle());
+            moveStart("up");
+
+        } else if (id == R.id.track) {
+            setFragment("control", ControlFragment.class, new Bundle());
+        } else if (id == R.id.move) {}
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
@@ -289,5 +291,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         transaction.replace(R.id.content, currentFragment);
         transaction.addToBackStack(null);
         transaction.commit();
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        machine.quit();
+        super.onDestroy();
     }
 }

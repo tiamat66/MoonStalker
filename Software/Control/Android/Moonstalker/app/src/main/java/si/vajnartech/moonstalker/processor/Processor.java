@@ -7,7 +7,6 @@ import static si.vajnartech.moonstalker.C.MD_NOT_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
 import static si.vajnartech.moonstalker.C.ST_ERROR;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
-import static si.vajnartech.moonstalker.C.ST_READY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATED;
@@ -21,13 +20,11 @@ import static si.vajnartech.moonstalker.OpCodes.MSG_GOT_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE_END;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE_START;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MVE_ACK;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MVS_ACK;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MV_ACK;
 import static si.vajnartech.moonstalker.OpCodes.MSG_NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_POSITION;
-import static si.vajnartech.moonstalker.OpCodes.MSG_READY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_WARNING;
 
 import android.os.Bundle;
@@ -42,6 +39,7 @@ import si.vajnartech.moonstalker.AstroObject;
 import si.vajnartech.moonstalker.ControlFragment;
 import si.vajnartech.moonstalker.MainActivity;
 import si.vajnartech.moonstalker.ManualMoveFragment;
+import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.R;
 import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.telescope.Status;
@@ -56,17 +54,24 @@ public class Processor
     protected Handler uxQueue;
     protected HashMap<Integer, Ball> actions = new HashMap<>();
 
+    protected HandlerThread ioThread;
+
     public Processor(MainActivity act)
     {
         this.act = act;
         uxQueue = new Handler(Looper.getMainLooper());
         
-        HandlerThread thread = new HandlerThread("ProcessorIO");
-        thread.start();
-        ioQueue = new Handler(thread.getLooper());
+        ioThread = new HandlerThread("ProcessorIO");
+        ioThread.start();
+        ioQueue = new Handler(ioThread.getLooper());
 
         initTable(this);
         mode.set(MD_NOT_CALIBRATED);
+    }
+
+    public void quit()
+    {
+        ioThread.quitSafely();
     }
 
     public void set(int id)
@@ -101,9 +106,20 @@ public class Processor
 
     private void initTable(Processor machine)
     {
+        actions.put(OpCodes.CONNECTING, new Ball(() -> new CmdStatus(this),
+                () -> {
+            act.setInfoMessage(R.string.connecting);
+            status.set(OpCodes.CONNECTING);
+        }));
+        actions.put(OpCodes.CONNECTED, new Ball(() -> new CmdStatus(this),
+                () -> {
+                    act.setInfoMessage(R.string.connected);
+                    status.set(OpCodes.CONNECTED);
+                    act.updateMenu(true, true, false, false);
+                }));
         // MSG_CONNECT
         actions.put(MSG_CONNECT, new Ball(() -> new CmdStatus(this),
-                () -> act.setInfoMessage(R.string.connecting)));
+                null));
         // MSG_GET_ASTRO_DATA
         actions.put(MSG_GET_ASTRO_DATA, new Ball(() -> new CmdGetAstroData(machine),
                 null));
@@ -118,7 +134,7 @@ public class Processor
         actions.put(MSG_GOT_ASTRO_DATA, new Ball(null, () -> {
             act.astroData = new DataAstroObj(status.data);
             act.setInfoMessage(R.string.ready);
-            status.set(ST_READY);
+            status.set(OpCodes.READY);
             act.updateFab(R.color.colorOk);
             act.updateMenu(true, true, false, false);
         }));
@@ -130,7 +146,7 @@ public class Processor
                 }
         ));
         // MSG_MOVE_START
-        actions.put(MSG_MOVE_START, new Ball(
+        actions.put(OpCodes.MOVE_START, new Ball(
                 () -> new CmdMoveStart(machine, status.message),
                 null
         ));
@@ -163,12 +179,11 @@ public class Processor
                 }
         ));
         // MSG_READY
-        actions.put(MSG_READY, new Ball(null,
+        actions.put(OpCodes.READY, new Ball(null,
                 () -> {
                     act.setInfoMessage(R.string.ready);
                     act.updateFab(R.color.colorOk);
-                    act.updateMenu(true, true, false, false);
-                    status.set(ST_READY);
+                    status.set(OpCodes.READY);
                 }
                 ));
         // MSG_ERROR
@@ -221,7 +236,7 @@ public class Processor
         actions.put(MSG_MVE_ACK, new Ball(null,
                 () -> {
                     act.setInfoMessage(R.string.ready);
-                    status.set(ST_READY);
+                    status.set(OpCodes.READY);
                     act.updateFab(R.color.design_default_color_primary);
                 }));
     }

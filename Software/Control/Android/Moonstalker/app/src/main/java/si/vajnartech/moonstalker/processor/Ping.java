@@ -2,7 +2,7 @@ package si.vajnartech.moonstalker.processor;
 
 public class Ping
 {
-    private static final int PING_INTERVAL = 7000;
+    private static final int PING_INTERVAL = 5000;
 
     public Ping(Processor machine)
     {
