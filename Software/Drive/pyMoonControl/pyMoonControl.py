@@ -229,23 +229,40 @@ class MoonControlWindow(QMainWindow):
         self.port_selector.port_changed.connect(self.on_port_changed)
         main_layout.addWidget(self.port_selector)
 
-        # ---- Main Content Area (MVS buttons left, other commands right) ----
+        # ---- Main Content Area (log left, commands + directions right) ----
         content_layout = QHBoxLayout()
         content_layout.setSpacing(10)
 
-        # === Left: MVS Direction Buttons ===
-        left_panel = self.build_direction_panel()
-        content_layout.addWidget(left_panel)
+        # === Left: Communication Log ===
+        left_panel = self.build_log_panel()
+        content_layout.addWidget(left_panel, 1)
 
-        # === Right: All Other Commands ===
-        right_panel = self.build_commands_panel()
-        content_layout.addWidget(right_panel, 1)
+        # === Right: Commands (top) + Direction Pad (middle) + Clear Log (bottom) ===
+        right_side = QVBoxLayout()
+        right_side.setSpacing(6)
+
+        commands_panel = self.build_commands_panel()
+        right_side.addWidget(commands_panel)
+
+        direction_panel = self.build_direction_panel()
+        right_side.addWidget(direction_panel)
+
+        clear_btn = QPushButton("Clear Log")
+        clear_btn.clicked.connect(self.log_text.clear)
+        clear_btn.setMaximumWidth(120)
+        clear_wrap = QHBoxLayout()
+        clear_wrap.addStretch()
+        clear_wrap.addWidget(clear_btn)
+        clear_wrap.addStretch()
+        right_side.addLayout(clear_wrap)
+
+        right_side.addStretch()
+
+        right_widget = QWidget()
+        right_widget.setLayout(right_side)
+        content_layout.addWidget(right_widget)
 
         main_layout.addLayout(content_layout, 1)
-
-        # === Bottom: Log Window ===
-        bottom_panel = self.build_log_panel()
-        main_layout.addWidget(bottom_panel)
 
         # Status bar
         self.statusBar().showMessage("Ready - Not connected")
@@ -272,8 +289,9 @@ class MoonControlWindow(QMainWindow):
         # Direction pad grid (2 rows above, 3 middle, 2 below)
         pad_layout = QGridLayout()
         pad_layout.setSpacing(4)
+        pad_layout.setHorizontalSpacing(4)
 
-        btn_size = 80
+        btn_size = 40
 
         # Row 0: NW - N - NE
         self.btn_nw = self.make_dir_button("NW", btn_size)
@@ -292,7 +310,7 @@ class MoonControlWindow(QMainWindow):
                 background-color: #d32f2f;
                 color: white;
                 font-weight: bold;
-                font-size: 12pt;
+                font-size: 8pt;
                 border-radius: 6px;
             }
             QPushButton:pressed {
@@ -314,7 +332,6 @@ class MoonControlWindow(QMainWindow):
         pad_layout.addWidget(self.btn_se, 2, 2, Qt.AlignCenter)
 
         layout.addLayout(pad_layout)
-        layout.addStretch()
 
         return group
 
@@ -327,7 +344,7 @@ class MoonControlWindow(QMainWindow):
                 background-color: #1976d2;
                 color: white;
                 font-weight: bold;
-                font-size: 12pt;
+                font-size: 8pt;
                 border-radius: 6px;
             }
             QPushButton:pressed {
@@ -354,8 +371,8 @@ class MoonControlWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def build_commands_panel(self):
-        group = QGroupBox("Commands")
-        layout = QVBoxLayout(group)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # --- MV (Move) ---
         mv_box = QGroupBox("MV - Finite Step Move")
@@ -436,9 +453,9 @@ class MoonControlWindow(QMainWindow):
         custom_layout.addWidget(custom_send_btn)
         layout.addWidget(custom_box)
 
-        layout.addStretch()
-
-        return group
+        wrap = QWidget()
+        wrap.setLayout(layout)
+        return wrap
 
     # ------------------------------------------------------------------
     # Log Panel
@@ -451,16 +468,7 @@ class MoonControlWindow(QMainWindow):
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
         self.log_text.setFont(QFont("Consolas", 10))
-        self.log_text.setMinimumHeight(120)
-        self.log_text.setMaximumHeight(200)
-        layout.addWidget(self.log_text)
-
-        btn_row = QHBoxLayout()
-        clear_btn = QPushButton("Clear Log")
-        clear_btn.clicked.connect(self.log_text.clear)
-        btn_row.addWidget(clear_btn)
-        btn_row.addStretch()
-        layout.addLayout(btn_row)
+        layout.addWidget(self.log_text, 1)
 
         return group
 
