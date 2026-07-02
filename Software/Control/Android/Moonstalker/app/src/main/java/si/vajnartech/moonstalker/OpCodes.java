@@ -26,4 +26,5 @@ public final class OpCodes
     public static final int MSG_GOT_ASTRO_DATA = 22;
     public static final int CONNECTING = 23;
     public static final int CONNECTED = 24;
+    public static final int ERROR = 25;
 }

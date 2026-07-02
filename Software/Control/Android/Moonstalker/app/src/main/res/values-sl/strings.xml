@@ -41,5 +41,6 @@
   <string name="btry_low">Baterija prazna</string>
   <string name="timeout">brez odziva</string>
   <string name="btry_voltage">napetost baterije %s V</string>
+  <string name="error">napaka</string>
 
 </resources>

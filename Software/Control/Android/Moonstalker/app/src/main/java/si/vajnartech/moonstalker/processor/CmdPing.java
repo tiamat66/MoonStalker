@@ -6,6 +6,7 @@ import android.util.Log;
 import java.io.BufferedReader;
 
 import si.vajnartech.moonstalker.OpCodes;
+import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.rest.RObjController;
 
 public class CmdPing extends Controller<RObjController>
@@ -42,6 +43,9 @@ public class CmdPing extends Controller<RObjController>
                    break;
                case "connected":
                    machine.set(OpCodes.CONNECTED);
+                   break;
+               case "error":
+                   machine.set(OpCodes.ERROR, new ObjController(res.message, "", ""));
                    break;
            }
         }

@@ -41,6 +41,7 @@
   <string name="btry_low">Battery voltage is low</string>
   <string name="timeout">no answer</string>
   <string name="btry_voltage">battery voltage %s V</string>
+  <string name="error">error</string>
 
 
   <string-array name="sky_objects">

@@ -7,6 +7,7 @@ import static si.vajnartech.moonstalker.C.MD_NOT_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
 import static si.vajnartech.moonstalker.C.ST_ERROR;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
+import static si.vajnartech.moonstalker.OpCodes.ERROR;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATED;
@@ -106,12 +107,21 @@ public class Processor
 
     private void initTable(Processor machine)
     {
-        actions.put(OpCodes.CONNECTING, new Ball(() -> new CmdStatus(this),
+        actions.put(OpCodes.ERROR, new Ball(null, new Runnable() {
+            @Override
+            public void run() {
+                act.setInfoMessage(R.string.error);
+                act.updateFab(R.color.colorError); // TODO: fab mora narediti akcijo reset
+                status.set(ERROR);
+                act.logMessage(status.message.p1);
+            }
+        }));
+        actions.put(OpCodes.CONNECTING, new Ball(null,
                 () -> {
             act.setInfoMessage(R.string.connecting);
             status.set(OpCodes.CONNECTING);
         }));
-        actions.put(OpCodes.CONNECTED, new Ball(() -> new CmdStatus(this),
+        actions.put(OpCodes.CONNECTED, new Ball(null,
                 () -> {
                     act.setInfoMessage(R.string.connected);
                     status.set(OpCodes.CONNECTED);
