@@ -94,6 +94,9 @@ volatile bool     StepperController::free_run_ramping_down = false;
 volatile uint16_t StepperController::free_run_target_ocr_horiz = 0;
 volatile uint16_t StepperController::free_run_target_ocr_vert = 0;
 
+// Current running mode. Starts IDLE (motors stopped).
+volatile RunningMode StepperController::running_mode = RunningMode::IDLE_MODE;
+
 // ============================================================================
 // Hardware pin assignments
 // ============================================================================
@@ -154,6 +157,18 @@ StepperController::StepperController(int16_t steps_per_revolution)
 RunningMode StepperController::get_running_mode()
 {
   return running_mode;
+}
+
+// ============================================================================
+// set_running_mode_idle (static, ISR-safe)
+// ============================================================================
+// Transitions the controller to IDLE_MODE. Called from ISR context when
+// both axes have completed their step counts.
+// This is a static method so it can be called from the ISRs without needing
+// a reference to the StepperController instance.
+void StepperController::set_running_mode_idle()
+{
+  running_mode = RunningMode::IDLE_MODE;
 }
 
 // ============================================================================
@@ -856,10 +871,17 @@ ISR(TIMER1_COMPA_vect)
       }
     }
 
-    // If this was the last step, disable further interrupts
+        // If this was the last step, disable further interrupts
     if (StepperController::horiz_steps_remain == 0)
     {
       TIMSK1 &= ~(1 << OCIE1A);
+      // Transition to IDLE_MODE when both axes have completed.
+      // The last axis to finish sets the mode. We check if the other axis
+      // has also finished by testing its steps_remain (volatile read from ISR-safe static).
+      if (StepperController::vert_steps_remain == 0)
+      {
+        StepperController::set_running_mode_idle();
+      }
     }
   }
 }
@@ -949,9 +971,14 @@ ISR(TIMER3_COMPA_vect)
       }
     }
 
-    if (StepperController::vert_steps_remain == 0)
+        if (StepperController::vert_steps_remain == 0)
     {
       TIMSK3 &= ~(1 << OCIE3A);
+      // Transition to IDLE_MODE when both axes have completed.
+      if (StepperController::horiz_steps_remain == 0)
+      {
+        StepperController::set_running_mode_idle();
+      }
     }
   }
 }

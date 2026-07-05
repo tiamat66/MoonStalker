@@ -107,7 +107,7 @@ class StepperController
                       int16_t speed_vert,
                       StepperDirection vert_direction);
 
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
   // free_run_stop
   // -------------------------------------------------------------------------
   // Initiate a ramped stop in FREE_RUN_MODE.
@@ -246,6 +246,11 @@ class StepperController
   static volatile uint16_t scaled_ocr_vert;
   static volatile bool sync_mode_enabled;
 
+  // Transition the controller to IDLE_MODE.
+  // Called from ISR context when both axes have completed their step counts.
+  // Must be static to be callable from ISRs (no object pointer available).
+  static void set_running_mode_idle();
+
   // Free-run ramping state
   //   free_run_ramp_steps_horiz/vert - steps allocated for free-run ramp
   //   free_run_ramping_down - true after free_run_stop() initiates ramp-down
@@ -256,13 +261,17 @@ class StepperController
   static volatile uint16_t free_run_target_ocr_horiz;
   static volatile uint16_t free_run_target_ocr_vert;
 
+  // Current running mode (IDLE, MOVE, FREE_RUN).
+  // Must be static and volatile so it can be written from ISR context
+  // (via set_running_mode_idle()) and read from the main loop.
+  static volatile RunningMode running_mode;
+
   private:
 
-  RunningMode running_mode;
   int16_t     steps_per_revolution;
   char        error[256];
 
-    // Number of steps for acceleration/deceleration ramp.
+  // Number of steps for acceleration/deceleration ramp.
   // Set via set_ramp_steps(). 0 = no ramping.
   uint16_t ramp_steps;
 

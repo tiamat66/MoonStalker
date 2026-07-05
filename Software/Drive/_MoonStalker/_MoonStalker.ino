@@ -1,11 +1,8 @@
-/* MoonStalker
+//  MoonStalker
+//  SW for MoonStalker Drive unit control
 
-   This SW controls the MoonStalker drive unit.
-*/
+//  Variable definitions
 
-/*
-   Variable definitions
-*/
 #include "StepperController.h"
 
 // constants
@@ -116,15 +113,17 @@ int get_battery_voltage()
 /* handle_incoming_command
 
    handle command tag that arrived
-   over seial
+   over serial connection
 
    commands:
    <MV a b>
    <BTRY?>
-   <ST?>
+   <MVST?>
    <SYS_CHK>
    <DEBUG>
    <STOP>
+   <MVS direction speed>
+   <LIM?>
 
 */
 void handle_incoming_command(char *command_buff)
@@ -232,10 +231,10 @@ void handle_incoming_command(char *command_buff)
     char *rpm_speed_str;
     int   rpm_speed;
 
-    // We can't start free run move if we are
-    // in move mode. Previous free run mode can
-    // be modified with new parameters.
-    if (stepper_controller.get_running_mode() == RunningMode::MOVE_MODE)
+        // Can only start free run from IDLE_MODE.
+    // Must stop the current mode first (MV cannot be interrupted, free run
+    // must be stopped before starting a new free run).
+    if (stepper_controller.get_running_mode() != RunningMode::IDLE_MODE)
     {
       Serial.println("<NOT_RDY>");
       return;
@@ -245,7 +244,7 @@ void handle_incoming_command(char *command_buff)
     rpm_speed_str = strtok(NULL, " ");
 
         rpm_speed = atoi(rpm_speed_str);
-        // Check if movement is blocked by an active limit switch before starting free run.
+    // Check if movement is blocked by an active limit switch before starting free run.
     // Direction-to-limit mapping for MVS commands:
     //   N  (north  = vertical CW)    → blocked if LIMIT_VERT_NORTH  is pressed
     //   S  (south  = vertical CCW)   → blocked if LIMIT_VERT_SOUTH  is pressed
@@ -345,17 +344,21 @@ void handle_incoming_command(char *command_buff)
     Serial.print(volt_mv);
     Serial.println(">");
   }
-  else if (!strcmp(cmd, "MVST?"))
+    else if (!strcmp(cmd, "MVST?"))
   {
     RunningMode mode = stepper_controller.get_running_mode();
 
     if (mode == RunningMode::IDLE_MODE)
     {
-      Serial.println("<RDY>");
+      Serial.println("<MVST IDLE>");
     }
-    else
+    else if (mode == RunningMode::MOVE_MODE)
     {
-      Serial.println("<NOT_RDY>");
+      Serial.println("<MVST MOVING>");
+    }
+    else if (mode == RunningMode::FREE_RUN_MODE)
+    {
+      Serial.println("<MVST FREE_RUN>");
     }
   }
   else if (!strcmp(cmd, "SYS_CHK"))

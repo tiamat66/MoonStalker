@@ -19,7 +19,7 @@
   3.  <MVE>           - Move End (stop free run)
   4.  <STOP>          - Emergency stop
   5.  <BTRY?>         - Query battery voltage
-  6.  <MVST?>         - Query motor status (ready / not ready)
+  6.  <MVST?>         - Query motor status
   7.  <LIM?>          - Query limit switch states
   8.  <SYS_CHK>       - System check
   9.  <DEBUG>         - Debug information
@@ -38,7 +38,9 @@
     Moves both axes by the specified number of steps at the given speed.
     The sign of horiz_steps and vert_steps determines direction:
       positive = CW, negative = CCW.
-    The motors run for exactly the specified number of steps and then stop.
+    The motors run for exactly the specified number of steps and then stop
+    automatically. The controller transitions back to IDLE_MODE when both
+    axes have completed their step counts.
     Ramping (acceleration/deceleration) applies if configured via the
     set_ramp_steps() method (default: off).
 
@@ -56,9 +58,8 @@
     <MV -200 50 30>   Move 200 steps horizontal CCW, 50 steps vertical CW,
                       at 30 RPM.
 
-  Prerequisite:
+    Prerequisite:
     Controller must be in IDLE_MODE.
-    <MVST?> returns <RDY>.
 
   Responses:
     <MV_ACK horiz_steps vert_steps rpm_speed>
@@ -82,9 +83,8 @@
   Description:
     Starts continuous (free run) movement in the specified direction at the
     given speed. The motors run indefinitely until <MVE> or <STOP> is sent.
-    Ramping (acceleration) applies if configured via set_free_run_ramp_steps()
-    (default: 50 steps). Previously in FREE_RUN_MODE, a new <MVS> command
-    changes speed/direction on the fly.
+        Ramping (acceleration) applies if configured via set_free_run_ramp_steps()
+    (default: 50 steps).
 
   Parameters:
     direction  : string - One of the eight cardinal and intercardinal
@@ -105,9 +105,8 @@
     <MVS NE 60>     Move North-East at 60 RPM (both axes).
     <MVS W 120>     Move West (horizontal CW) at 120 RPM.
 
-  Prerequisite:
-    Controller must NOT be in MOVE_MODE.
-    Can be used in FREE_RUN_MODE or IDLE_MODE.
+    Prerequisite:
+    Controller must be in IDLE_MODE.
 
   Responses:
     <MVS_ACK direction rpm_speed>
@@ -118,7 +117,7 @@
       of travel. No movement occurs.
 
     <NOT_RDY>
-      Sent if currently in MOVE_MODE (a finite step move is in progress).
+      Sent if not in IDLE_MODE. Must stop first with <MVE> or <STOP>.
 
     <ERROR UNKNOWN_DIRECTION>
       Sent if the direction string is not one of: N, S, W, E, NW, NE, SW, SE.
@@ -196,26 +195,36 @@
 
 
 ================================================================================
-  6.  <MVST?> - Query motor status
+    6.  <MVST?> - Query motor status
 ================================================================================
 
   Command:
     <MVST?>
 
   Description:
-    Queries whether the controller is ready to accept a new <MV> or <MVS>
-    command.
+    Queries the current state of the stepper controller. Returns one of
+    three possible states: IDLE (motors stopped, ready for commands),
+    MOVING (finite step move in progress), or FREE_RUN (continuous
+    rotation in progress). The controller automatically transitions
+    back to IDLE when a move completes or a free-run ramp-down finishes.
 
   Parameters:
     None.
 
   Responses:
-    <RDY>
-      Controller is in IDLE_MODE. Ready for <MV> or <MVS>.
+    <MVST IDLE>
+      Controller is in IDLE_MODE. Motors are stopped. Ready for <MV> or
+      <MVS>.
 
-    <NOT_RDY>
-      Controller is in MOVE_MODE or FREE_RUN_MODE. Must stop first
-      (<STOP> or <MVE>).
+    <MVST MOVING>
+      Controller is in MOVE_MODE. A finite step move (<MV>) is in progress.
+      The controller will transition to IDLE automatically when all steps
+      complete. Use <STOP> to interrupt.
+
+    <MVST FREE_RUN>
+      Controller is in FREE_RUN_MODE. Continuous rotation (<MVS>) is active.
+      Use <MVE> to stop with smooth deceleration, or <STOP> for immediate
+      stop.
 
 
 ================================================================================
@@ -330,7 +339,8 @@
 
   <NOT_RDY>
     The controller is busy with another operation and cannot accept the
-    requested command. Wait for it to become ready (<RDY> via <MVST?>).
+    requested command. Wait for it to become ready (<MVST IDLE> via
+    <MVST?>).
 
   <LIMIT_BLOCKED>
     The requested movement would travel toward an active (pressed) limit
