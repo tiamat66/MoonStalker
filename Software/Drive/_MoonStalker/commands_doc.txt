@@ -4,7 +4,7 @@
 
   Author  : MoonStalker Project
   Hardware: ATmega32u4 (Arduino Micro)
-  Serial  : Serial1 (Bluetooth), 115200 baud
+  Serial  : Serial (USB), 115200 baud
 
   All commands and responses are enclosed in angle brackets '<' and '>'.
   The '>' character signals end of command and triggers processing.
@@ -21,7 +21,7 @@
   5.  <BTRY?>         - Query battery voltage
   6.  <MVST?>         - Query motor status
   7.  <LIM?>          - Query limit switch states
-  8.  <SYS_CHK>       - System check
+  8.  <ALARMS?>       - Query alarms (system check)
   9.  <DEBUG>         - Debug information
   10. Automatic / Unsolicited Responses
   11. Error Responses
@@ -61,15 +61,15 @@
     Prerequisite:
     Controller must be in IDLE_MODE.
 
-  Responses:
+    Responses:
     <MV_ACK horiz_steps vert_steps rpm_speed>
       Sent immediately upon accepting the command, before movement starts.
 
-    <LIMIT_BLOCKED>
+    <MV_NACK LIMIT_BLOCKED>
       Sent instead of <MV_ACK> if a limit switch is pressed in the direction
       of travel. No movement occurs.
 
-    <NOT_RDY>
+    <MV_NACK NOT_RDY>
       Sent if not in IDLE_MODE (a move or free run is already in progress).
 
 
@@ -108,18 +108,18 @@
     Prerequisite:
     Controller must be in IDLE_MODE.
 
-  Responses:
+    Responses:
     <MVS_ACK direction rpm_speed>
       Sent upon accepting the command. Movement begins immediately.
 
-    <LIMIT_BLOCKED>
+    <MVS_NACK LIMIT_BLOCKED>
       Sent instead of <MVS_ACK> if a limit switch is pressed in the direction
       of travel. No movement occurs.
 
-    <NOT_RDY>
+    <MVS_NACK NOT_RDY>
       Sent if not in IDLE_MODE. Must stop first with <MVE> or <STOP>.
 
-    <ERROR UNKNOWN_DIRECTION>
+    <MVS_NACK UNKNOWN_DIRECTION>
       Sent if the direction string is not one of: N, S, W, E, NW, NE, SW, SE.
 
 
@@ -147,7 +147,7 @@
       immediately. The actual stop occurs after the ramp-down completes
       (a few hundred milliseconds at typical speeds).
 
-    <NOT_RDY>
+        <MVE_NACK NOT_RDY>
       Sent if not in FREE_RUN_MODE.
 
 
@@ -256,28 +256,41 @@
 
 
 ================================================================================
-  8.  <SYS_CHK> - System check
+  8.  <ALARMS?> - Query alarms (system check)
 ================================================================================
 
   Command:
-    <SYS_CHK>
+    <ALARMS?>
 
   Description:
-    Performs a system diagnostic check. Checks the battery voltage and
-    the fault status of both DRV stepper drivers. Any detected issues
-    are reported as alarm messages, followed by a completion response.
+    Checks the system for any error conditions and returns the results
+    in a single response. Checks the battery voltage and the fault status
+    of both DRV stepper drivers. Any detected issues are reported as alarm
+    keywords inline within the response.
 
   Parameters:
     None.
 
-  Responses:
-    <ALARM_LOW_BTRY>   - Sent if battery voltage < 10000 mV (10.0 V).
-    <ALARM_DRV_HORIZ_FAULT> - Sent if horizontal DRV fault pin is LOW.
-    <ALARM_DRV_VERT_FAULT>  - Sent if vertical DRV fault pin is LOW.
+    Response:
+      <ALARMS [ALARM_LOW_BTRY] [ALARM_DRV_HORIZ_FAULT] [ALARM_DRV_VERT_FAULT]
+              [ALARM_LIMIT_HORIZ_WEST_ACTIVE] [ALARM_LIMIT_HORIZ_EAST_ACTIVE]
+              [ALARM_LIMIT_VERT_NORTH_ACTIVE] [ALARM_LIMIT_VERT_SOUTH_ACTIVE]>
 
-    <SYS_CHK_DONE>
-      Always sent at the end of the system check, regardless of whether
-      any alarms were triggered.
+      ALARM_LOW_BTRY                 : Present if battery voltage < 10000 mV (10.0 V).
+      ALARM_DRV_HORIZ_FAULT          : Present if horizontal DRV fault pin is LOW.
+      ALARM_DRV_VERT_FAULT           : Present if vertical DRV fault pin is LOW.
+      ALARM_LIMIT_HORIZ_WEST_ACTIVE  : Present if horizontal west limit switch is pressed.
+      ALARM_LIMIT_HORIZ_EAST_ACTIVE  : Present if horizontal east limit switch is pressed.
+      ALARM_LIMIT_VERT_NORTH_ACTIVE  : Present if vertical north limit switch is pressed.
+      ALARM_LIMIT_VERT_SOUTH_ACTIVE  : Present if vertical south limit switch is pressed.
+
+      Examples:
+        <ALARMS>
+          No alarms, system healthy.
+        <ALARMS ALARM_LOW_BTRY>
+          Low battery alarm active.
+        <ALARMS ALARM_DRV_HORIZ_FAULT ALARM_LIMIT_HORIZ_EAST_ACTIVE>
+          Horizontal driver fault and east limit switch triggered.
 
 
 ================================================================================
@@ -337,22 +350,16 @@
 
   These responses can be returned by multiple commands.
 
-  <NOT_RDY>
-    The controller is busy with another operation and cannot accept the
-    requested command. Wait for it to become ready (<MVST IDLE> via
-    <MVST?>).
-
-  <LIMIT_BLOCKED>
-    The requested movement would travel toward an active (pressed) limit
-    switch. The command is rejected and no movement occurs.
+    <MV_NACK reason> / <MVS_NACK reason> / <MVE_NACK reason>
+      Negative acknowledgment for the MV, MVS or MVE command. The reason field
+      indicates the specific error:
+        NOT_RDY            - The controller is busy with another operation.
+        LIMIT_BLOCKED      - The movement would travel toward a pressed limit.
+        UNKNOWN_DIRECTION  - (MVS only) Invalid direction string.
 
   <LIMIT HORIZ_WEST>  (and variants)
     An active limit switch triggered an emergency stop. Sent automatically
     by check_limit_switches() polling function.
-
-  <ERROR UNKNOWN_DIRECTION>
-    The direction parameter for <MVS> is not one of the valid values
-    (N, S, W, E, NW, NE, SW, SE).
 
 
 ================================================================================

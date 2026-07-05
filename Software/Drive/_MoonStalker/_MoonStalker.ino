@@ -119,7 +119,7 @@ int get_battery_voltage()
    <MV a b>
    <BTRY?>
    <MVST?>
-   <SYS_CHK>
+   <ALARMS?>
    <DEBUG>
    <STOP>
    <MVS direction speed>
@@ -137,7 +137,7 @@ void handle_incoming_command(char *command_buff)
   command[strlen(command) - 1] = 0;
 
   cmd = strtok(command, " ");
-  if (!strcmp(cmd, "MV"))
+    if (!strcmp(cmd, "MV"))
   {
     char *horiz_steps_str;
     char *vert_steps_str;
@@ -148,7 +148,7 @@ void handle_incoming_command(char *command_buff)
 
     if (stepper_controller.get_running_mode() != RunningMode::IDLE_MODE)
     {
-      Serial.println("<NOT_RDY>");
+      Serial.println("<MV_NACK NOT_RDY>");
       return;
     }
     horiz_steps_str = strtok(NULL, " ");
@@ -214,7 +214,7 @@ void handle_incoming_command(char *command_buff)
     }
     if (limit_blocked)
     {
-      Serial.println("<LIMIT_BLOCKED>");
+      Serial.println("<MV_NACK LIMIT_BLOCKED>");
       return;
     }
 
@@ -225,7 +225,7 @@ void handle_incoming_command(char *command_buff)
                                      vert_direction,
                                      vert_steps);
   }
-  else if (!strcmp(cmd, "MVS"))
+    else if (!strcmp(cmd, "MVS"))
   {
     char *direction_str;
     char *rpm_speed_str;
@@ -236,7 +236,7 @@ void handle_incoming_command(char *command_buff)
     // must be stopped before starting a new free run).
     if (stepper_controller.get_running_mode() != RunningMode::IDLE_MODE)
     {
-      Serial.println("<NOT_RDY>");
+      Serial.println("<MVS_NACK NOT_RDY>");
       return;
     }
 
@@ -254,7 +254,7 @@ void handle_incoming_command(char *command_buff)
     //   NE (north-east)              → blocked if EITHER corresponding limit is pressed
     //   SW (south-west)              → blocked if EITHER corresponding limit is pressed
     //   SE (south-east)              → blocked if EITHER corresponding limit is pressed
-    // If the direction is blocked, the command is rejected with <LIMIT_BLOCKED>
+    // If the direction is blocked, the command is rejected with <MVS_NACK LIMIT_BLOCKED>
     // and no movement starts.
     bool limit_blocked = false;
 
@@ -308,13 +308,13 @@ void handle_incoming_command(char *command_buff)
     }
     else
     {
-      Serial.println("<ERROR UNKNOWN_DIRECTION>");
+      Serial.println("<MVS_NACK UNKNOWN_DIRECTION>");
       return;
     }
 
     if (limit_blocked)
     {
-      Serial.println("<LIMIT_BLOCKED>");
+      Serial.println("<MVS_NACK LIMIT_BLOCKED>");
       return;
     }
 
@@ -324,11 +324,11 @@ void handle_incoming_command(char *command_buff)
     Serial.print(rpm_speed);
     Serial.println(">");
   }
-  else if (!strcmp(cmd, "MVE"))
+    else if (!strcmp(cmd, "MVE"))
   {
     if (stepper_controller.get_running_mode() != RunningMode::FREE_RUN_MODE)
     {
-      Serial.println("<NOT_RDY>");
+      Serial.println("<MVE_NACK NOT_RDY>");
       return;
     }
     else
@@ -361,10 +361,9 @@ void handle_incoming_command(char *command_buff)
       Serial.println("<MVST FREE_RUN>");
     }
   }
-  else if (!strcmp(cmd, "SYS_CHK"))
+    else if (!strcmp(cmd, "ALARMS?"))
   {
-    system_check();
-    Serial.println("<SYS_CHK_DONE>");
+    check_alarms();
   }
   else if (!strcmp(cmd, "DEBUG"))
   {
@@ -420,33 +419,64 @@ void handle_incoming_command(char *command_buff)
   }
 }
 
-// Check for any error conditions
-void system_check()
+// Check for any error conditions and return alarms in a single response.
+// Response format: <ALARMS [alarm1] [alarm2] ...>
+//   ALARM_LOW_BTRY             : Present if battery voltage < 10000 mV
+//   ALARM_DRV_HORIZ_FAULT      : Present if horizontal DRV fault pin is LOW
+//   ALARM_DRV_VERT_FAULT       : Present if vertical DRV fault pin is LOW
+//   ALARM_LIMIT_HORIZ_WEST_ACTIVE  : Present if horizontal west limit is pressed
+//   ALARM_LIMIT_HORIZ_EAST_ACTIVE  : Present if horizontal east limit is pressed
+//   ALARM_LIMIT_VERT_NORTH_ACTIVE  : Present if vertical north limit is pressed
+//   ALARM_LIMIT_VERT_SOUTH_ACTIVE  : Present if vertical south limit is pressed
+void check_alarms()
 {
-  int battery_volt_mv;
-  int horiz_fault;
-  int vert_fault;
+  int battery_volt_mv = get_battery_voltage();
+  int horiz_fault = digitalRead(horiz_fault_pin);
+  int vert_fault  = digitalRead(vert_fault_pin);
 
-  battery_volt_mv = get_battery_voltage();
+  bool horiz_west_active  = (digitalRead(LIMIT_HORIZ_WEST)  == LOW);
+  bool horiz_east_active  = (digitalRead(LIMIT_HORIZ_EAST)  == LOW);
+  bool vert_north_active  = (digitalRead(LIMIT_VERT_NORTH)  == LOW);
+  bool vert_south_active  = (digitalRead(LIMIT_VERT_SOUTH)  == LOW);
+
+  Serial.print("<ALARMS");
 
   if (battery_volt_mv < BATTERY_LOW_LIMIT_MV)
   {
-    Serial.println("<ALARM_LOW_BTRY>");
+    Serial.print(" ALARM_LOW_BTRY");
   }
-
-  // check drv fault pins
-  horiz_fault = digitalRead(horiz_fault_pin);
-  vert_fault = digitalRead(vert_fault_pin);
 
   if (horiz_fault == LOW)
   {
-    Serial.println("<ALARM_DRV_HORIZ_FAULT>");
+    Serial.print(" ALARM_DRV_HORIZ_FAULT");
   }
 
   if (vert_fault == LOW)
   {
-    Serial.println("<ALARM_DRV_VERT_FAULT>");
+    Serial.print(" ALARM_DRV_VERT_FAULT");
   }
+
+  if (horiz_west_active)
+  {
+    Serial.print(" ALARM_LIMIT_HORIZ_WEST_ACTIVE");
+  }
+
+  if (horiz_east_active)
+  {
+    Serial.print(" ALARM_LIMIT_HORIZ_EAST_ACTIVE");
+  }
+
+  if (vert_north_active)
+  {
+    Serial.print(" ALARM_LIMIT_VERT_NORTH_ACTIVE");
+  }
+
+  if (vert_south_active)
+  {
+    Serial.print(" ALARM_LIMIT_VERT_SOUTH_ACTIVE");
+  }
+
+  Serial.println(">");
 }
 
 void initialize_pins()

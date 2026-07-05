@@ -182,7 +182,7 @@ class StepperController
   // move_steppers() call will complete their step counts at the same
   // time. The motor with fewer steps is proportionally slowed:
   //   new_speed = target_speed * (my_steps / max_steps)
-  // Set to false (default) for independent per-axis speed control.
+  // Set to true (default) for synchronized finish; false for independent per-axis speed control.
   void set_sync_mode(bool enabled);
 
   // -------------------------------------------------------------------------

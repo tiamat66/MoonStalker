@@ -78,7 +78,7 @@ volatile uint16_t StepperController::total_steps_horiz = 0;
 volatile uint16_t StepperController::total_steps_vert = 0;
 volatile uint16_t StepperController::scaled_ocr_horiz = 0;
 volatile uint16_t StepperController::scaled_ocr_vert = 0;
-volatile bool StepperController::sync_mode_enabled = false;
+volatile bool StepperController::sync_mode_enabled = true;
 
 // Free-run ramping state:
 //   free_run_ramp_steps_horiz/vert - Number of steps allocated for the
