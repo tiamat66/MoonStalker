@@ -5,6 +5,8 @@ import static si.vajnartech.moonstalker.OpCodes.MSG_GET_ASTRO_DATA;
 
 import java.io.BufferedReader;
 
+import si.vajnartech.moonstalker.OpCodes;
+import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.rest.RObjController;
 
 public class CmdStatus extends Controller<RObjController>
@@ -26,31 +28,9 @@ public class CmdStatus extends Controller<RObjController>
         return callServer(null);
     }
 
-//    /** @noinspection IfCanBeSwitch*/
-//    @Override
-//    protected void onPostExecute(String cmdResult)
-//    {
-//        if (cmdResult != null) {
-//            if (Objects.equals(cmdResult, "RDY")) {
-//                machine.set(MSG_GET_ASTRO_DATA);
-//            }
-//            else if (Objects.equals(cmdResult, "NOT_RDY")) {
-//                machine.set(MSG_NOT_READY);
-//            } else if (Objects.equals(cmdResult, "TIMEOUT")) {
-//                machine.set(MSG_CONN_ERROR);
-//            }
-//        }
-//    }
-
-
     @Override
     protected void onPostExecute(RObjController res)
     {
-        // TODO: zaenkrat, ko se connect izvede dobimo success, pol pa naprej!!
-//        if (res.success) {
-//            machine.set(MSG_GET_ASTRO_DATA);
-//        } else {
-//            machine.set(MSG_CONN_ERROR);
-//        }
+        // zaenkrat v tej komandi ni handlinga, vse se nanasa na ping
     }
 }

@@ -1,11 +1,5 @@
 package si.vajnartech.moonstalker.processor;
 
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MV_ACK;
-import static si.vajnartech.moonstalker.OpCodes.MSG_NOT_READY;
-
-import com.google.gson.Gson;
-
 import java.io.BufferedReader;
 
 import si.vajnartech.moonstalker.rest.ObjController;

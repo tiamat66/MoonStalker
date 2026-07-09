@@ -13,7 +13,7 @@ public class CmdPing extends Controller<RObjController>
 {
     public CmdPing(Processor machine)
     {
-        super("response", machine);
+        super("ping", machine);
     }
 
     @Override
@@ -31,22 +31,19 @@ public class CmdPing extends Controller<RObjController>
     @Override
     protected void onPostExecute(RObjController res)
     {
-        if (res != null) {
-           Log.i("CmdPing", "onPostExecute: " + res.state + " " + res.message + " " + res.data);
-
+           Log.i("CmdPing", res.state + " " + res.message + " " + res.error_data);
            switch(res.state) {
                case "ready":
-                   machine.set(OpCodes.READY);
-                   break;
-               case "connecting":
-                   machine.set(OpCodes.CONNECTING);
+                   machine.set(OpCodes.READY, new ObjController(res.message, res.error_data, ""));
                    break;
                case "connected":
-                   machine.set(OpCodes.CONNECTED);
+                   machine.set(OpCodes.CONNECTED, new ObjController(res.message, res.error_data, ""));
                    break;
                case "error":
                    machine.set(OpCodes.ERROR, new ObjController(res.message, "", ""));
                    break;
+               case "moving":
+                   machine.set(OpCodes.MOVING, new ObjController(res.message, res.error_data, ""));
            }
         }
     }
@@ -73,4 +70,4 @@ public class CmdPing extends Controller<RObjController>
 //        }
 //    }
 
-}
+

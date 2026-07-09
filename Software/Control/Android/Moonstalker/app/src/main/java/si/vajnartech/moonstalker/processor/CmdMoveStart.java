@@ -1,11 +1,5 @@
 package si.vajnartech.moonstalker.processor;
 
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MVS_ACK;
-import static si.vajnartech.moonstalker.OpCodes.MSG_NOT_READY;
-
-import com.google.gson.Gson;
-
 import java.io.BufferedReader;
 
 import si.vajnartech.moonstalker.rest.ObjController;
@@ -13,12 +7,12 @@ import si.vajnartech.moonstalker.rest.RObjController;
 
 public class CmdMoveStart extends Controller<RObjController>
 {
-    protected ObjController direction;
+    protected ObjController data;
 
-    public CmdMoveStart(Processor machine, ObjController direction)
+    public CmdMoveStart(Processor machine, ObjController data)
     {
-        super("move", machine);
-        this.direction = direction;
+        super("movestart", machine);
+        this.data = data;
     }
 
     @Override
@@ -30,28 +24,13 @@ public class CmdMoveStart extends Controller<RObjController>
     @Override
     public RObjController backgroundFunc()
     {
-        return callServer(direction);
+        return callServer(data);
     }
 
     @Override
     protected void onPostExecute(RObjController rObjController)
     {
-
+        // zaenkrat je komanda posredovana dobimo message ki je sent in neki text
+        // vse ostalo je na pingu
     }
-
-//    @Override
-//    protected void onPostExecute(String cmdResult)
-//    {
-//        if (cmdResult != null) {
-//            if (cmdResult.equals("NOT_RDY")) {
-//                machine.set(MSG_NOT_READY);
-//            } else if (cmdResult.equals("TIMEOUT")) {
-//                machine.set(MSG_CONN_TIMEOUT);
-//            } else if (cmdResult.startsWith("MVS_ACK")) {
-//                machine.set(MSG_MVS_ACK);
-//            }
-//        }
-//    }
-
-
 }

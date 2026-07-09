@@ -13,7 +13,7 @@ public class CmdMoveEnd extends Controller<RObjController>
 {
     public CmdMoveEnd(Processor queue)
     {
-        super("end_move", queue);
+        super("moveend", queue);
     }
 
     @Override

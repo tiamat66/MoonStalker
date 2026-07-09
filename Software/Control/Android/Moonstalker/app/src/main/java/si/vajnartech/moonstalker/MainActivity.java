@@ -8,8 +8,8 @@ import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATING;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONNECT;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE_END;
+import static si.vajnartech.moonstalker.OpCodes.CONNECT;
+import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void logMessage(String val)
     {
+        if (val == null) return;
         monitor.update(val);
     }
 
@@ -150,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void connect()
     {
-        machine.set(MSG_CONNECT);
+        machine.set(CONNECT);
     }
 
     private void calibrated()
@@ -165,12 +166,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void moveStart(String direction)
     {
-        machine.set(OpCodes.MOVE_START, new ObjController(direction, "", ""));
+        // TODO: speed is 500 RPM, both horizontal and vertical steppers will move this speed
+        String speed = "500";
+        machine.set(OpCodes.MOVE_START, new ObjController(direction, speed, ""));
     }
 
     public void moveEnd()
     {
-        machine.set(MSG_MOVE_END);
+        machine.set(MOVE_END);
     }
 
     @Override
@@ -219,9 +222,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.calibrate) {
             calibrating();
         } else if (id == R.id.manual) {
-//            setFragment("manual", ManualMoveFragment.class, new Bundle());
-            moveStart("up");
-
+            setFragment("manual", ManualMoveFragment.class, new Bundle());
         } else if (id == R.id.track) {
             setFragment("control", ControlFragment.class, new Bundle());
         } else if (id == R.id.move) {}

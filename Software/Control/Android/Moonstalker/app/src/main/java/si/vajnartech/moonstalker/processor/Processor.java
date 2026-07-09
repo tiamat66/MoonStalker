@@ -12,7 +12,7 @@ import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATING;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONNECT;
+import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_ERROR;
@@ -20,11 +20,11 @@ import static si.vajnartech.moonstalker.OpCodes.MSG_GET_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MSG_GOT_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE_END;
+import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MVE_ACK;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MVS_ACK;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MV_ACK;
-import static si.vajnartech.moonstalker.OpCodes.MSG_NOT_READY;
+import static si.vajnartech.moonstalker.OpCodes.NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_POSITION;
 import static si.vajnartech.moonstalker.OpCodes.MSG_WARNING;
 
@@ -110,10 +110,12 @@ public class Processor
         actions.put(OpCodes.ERROR, new Ball(null, new Runnable() {
             @Override
             public void run() {
+                act.logMessage(status.message.p2);
+                if (Objects.equals(status.message.p1, "NOT_RDY"))
+                    return;
                 act.setInfoMessage(R.string.error);
-                act.updateFab(R.color.colorError); // TODO: fab mora narediti akcijo reset
+                act.updateFab(R.color.colorError);
                 status.set(ERROR);
-                act.logMessage(status.message.p1);
             }
         }));
         actions.put(OpCodes.CONNECTING, new Ball(null,
@@ -128,7 +130,10 @@ public class Processor
                     act.updateMenu(true, true, false, false);
                 }));
         // MSG_CONNECT
-        actions.put(MSG_CONNECT, new Ball(() -> new CmdStatus(this),
+        actions.put(CONNECT, new Ball(() -> {
+            new CmdStatus(this);
+            machine.set(OpCodes.CONNECTING);
+        },
                 null));
         // MSG_GET_ASTRO_DATA
         actions.put(MSG_GET_ASTRO_DATA, new Ball(() -> new CmdGetAstroData(machine),
@@ -149,7 +154,7 @@ public class Processor
             act.updateMenu(true, true, false, false);
         }));
         // MSG_NOT_READY
-        actions.put(MSG_NOT_READY, new Ball(null,
+        actions.put(NOT_READY, new Ball(null,
                 () -> {
                     act.setInfoMessage(R.string.not_ready);
                     status.set(ST_NOT_READY);
@@ -157,9 +162,17 @@ public class Processor
         ));
         // MSG_MOVE_START
         actions.put(OpCodes.MOVE_START, new Ball(
-                () -> new CmdMoveStart(machine, status.message),
+                () -> {
+                    new CmdMoveStart(machine, status.message);
+                    machine.set(OpCodes.MOVING);
+                },
                 null
         ));
+        actions.put(OpCodes.MOVING, new Ball(null,
+                () -> {
+                    act.setInfoMessage(R.string.moving);
+                    status.set(OpCodes.MOVING);
+                }));
         // MSG_CONN_TIMEOUT
         actions.put(MSG_CONN_TIMEOUT, new Ball(null,
                 () -> act.setInfoMessage(R.string.timeout)));
@@ -194,6 +207,7 @@ public class Processor
                     act.setInfoMessage(R.string.ready);
                     act.updateFab(R.color.colorOk);
                     status.set(OpCodes.READY);
+                    act.logMessage(status.message.p2);
                 }
                 ));
         // MSG_ERROR
@@ -240,7 +254,7 @@ public class Processor
         actions.put(MSG_BATTERY_RES, new Ball(null,
                 () -> act.setInfoMessage(R.string.btry_voltage)));
         // MSG_MOVE_END
-        actions.put(MSG_MOVE_END, new Ball(() -> new CmdMoveEnd(this),
+        actions.put(MOVE_END, new Ball(() -> new CmdMoveEnd(this),
                 null));
         // MSG_MVE_ACK
         actions.put(MSG_MVE_ACK, new Ball(null,

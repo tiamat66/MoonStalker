@@ -13,6 +13,7 @@ public final class Status
     private final AtomicInteger value = new AtomicInteger(ST_NOT_READY);
     public volatile ObjController message = null;
     public volatile DataAstroObj data = null;
+    public volatile String alterData = "";
 
     public void set(int val)
     {

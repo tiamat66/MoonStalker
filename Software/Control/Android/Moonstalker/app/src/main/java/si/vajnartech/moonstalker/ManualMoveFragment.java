@@ -27,14 +27,16 @@ public class ManualMoveFragment extends MyFragment implements View.OnTouchListen
     public boolean onTouch(View view, MotionEvent motionEvent)
     {
         switch (motionEvent.getAction()) {
-            case MotionEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_DOWN:
                 if (fingerDown.get()) break;
                 fingerDown.set(true);
                 act.moveStart("N");
                 break;
             case MotionEvent.ACTION_UP:
-                fingerDown.set(false);
-                act.moveEnd();
+                if (fingerDown.get()) {
+                    fingerDown.set(false);
+                    act.moveEnd();
+                }
         }
         view.performClick();
         return true;
