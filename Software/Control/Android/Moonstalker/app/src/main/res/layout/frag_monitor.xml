@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="SYSTEM MONITOR"
+        android:text="@string/system_monitor"
         android:textColor="@color/textColorSecondary"
         android:textSize="12sp"
         android:textStyle="bold"

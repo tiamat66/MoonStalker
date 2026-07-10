@@ -1,15 +1,24 @@
 package si.vajnartech.moonstalker.rest;
 
+import si.vajnartech.moonstalker.AstroObject;
+import si.vajnartech.moonstalker.processor.AstroObj;
+
 public class ObjController
 {
     public String p1;
     public String p2;
     public String p3;
+    public AstroObject astroObj;
 
     public ObjController (String p1, String p2, String p3)
     {
         this.p1 = p1;
         this.p2 = p2;
         this.p3 = p3;
+    }
+
+    public ObjController (AstroObject astroObj)
+    {
+        this.astroObj = astroObj;
     }
 }

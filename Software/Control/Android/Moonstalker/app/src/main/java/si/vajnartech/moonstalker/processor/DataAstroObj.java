@@ -9,6 +9,7 @@ public class DataAstroObj
     public DataAstroObj(DataAstroObj val)
     {
         data = new ArrayList<>();
-        data.addAll(val.data);
+        if (val != null)
+            data.addAll(val.data);
     }
 }

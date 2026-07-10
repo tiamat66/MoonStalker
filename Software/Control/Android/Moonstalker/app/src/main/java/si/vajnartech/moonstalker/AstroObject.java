@@ -2,6 +2,7 @@ package si.vajnartech.moonstalker;
 
 import androidx.annotation.NonNull;
 
+// To je lokalni astronomski objekt za UI
 public class AstroObject
 {
   public String name;

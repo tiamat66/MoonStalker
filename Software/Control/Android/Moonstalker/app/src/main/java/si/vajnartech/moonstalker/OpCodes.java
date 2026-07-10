@@ -15,8 +15,8 @@ public final class OpCodes
     public static final int MSG_BATTERY = 10;
     public static final int MSG_BATTERY_RES = 11;
     public static final int MSG_GET_ASTRO_DATA = 13;
-    public static final int MSG_CALIBRATED = 14;
-    public static final int MSG_CALIBRATING = 15;
+    public static final int CALIBRATED = 14;
+    public static final int CALIBRATING = 15;
     public static final int MSG_POSITION = 16;
     public static final int MOVE_START = 17;
     public static final int MOVE_END = 18;

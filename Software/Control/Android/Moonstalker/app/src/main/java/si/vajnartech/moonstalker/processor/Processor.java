@@ -1,7 +1,6 @@
 package si.vajnartech.moonstalker.processor;
 
 import static si.vajnartech.moonstalker.C.CALIBRATOR;
-import static si.vajnartech.moonstalker.C.MD_CALIBRATING;
 import static si.vajnartech.moonstalker.C.MD_MOVING;
 import static si.vajnartech.moonstalker.C.MD_NOT_CALIBRATED;
 import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
@@ -10,8 +9,8 @@ import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.ERROR;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATED;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATING;
+import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
+import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
@@ -50,6 +49,8 @@ public class Processor
     public Status status = new Status();
     public Status mode = new Status();
 
+    protected volatile int curActionID = -1;
+
     protected MainActivity act;
     protected Handler ioQueue;
     protected Handler uxQueue;
@@ -77,6 +78,8 @@ public class Processor
 
     public void set(int id)
     {
+        if (curActionID == id) return;
+
         Ball ball = actions.get(id);
         if (ball != null) {
             if (ball.ioAction != null) {
@@ -184,21 +187,23 @@ public class Processor
                     mode.set(MD_MOVING);
                  }));
         // MSG_CALIBRATING
-        actions.put(MSG_CALIBRATING, new Ball(null,
+        actions.put(CALIBRATING, new Ball(null,
                 () -> {
                     act.setFragment("manual", ManualMoveFragment.class, new Bundle());
                     act.promptToCalibration();
                     act.setInfoMessage(R.string.calibrating);
-                    mode.set(MD_CALIBRATING);
+                    act.updateFab(R.color.colorOk);
+                    mode.set(CALIBRATING);
+                    act.setInfoMessage(R.string.calibrating);
                 }));
         // MSG_CALIBRATED
-        actions.put(MSG_CALIBRATED, new Ball(
+        actions.put(CALIBRATED, new Ball(
                 () -> new CmdCalibrated(this, status.message),
                 () -> {
                     act.curObject = new AstroObject(CALIBRATOR);
                     act.setFragment("control", ControlFragment.class, new Bundle());
                     act.updateMenu(false, true, true, true);
-                    act.setInfoMessage(R.string.ready);
+                    act.setInfoMessage(R.string.calibrated);
                 }
         ));
         // MSG_READY

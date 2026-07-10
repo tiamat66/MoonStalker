@@ -106,10 +106,18 @@ public class SelectFragment extends MyFragment
 
   static void initAstroObjDatabase(MainActivity ctx)
   {
-    skyObjAdapter = ArrayAdapter.createFromResource(ctx, R.array.sky_objects, android.R.layout.simple_spinner_item);
+    skyObjAdapter = new ArrayAdapter<>(ctx, R.layout.spinner_item);
+    skyObjAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+    
+    // Add items from resources
+    String[] objects = ctx.getResources().getStringArray(R.array.sky_objects);
+    for (String obj : objects) {
+        skyObjAdapter.add(obj);
+    }
     skyObjAdapter.sort(Comparator.comparingInt(charSequence -> charSequence.toString().charAt(0)));
 
-    constellationAdapter = new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_item);
+    constellationAdapter = new ArrayAdapter<>(ctx, R.layout.spinner_item);
+    constellationAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
     constellationAdapter.sort(Comparator.comparingInt(charSequence -> charSequence.toString().charAt(0)));
     new GetConstellationInfo(constellationAdapter);
   }

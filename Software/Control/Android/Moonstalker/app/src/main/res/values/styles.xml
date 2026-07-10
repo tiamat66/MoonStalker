@@ -21,7 +21,6 @@
   <style name="ControlPanel" parent="">
     <item name="android:background">@drawable/border_frame</item>
     <item name="android:elevation">4dp</item>
-    <item name="android:padding">12dp</item>
   </style>
 
 </resources>

@@ -1,13 +1,12 @@
 package si.vajnartech.moonstalker;
 
 import static si.vajnartech.moonstalker.C.CALIBRATOR;
-import static si.vajnartech.moonstalker.C.MD_CALIBRATING;
 import static si.vajnartech.moonstalker.C.MD_MOVING;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
 import static si.vajnartech.moonstalker.C.ST_NOT_READY;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATED;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CALIBRATING;
+import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
+import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
 
@@ -20,6 +19,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
@@ -32,6 +32,9 @@ import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.ArrayList;
+
+import si.vajnartech.moonstalker.processor.AstroObj;
 import si.vajnartech.moonstalker.processor.DataAstroObj;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
@@ -40,7 +43,7 @@ import si.vajnartech.moonstalker.rest.ObjController;
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
-    public DataAstroObj astroData;
+    public DataAstroObj astroData = new DataAstroObj(null);
 
     public AstroObject curObject;
     protected Processor machine = new Processor(this);
@@ -69,17 +72,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         monitor.update(val);
     }
 
+    public void hideFab()
+    {
+        runOnUiThread(() -> fab.setVisibility(View.GONE));
+    }
+
     public void updateFab(int color)
     {
+        fab.setVisibility(View.VISIBLE);
+
         runOnUiThread(() -> {
             fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
-            
+
             // Update icon based on state
-            if (machine.mode.get() == MD_MOVING) {
+            if (machine.status.get() == OpCodes.MOVING) {
                 fab.setImageResource(android.R.drawable.ic_media_pause);
             } else if (machine.status.get() == ST_CONNECTION_ERROR || machine.status.get() == ST_NOT_READY) {
                 fab.setImageResource(android.R.drawable.stat_sys_data_bluetooth);
-            } else if (machine.mode.get() == MD_CALIBRATING) {
+            } else if (machine.status.get() == CALIBRATING) {
                 fab.setImageResource(android.R.drawable.ic_menu_save);
             } else {
                 fab.setImageResource(android.R.drawable.ic_menu_directions);
@@ -125,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 moveEnd();
             } else if (machine.status.get() == OpCodes.READY) {
                 connect();
-            } else if (machine.mode.get() == MD_CALIBRATING) {
+            } else if (machine.mode.get() == CALIBRATING) {
                 calibrated();
             }
         });
@@ -146,6 +156,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
 
+        // TODO: preberi podatkovno bazo MSG_GOT_ASTRO_DATA
+        AstroObj obj = new AstroObj();
+        obj.name = CALIBRATOR.name;
+        obj.ra = CALIBRATOR.ra;
+        obj.dec = CALIBRATOR.dec;
+        astroData.data.add(obj);
+
         new Ping(machine);
     }
 
@@ -156,12 +173,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void calibrated()
     {
-        machine.set(MSG_CALIBRATED, new ObjController(CALIBRATOR.toString(), "", ""));
+        machine.set(CALIBRATED, new ObjController(CALIBRATOR));
     }
 
     private void calibrating()
     {
-        machine.set(MSG_CALIBRATING);
+        machine.set(CALIBRATING);
     }
 
     public void moveStart(String direction)
