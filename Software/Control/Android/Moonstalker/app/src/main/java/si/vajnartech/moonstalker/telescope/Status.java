@@ -4,6 +4,8 @@ import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import si.vajnartech.moonstalker.AstroObject;
+import si.vajnartech.moonstalker.processor.AstroObj;
 import si.vajnartech.moonstalker.processor.DataAstroObj;
 import si.vajnartech.moonstalker.rest.ObjController;
 
@@ -13,6 +15,7 @@ public final class Status
     private final AtomicInteger value = new AtomicInteger(ST_NOT_READY);
     public volatile ObjController message = null;
     public volatile DataAstroObj data = null;
+    public volatile AstroObj object = null;
     public volatile String alterData = "";
 
     public void set(int val)

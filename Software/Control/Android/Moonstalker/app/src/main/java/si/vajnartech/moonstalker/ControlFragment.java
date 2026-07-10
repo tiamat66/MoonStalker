@@ -10,6 +10,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import si.vajnartech.moonstalker.processor.AstroObj;
+import si.vajnartech.moonstalker.processor.CelestialObj;
 
 public class ControlFragment extends MyFragment
 {
@@ -17,6 +18,8 @@ public class ControlFragment extends MyFragment
     private View detailsPanel;
     private TextView valueRa;
     private TextView valueDec;
+
+    ArrayAdapter<String> skyObjectAdapter = new ArrayAdapter<>(act, R.layout.spinner_item);
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -42,12 +45,11 @@ public class ControlFragment extends MyFragment
     private void initAstroObjDropDown()
     {
         // Using custom layout for better visibility in dark theme
-        ArrayAdapter<String> skyObjectAdapter = new ArrayAdapter<>(act, R.layout.spinner_item);
         skyObjectAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
-        if (act.astroData != null && act.astroData.data != null) {
-            for (AstroObj obj : act.astroData.data) {
-                skyObjectAdapter.add(obj.name);
+        if (act.objectsDatabase != null && act.objectsDatabase.data != null) {
+            for (String name : act.objectsDatabase.data.keySet()) {
+                skyObjectAdapter.add(name);
             }
         }
         skyObjects.setAdapter(skyObjectAdapter);
@@ -69,10 +71,13 @@ public class ControlFragment extends MyFragment
 
     private void updateDetails(int position)
     {
-        if (act.astroData != null && act.astroData.data != null && position < act.astroData.data.size()) {
-            AstroObj selected = act.astroData.data.get(position);
-            valueRa.setText(selected.ra);
-            valueDec.setText(selected.dec);
+        String name = skyObjectAdapter.getItem(position);
+        if (act.objectsDatabase != null && act.objectsDatabase.data != null && position < act.objectsDatabase.data.size()) {
+            CelestialObj selected = act.objectsDatabase.data.get(name);
+            String sRa = selected.ra.hours + ":" + selected.ra.minutes + ":" + selected.ra.seconds;
+            String sDec = selected.dec.degrees + ":" + selected.dec.minutes + ":" + selected.dec.seconds;
+            valueRa.setText(sRa);
+            valueDec.setText(sDec);
         }
     }
 }

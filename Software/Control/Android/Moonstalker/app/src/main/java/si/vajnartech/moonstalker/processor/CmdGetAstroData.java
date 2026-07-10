@@ -1,49 +1,33 @@
 package si.vajnartech.moonstalker.processor;
 
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
-import static si.vajnartech.moonstalker.OpCodes.MSG_GOT_ASTRO_DATA;
-
-import com.google.gson.Gson;
+import android.util.Log;
 
 import java.io.BufferedReader;
 
-import si.vajnartech.moonstalker.rest.RObjController;
+import si.vajnartech.moonstalker.rest.RObjAstroData;
 
-public class CmdGetAstroData extends Controller<DataAstroObj>
+public class CmdGetAstroData extends Controller<RObjAstroData>
 {
     public CmdGetAstroData(Processor machine)
     {
-        super("get_astro_data", machine);
+        super("getastrodata", machine);
     }
 
     @Override
-    protected DataAstroObj deserialize(BufferedReader br)
+    protected RObjAstroData deserialize(BufferedReader br)
     {
-        return gson.fromJson(br, DataAstroObj.class);
+        return gson.fromJson(br, RObjAstroData.class);
     }
 
     @Override
-    public DataAstroObj backgroundFunc()
+    public RObjAstroData backgroundFunc()
     {
         return callServer(null);
     }
 
     @Override
-    protected void onPostExecute(DataAstroObj dataAstroObj)
+    protected void onPostExecute(RObjAstroData rObjAstroData)
     {
-
+        Log.i("Pepe", "Tjorba kavcic");
     }
-
-
-//    @Override
-//    protected void onPostExecute(DataAstroObj astroData)
-//    {
-//        if (astroData == null) {
-//            machine.set(MSG_CONN_ERROR);
-//        } else {
-//            machine.set(MSG_GOT_ASTRO_DATA, astroData);
-//        }
-//    }
-
-
 }

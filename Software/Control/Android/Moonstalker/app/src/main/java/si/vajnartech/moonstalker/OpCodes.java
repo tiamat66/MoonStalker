@@ -14,7 +14,7 @@ public final class OpCodes
     public static final int MSG_INFO = 9;
     public static final int MSG_BATTERY = 10;
     public static final int MSG_BATTERY_RES = 11;
-    public static final int MSG_GET_ASTRO_DATA = 13;
+    public static final int GET_ASTRO_DATA = 13;
     public static final int CALIBRATED = 14;
     public static final int CALIBRATING = 15;
     public static final int MSG_POSITION = 16;
@@ -23,7 +23,7 @@ public final class OpCodes
     public static final int MSG_MVS_ACK = 19;
     public static final int MSG_MVE_ACK = 20;
     public static final int MSG_CONN_TIMEOUT = 21;
-    public static final int MSG_GOT_ASTRO_DATA = 22;
+    public static final int GOT_ASTRO_DATA = 22;
     public static final int CONNECTING = 23;
     public static final int CONNECTED = 24;
     public static final int ERROR = 25;

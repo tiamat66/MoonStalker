@@ -8,6 +8,7 @@ import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
+import static si.vajnartech.moonstalker.OpCodes.GET_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
 
 import android.annotation.SuppressLint;
@@ -39,11 +40,13 @@ import si.vajnartech.moonstalker.processor.DataAstroObj;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
 import si.vajnartech.moonstalker.rest.ObjController;
+import si.vajnartech.moonstalker.rest.RObjAstroData;
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
-    public DataAstroObj astroData = new DataAstroObj(null);
+//    public DataAstroObj astroData = new DataAstroObj(null);
+    public RObjAstroData objectsDatabase = new RObjAstroData();
 
     public AstroObject curObject;
     protected Processor machine = new Processor(this);
@@ -173,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void calibrated()
     {
-        machine.set(CALIBRATED, new ObjController(CALIBRATOR));
+        machine.set(CALIBRATED);
     }
 
     private void calibrating()

@@ -15,8 +15,8 @@ import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_ERROR;
-import static si.vajnartech.moonstalker.OpCodes.MSG_GET_ASTRO_DATA;
-import static si.vajnartech.moonstalker.OpCodes.MSG_GOT_ASTRO_DATA;
+import static si.vajnartech.moonstalker.OpCodes.GET_ASTRO_DATA;
+import static si.vajnartech.moonstalker.OpCodes.GOT_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
 import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
@@ -126,7 +126,7 @@ public class Processor
             act.setInfoMessage(R.string.connecting);
             status.set(OpCodes.CONNECTING);
         }));
-        actions.put(OpCodes.CONNECTED, new Ball(null,
+        actions.put(OpCodes.CONNECTED, new Ball(() -> new CmdGetAstroData(machine),
                 () -> {
                     act.setInfoMessage(R.string.connected);
                     status.set(OpCodes.CONNECTED);
@@ -138,9 +138,6 @@ public class Processor
             machine.set(OpCodes.CONNECTING);
         },
                 null));
-        // MSG_GET_ASTRO_DATA
-        actions.put(MSG_GET_ASTRO_DATA, new Ball(() -> new CmdGetAstroData(machine),
-                null));
         // MSG_CONN_ERROR
         actions.put(MSG_CONN_ERROR, new Ball(null, () -> {
             act.setInfoMessage(R.string.connection_failed);
@@ -149,12 +146,8 @@ public class Processor
             status.set(ST_CONNECTION_ERROR);
         }));
         // MSG_GOT_ASTRO_DATA
-        actions.put(MSG_GOT_ASTRO_DATA, new Ball(null, () -> {
+        actions.put(GOT_ASTRO_DATA, new Ball(null, () -> {
             act.astroData = new DataAstroObj(status.data);
-            act.setInfoMessage(R.string.ready);
-            status.set(OpCodes.READY);
-            act.updateFab(R.color.colorOk);
-            act.updateMenu(true, true, false, false);
         }));
         // MSG_NOT_READY
         actions.put(NOT_READY, new Ball(null,
@@ -198,7 +191,7 @@ public class Processor
                 }));
         // MSG_CALIBRATED
         actions.put(CALIBRATED, new Ball(
-                () -> new CmdCalibrated(this, status.message),
+                null,
                 () -> {
                     act.curObject = new AstroObject(CALIBRATOR);
                     act.setFragment("control", ControlFragment.class, new Bundle());
