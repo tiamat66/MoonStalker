@@ -418,9 +418,9 @@ class MoonControlWindow(QMainWindow):
         lim_btn.clicked.connect(lambda: self.send_serial("<LIM?>"))
         row1.addWidget(lim_btn)
 
-        sys_chk_btn = QPushButton("SYS_CHK")
-        sys_chk_btn.clicked.connect(lambda: self.send_serial("<SYS_CHK>"))
-        row1.addWidget(sys_chk_btn)
+        alarms_btn = QPushButton("ALARMS?")
+        alarms_btn.clicked.connect(lambda: self.send_serial("<ALARMS?>"))
+        row1.addWidget(alarms_btn)
 
         query_layout.addLayout(row1)
 
