@@ -1,0 +1,31 @@
+Implement step counter
+-----------------------
+Implement the <STEP_COUNTER?> query command. This should return the cumulative
+counter of horizontal (x) and vertical (y) steps executed from the start of the system
+or from the last reset. The return should be of the form
+<STEP_COUNTER X:... Y:...>.
+Both steps from the MV command and from the MVS free run mode should be counted
+in this.
+Even if the movement is done in the negative, e.g. -200 for the X, the steps are counted
+as positive. So the movement MV -200 0 and movement MV 200 0 should increase the
+X counter to 400, they should not null out.
+
+<STEP_COUNTER_RESET> command should  be impelemented that  resets both X and y
+counter to 0.
+
+Implement coords
+-----------------
+Also implement the <COORDS?> command. This is similar to the step counter above,
+the difference is that the movements do null out like in the above example.
+MV -200 0 and MV 200 0 should leave the X coordinate at 0, because that's where the
+telescope ends up. The same is true for the Y coordinate.
+The reply to this command should be <COORDS X:... Y:....> where X and Y are the
+current coordinates for X and Y.
+
+Fix MVE bug
+------------
+Fix a bug where MVE command returns NOT_RDY when it's executed to end the MVS free
+run mode.
+
+Don't show remaining steps and current steps for MVS free running mode in
+DEBUG command.

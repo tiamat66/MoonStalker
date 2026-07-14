@@ -97,6 +97,15 @@ volatile uint16_t StepperController::free_run_target_ocr_vert = 0;
 // Current running mode. Starts IDLE (motors stopped).
 volatile RunningMode StepperController::running_mode = RunningMode::IDLE_MODE;
 
+// Step counters and coordinate tracking.
+// Initialized to 0; the first free_run_start or move_steppers will set
+// step_counters_initialized to true so the ISRs start counting.
+volatile uint32_t StepperController::step_counter_x = 0;
+volatile uint32_t StepperController::step_counter_y = 0;
+volatile int32_t  StepperController::coord_x = 0;
+volatile int32_t  StepperController::coord_y = 0;
+volatile bool     StepperController::step_counters_initialized = false;
+
 // ============================================================================
 // Hardware pin assignments
 // ============================================================================
@@ -228,6 +237,9 @@ bool StepperController::free_run_start(int16_t speed_horiz,
   // Clear any previous ramp-down state
   free_run_ramping_down = false;
 
+  // Activate step counting
+  step_counters_initialized = true;
+
   // Handle horizontal axis (if not IGNORE)
   if (horiz_direction != StepperDirection::IGNORE)
   {
@@ -246,8 +258,14 @@ bool StepperController::free_run_start(int16_t speed_horiz,
         start_ocr_horiz_isr = MAX_OCR_RAMP;
         target_ocr_horiz_isr = free_run_target_ocr_horiz;
         OCR1A = start_ocr_horiz_isr;
-        // Use ramp steps as the initial count so the ISR can track progress
-        horiz_steps_remain = free_run_ramp_steps_horiz;
+        // Set steps_remain to ramp_steps + 1 so the ISR processes all ramp
+        // steps without hitting steps_remain == 0 prematurely. On the final
+        // ramp step, step_idx >= ramp_steps, so the ISR enters the "else"
+        // branch which sets steps_remain = 65535 for unlimited steady-state.
+        // Without this +1, the last ramp iteration would decrement
+        // steps_remain to 0, triggering a premature IDLE transition
+        // (the MVE bug: MVE would see IDLE_MODE and return NOT_RDY).
+        horiz_steps_remain = free_run_ramp_steps_horiz + 1;
       }
       else
       {
@@ -278,7 +296,7 @@ bool StepperController::free_run_start(int16_t speed_horiz,
         start_ocr_vert_isr = MAX_OCR_RAMP;
         target_ocr_vert_isr = free_run_target_ocr_vert;
         OCR3A = start_ocr_vert_isr;
-        vert_steps_remain = free_run_ramp_steps_vert;
+        vert_steps_remain = free_run_ramp_steps_vert + 1;
       }
       else
       {
@@ -458,6 +476,9 @@ bool StepperController::move_steppers(int16_t speed_horiz,
   {
     return false;
   }
+
+  // Activate step counting
+  step_counters_initialized = true;
 
   // --- Set direction pins
   horiz_direction_state = horiz_direction;
@@ -797,6 +818,24 @@ ISR(TIMER1_COMPA_vect)
     StepperController::horiz_steps_remain--;
     StepperController::horiz_steps_current++;
 
+    // Update step counter and coordinate tracking
+    // Only count when the counters are initialized (after first start command)
+    if (StepperController::step_counters_initialized)
+    {
+      // Step counter: always positive, cumulative total of steps
+      StepperController::step_counter_x++;
+
+      // Coordinates: CW = positive, CCW = negative
+      if (StepperController::horiz_direction_state == StepperDirection::CW)
+      {
+        StepperController::coord_x++;
+      }
+      else
+      {
+        StepperController::coord_x--;
+      }
+    }
+
     // Schedule the falling edge
     OCR1B = TCNT1 + 1;
     TIMSK1 |= (1 << OCIE1B);
@@ -903,6 +942,24 @@ ISR(TIMER3_COMPA_vect)
     // Update step counters
     StepperController::vert_steps_remain--;
     StepperController::vert_steps_current++;
+
+    // Update step counter and coordinate tracking
+    // Only count when the counters are initialized (after first start command)
+    if (StepperController::step_counters_initialized)
+    {
+      // Step counter: always positive, cumulative total of steps
+      StepperController::step_counter_y++;
+
+      // Coordinates: CW = positive, CCW = negative
+      if (StepperController::vert_direction_state == StepperDirection::CW)
+      {
+        StepperController::coord_y++;
+      }
+      else
+      {
+        StepperController::coord_y--;
+      }
+    }
 
     // Schedule the falling edge
     OCR3B = TCNT3 + 1;

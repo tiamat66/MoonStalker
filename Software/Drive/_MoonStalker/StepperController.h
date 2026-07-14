@@ -266,6 +266,24 @@ class StepperController
   // (via set_running_mode_idle()) and read from the main loop.
   static volatile RunningMode running_mode;
 
+  // -------------------------------------------------------------------------
+  // Step counters and coordinate tracking
+  // -------------------------------------------------------------------------
+  // step_counter_x / step_counter_y:
+  //   Cumulative count of all steps executed since system start or last reset.
+  //   Always incremented (positive) regardless of direction.
+  //   Used by the <STEP_COUNTER?> query command.
+  //
+  // coord_x / coord_y:
+  //   Signed position tracking where positive/negative movements cancel out.
+  //   Incremented for CW direction, decremented for CCW direction.
+  //   Used by the <COORDS?> query command.
+  static volatile uint32_t step_counter_x;
+  static volatile uint32_t step_counter_y;
+  static volatile int32_t  coord_x;
+  static volatile int32_t  coord_y;
+  static volatile bool     step_counters_initialized;
+
   private:
 
   int16_t     steps_per_revolution;

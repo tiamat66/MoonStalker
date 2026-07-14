@@ -124,6 +124,9 @@ int get_battery_voltage()
    <STOP>
    <MVS direction speed>
    <LIM?>
+   <STEP_COUNTER?>
+   <STEP_COUNTER_RESET>
+   <COORDS?>
 
 */
 void handle_incoming_command(char *command_buff)
@@ -367,15 +370,54 @@ void handle_incoming_command(char *command_buff)
   }
   else if (!strcmp(cmd, "DEBUG"))
   {
-    Serial.print("<MV_REMAIN X: ");
-    Serial.print(StepperController::horiz_steps_remain);
-    Serial.print(" Y: ");
-    Serial.print(StepperController::vert_steps_remain);
+    // Only show remaining and current steps for MOVE_MODE, not FREE_RUN_MODE
+    // (free run uses 65535 steps_remain and the values are meaningless for debugging)
+    if (stepper_controller.get_running_mode() != RunningMode::FREE_RUN_MODE)
+    {
+      Serial.print("<MV_REMAIN X: ");
+      Serial.print(StepperController::horiz_steps_remain);
+      Serial.print(" Y: ");
+      Serial.print(StepperController::vert_steps_remain);
+      Serial.println(">");
+      Serial.print("<MV_CURRENT X: ");
+      Serial.print(StepperController::horiz_steps_current);
+      Serial.print(" Y: ");
+      Serial.print(StepperController::vert_steps_current);
+      Serial.println(">");
+    }
+  }
+    else if (!strcmp(cmd, "STEP_COUNTER?"))
+  {
+    noInterrupts();
+    uint32_t x = StepperController::step_counter_x;
+    uint32_t y = StepperController::step_counter_y;
+    interrupts();
+    Serial.print("<STEP_COUNTER X:");
+    Serial.print(x);
+    Serial.print(" Y:");
+    Serial.print(y);
     Serial.println(">");
-    Serial.print("<MV_CURRENT X: ");
-    Serial.print(StepperController::horiz_steps_current);
-    Serial.print(" Y: ");
-    Serial.print(StepperController::vert_steps_current);
+  }
+    else if (!strcmp(cmd, "STEP_COUNTER_RESET"))
+  {
+    noInterrupts();
+    StepperController::step_counter_x = 0;
+    StepperController::step_counter_y = 0;
+    StepperController::coord_x = 0;
+    StepperController::coord_y = 0;
+    interrupts();
+    Serial.println("<STEP_COUNTER_RESET_ACK>");
+  }
+    else if (!strcmp(cmd, "COORDS?"))
+  {
+    noInterrupts();
+    int32_t x = StepperController::coord_x;
+    int32_t y = StepperController::coord_y;
+    interrupts();
+    Serial.print("<COORDS X:");
+    Serial.print(x);
+    Serial.print(" Y:");
+    Serial.print(y);
     Serial.println(">");
   }
     else if (!strcmp(cmd, "STOP"))
