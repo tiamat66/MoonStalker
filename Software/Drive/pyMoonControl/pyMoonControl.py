@@ -136,6 +136,7 @@ class SerialPortSelector(QWidget):
         layout.addWidget(self.baud_combo)
 
         self.connect_btn = QPushButton("Connect")
+        self.connect_btn.setAutoDefault(False)
         self.connect_btn.clicked.connect(self.toggle_connection)
         layout.addWidget(self.connect_btn)
 
@@ -215,6 +216,10 @@ class MoonControlWindow(QMainWindow):
         self.serial_thread.data_received.connect(self.on_data_received)
         self.serial_thread.connection_status.connect(self.on_connection_status)
 
+        # Free run state tracking
+        self._active_direction: str | None = None
+        self._pending_direction: str | None = None
+
         self.build_ui()
         self.apply_styles()
 
@@ -272,7 +277,7 @@ class MoonControlWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def build_direction_panel(self):
-        group = QGroupBox("Free Run (MVS) - Click & hold to move, release to stop")
+        group = QGroupBox("Free Run (MVS)")
         layout = QVBoxLayout(group)
 
         # Speed input
@@ -293,17 +298,21 @@ class MoonControlWindow(QMainWindow):
 
         btn_size = 40
 
+        # Direction button references for state tracking
+        self._dir_buttons: dict[str, QPushButton] = {}
+
         # Row 0: NW - N - NE
-        self.btn_nw = self.make_dir_button("NW", btn_size)
-        self.btn_n = self.make_dir_button("N", btn_size)
-        self.btn_ne = self.make_dir_button("NE", btn_size)
-        pad_layout.addWidget(self.btn_nw, 0, 0, Qt.AlignCenter)
-        pad_layout.addWidget(self.btn_n, 0, 1, Qt.AlignCenter)
-        pad_layout.addWidget(self.btn_ne, 0, 2, Qt.AlignCenter)
+        self._dir_buttons["NW"] = self.make_dir_button("NW", btn_size)
+        self._dir_buttons["N"] = self.make_dir_button("N", btn_size)
+        self._dir_buttons["NE"] = self.make_dir_button("NE", btn_size)
+        pad_layout.addWidget(self._dir_buttons["NW"], 0, 0, Qt.AlignCenter)
+        pad_layout.addWidget(self._dir_buttons["N"], 0, 1, Qt.AlignCenter)
+        pad_layout.addWidget(self._dir_buttons["NE"], 0, 2, Qt.AlignCenter)
 
         # Row 1: W - (center/stop) - E
-        self.btn_w = self.make_dir_button("W", btn_size)
+        self._dir_buttons["W"] = self.make_dir_button("W", btn_size)
         self.btn_stop = QPushButton("STOP")
+        self.btn_stop.setAutoDefault(False)
         self.btn_stop.setFixedSize(btn_size, btn_size)
         self.btn_stop.setStyleSheet("""
             QPushButton {
@@ -318,26 +327,27 @@ class MoonControlWindow(QMainWindow):
             }
         """)
         self.btn_stop.clicked.connect(self.send_stop)
-        self.btn_e = self.make_dir_button("E", btn_size)
-        pad_layout.addWidget(self.btn_w, 1, 0, Qt.AlignCenter)
+        self._dir_buttons["E"] = self.make_dir_button("E", btn_size)
+        pad_layout.addWidget(self._dir_buttons["W"], 1, 0, Qt.AlignCenter)
         pad_layout.addWidget(self.btn_stop, 1, 1, Qt.AlignCenter)
-        pad_layout.addWidget(self.btn_e, 1, 2, Qt.AlignCenter)
+        pad_layout.addWidget(self._dir_buttons["E"], 1, 2, Qt.AlignCenter)
 
         # Row 2: SW - S - SE
-        self.btn_sw = self.make_dir_button("SW", btn_size)
-        self.btn_s = self.make_dir_button("S", btn_size)
-        self.btn_se = self.make_dir_button("SE", btn_size)
-        pad_layout.addWidget(self.btn_sw, 2, 0, Qt.AlignCenter)
-        pad_layout.addWidget(self.btn_s, 2, 1, Qt.AlignCenter)
-        pad_layout.addWidget(self.btn_se, 2, 2, Qt.AlignCenter)
+        self._dir_buttons["SW"] = self.make_dir_button("SW", btn_size)
+        self._dir_buttons["S"] = self.make_dir_button("S", btn_size)
+        self._dir_buttons["SE"] = self.make_dir_button("SE", btn_size)
+        pad_layout.addWidget(self._dir_buttons["SW"], 2, 0, Qt.AlignCenter)
+        pad_layout.addWidget(self._dir_buttons["S"], 2, 1, Qt.AlignCenter)
+        pad_layout.addWidget(self._dir_buttons["SE"], 2, 2, Qt.AlignCenter)
 
         layout.addLayout(pad_layout)
 
         return group
 
     def make_dir_button(self, direction: str, size: int):
-        """Create a direction button with press-and-hold logic."""
+        """Create a direction button with click-to-toggle logic."""
         btn = QPushButton(direction)
+        btn.setAutoDefault(False)
         btn.setFixedSize(size, size)
         btn.setStyleSheet("""
             QPushButton {
@@ -351,20 +361,67 @@ class MoonControlWindow(QMainWindow):
                 background-color: #0d47a1;
             }
         """)
-        btn.pressed.connect(lambda d=direction: self.on_mvs_pressed(d))
-        btn.released.connect(self.on_mvs_released)
+        btn.clicked.connect(lambda checked, d=direction: self.on_dir_button_clicked(d))
         return btn
 
-    def on_mvs_pressed(self, direction: str):
-        """Send MVS command on button press."""
+    def on_dir_button_clicked(self, direction: str):
+        """Handle direction button click (toggle on/off).
+        Uses a guard flag to prevent multiple emissions from a single click.
+        """
+        # Guard against rapid re-entry / duplicate clicks
+        if getattr(self, '_click_guard', False):
+            return
+        self._click_guard = True
+        import time
+        # Re-enable after 300ms (well past any double-click or bounce)
+        QTimer.singleShot(300, lambda: setattr(self, '_click_guard', False))
+
+        # If already active and same direction clicked -> send MVE to deactivate
+        if self._active_direction == direction:
+            self.send_serial("<MVE>")
+            return
+
+        # If a different direction is active -> ignore this click
+        if self._active_direction is not None:
+            return
+
+        # No active direction -> send MVS to activate
         speed = self.mvs_speed_input.value()
         cmd = f"<MVS {direction} {speed}>"
+        self._pending_direction = direction
         self.send_serial(cmd)
 
-    def on_mvs_released(self):
-        """Send MVE command on button release to stop movement."""
-        cmd = "<MVE>"
-        self.send_serial(cmd)
+    def _set_button_active(self, direction: str | None, active: bool):
+        """Paint a direction button green (active) or blue (inactive)."""
+        for d, btn in self._dir_buttons.items():
+            if d == direction:
+                if active:
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #2e7d32;
+                            color: white;
+                            font-weight: bold;
+                            font-size: 8pt;
+                            border-radius: 6px;
+                        }
+                        QPushButton:pressed {
+                            background-color: #1b5e20;
+                        }
+                    """)
+                else:
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #1976d2;
+                            color: white;
+                            font-weight: bold;
+                            font-size: 8pt;
+                            border-radius: 6px;
+                        }
+                        QPushButton:pressed {
+                            background-color: #0d47a1;
+                        }
+                    """)
+                break
 
     # ------------------------------------------------------------------
     # Other Commands Panel
@@ -394,6 +451,7 @@ class MoonControlWindow(QMainWindow):
         self.mv_rpm.setValue(60)
         mv_grid.addWidget(self.mv_rpm, 2, 1)
         mv_btn = QPushButton("Send MV")
+        mv_btn.setAutoDefault(False)
         mv_btn.clicked.connect(self.send_mv)
         mv_grid.addWidget(mv_btn, 3, 0, 1, 2)
         mv_grid.setColumnStretch(1, 1)
@@ -407,18 +465,22 @@ class MoonControlWindow(QMainWindow):
         # First row
         row1 = QHBoxLayout()
         btry_btn = QPushButton("BTRY?")
+        btry_btn.setAutoDefault(False)
         btry_btn.clicked.connect(lambda: self.send_serial("<BTRY?>"))
         row1.addWidget(btry_btn)
 
         mvst_btn = QPushButton("MVST?")
+        mvst_btn.setAutoDefault(False)
         mvst_btn.clicked.connect(lambda: self.send_serial("<MVST?>"))
         row1.addWidget(mvst_btn)
 
         lim_btn = QPushButton("LIM?")
+        lim_btn.setAutoDefault(False)
         lim_btn.clicked.connect(lambda: self.send_serial("<LIM?>"))
         row1.addWidget(lim_btn)
 
         alarms_btn = QPushButton("ALARMS?")
+        alarms_btn.setAutoDefault(False)
         alarms_btn.clicked.connect(lambda: self.send_serial("<ALARMS?>"))
         row1.addWidget(alarms_btn)
 
@@ -426,20 +488,42 @@ class MoonControlWindow(QMainWindow):
 
         # Second row
         row2 = QHBoxLayout()
-        debug_btn = QPushButton("DEBUG")
-        debug_btn.clicked.connect(lambda: self.send_serial("<DEBUG>"))
-        row2.addWidget(debug_btn)
+        coords_btn = QPushButton("COORDS?")
+        coords_btn.setAutoDefault(False)
+        coords_btn.clicked.connect(lambda: self.send_serial("<COORDS?>"))
+        row2.addWidget(coords_btn)
 
-        stop_btn = QPushButton("STOP")
-        stop_btn.clicked.connect(self.send_stop)
-        stop_btn.setStyleSheet("background-color: #d32f2f; color: white; font-weight: bold;")
-        row2.addWidget(stop_btn)
+        step_counter_btn = QPushButton("STEP_CNT?")
+        step_counter_btn.setAutoDefault(False)
+        step_counter_btn.clicked.connect(lambda: self.send_serial("<STEP_COUNTER?>"))
+        row2.addWidget(step_counter_btn)
 
-        mve_btn = QPushButton("MVE")
-        mve_btn.clicked.connect(lambda: self.send_serial("<MVE>"))
-        row2.addWidget(mve_btn)
+        step_counter_rst_btn = QPushButton("STEP_CNT_RST")
+        step_counter_rst_btn.setAutoDefault(False)
+        step_counter_rst_btn.clicked.connect(lambda: self.send_serial("<STEP_COUNTER_RESET>"))
+        row2.addWidget(step_counter_rst_btn)
 
         query_layout.addLayout(row2)
+
+        # Third row
+        row3 = QHBoxLayout()
+        debug_btn = QPushButton("DEBUG")
+        debug_btn.setAutoDefault(False)
+        debug_btn.clicked.connect(lambda: self.send_serial("<DEBUG>"))
+        row3.addWidget(debug_btn)
+
+        stop_btn = QPushButton("STOP")
+        stop_btn.setAutoDefault(False)
+        stop_btn.clicked.connect(self.send_stop)
+        stop_btn.setStyleSheet("background-color: #d32f2f; color: white; font-weight: bold;")
+        row3.addWidget(stop_btn)
+
+        mve_btn = QPushButton("MVE")
+        mve_btn.setAutoDefault(False)
+        mve_btn.clicked.connect(lambda: self.send_serial("<MVE>"))
+        row3.addWidget(mve_btn)
+
+        query_layout.addLayout(row3)
         layout.addWidget(query_box)
 
         # --- Custom command ---
@@ -449,6 +533,7 @@ class MoonControlWindow(QMainWindow):
         self.custom_cmd_input.setPlaceholderText("e.g. <MV 100 100 30>")
         custom_layout.addWidget(self.custom_cmd_input)
         custom_send_btn = QPushButton("Send")
+        custom_send_btn.setAutoDefault(False)
         custom_send_btn.clicked.connect(self.send_custom)
         custom_layout.addWidget(custom_send_btn)
         layout.addWidget(custom_box)
@@ -517,7 +602,18 @@ class MoonControlWindow(QMainWindow):
             self.statusBar().showMessage("Disconnected")
 
     def send_serial(self, command: str):
-        """Send a command over serial and log it."""
+        """Send a command over serial and log it.
+        Includes a 200ms debounce to prevent duplicate sends."""
+        import time
+        if not hasattr(self, '_last_cmd_time'):
+            self._last_cmd_time = 0
+            self._last_cmd = None
+        now = time.time()
+        # If same command was sent within the last 200ms, ignore it
+        if command == self._last_cmd and (now - self._last_cmd_time) < 0.2:
+            return
+        self._last_cmd = command
+        self._last_cmd_time = now
         if self.serial_thread.send_command(command):
             self.log_message(">>>", command)
         else:
@@ -528,9 +624,42 @@ class MoonControlWindow(QMainWindow):
         """Handle incoming serial data."""
         self.log_message("<<<", data)
 
+        # Data arrives as e.g. "<MVS_ACK N 60>" or "<MVS_NACK LIMIT_BLOCKED>"
+        # Strip leading '<' for easier matching
+        stripped = data.lstrip("<")
+
+        # Parse ACK/NACK responses for free run commands
+        if stripped.startswith("MVS_ACK") and self._pending_direction is not None:
+            # Free run activated successfully
+            self._active_direction = self._pending_direction
+            self._pending_direction = None
+            self._set_button_active(self._active_direction, True)
+
+        elif stripped.startswith("MVS_NACK") and self._pending_direction is not None:
+            # Free run rejected (limit blocked, not ready, unknown direction)
+            self._pending_direction = None
+
+        elif stripped.startswith("MVE_ACK") and self._active_direction is not None:
+            # Free run stopped successfully
+            self._set_button_active(self._active_direction, False)
+            self._active_direction = None
+
+        elif stripped.startswith("MVE_NACK") and self._active_direction is not None:
+            # MVE rejected (e.g. not in FREE_RUN_MODE) — force clear anyway
+            self._set_button_active(self._active_direction, False)
+            self._active_direction = None
+
+        elif stripped.startswith("STOP_ACK") and self._active_direction is not None:
+            # STOP also ends free run
+            self._set_button_active(self._active_direction, False)
+            self._active_direction = None
+            self._pending_direction = None
+
     def log_message(self, prefix: str, message: str):
-        """Append a formatted message to the log window."""
-        self.log_text.append(f"{prefix} {message}")
+        """Append a formatted message to the log window with a timestamp."""
+        from datetime import datetime
+        ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        self.log_text.append(f"[{ts}] {prefix} {message}")
         # Auto-scroll to bottom
         scrollbar = self.log_text.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
@@ -548,8 +677,13 @@ class MoonControlWindow(QMainWindow):
         self.send_serial(cmd)
 
     def send_stop(self):
-        """Send emergency stop command."""
+        """Send emergency stop command and clear any active free run state."""
         self.send_serial("<STOP>")
+        # Optimistically clear active direction (STOP_ACK handler will also do this)
+        if self._active_direction is not None:
+            self._set_button_active(self._active_direction, False)
+            self._active_direction = None
+            self._pending_direction = None
 
     def send_custom(self):
         """Send a custom command from the text input."""
