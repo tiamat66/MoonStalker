@@ -1,4 +1,4 @@
-================================================================================
+﻿================================================================================
   MoonStalker Drive Unit - Serial Command Interface Documentation
 ================================================================================
 
@@ -22,9 +22,12 @@
   6.  <MVST?>         - Query motor status
   7.  <LIM?>          - Query limit switch states
   8.  <ALARMS?>       - Query alarms (system check)
-  9.  <DEBUG>         - Debug information
-  10. Automatic / Unsolicited Responses
-  11. Error Responses
+  9.  <COORDS?>       - Query signed coordinate positions
+  10. <STEP_COUNTER?> - Query cumulative step counters
+  11. <STEP_COUNTER_RESET> - Reset step counters and coordinates
+  12. <DEBUG>         - Debug information
+  13. Automatic / Unsolicited Responses
+  14. Error Responses
 
 
 ================================================================================
@@ -83,7 +86,7 @@
   Description:
     Starts continuous (free run) movement in the specified direction at the
     given speed. The motors run indefinitely until <MVE> or <STOP> is sent.
-        Ramping (acceleration) applies if configured via set_free_run_ramp_steps()
+    Ramping (acceleration) applies if configured via set_free_run_ramp_steps()
     (default: 50 steps).
 
   Parameters:
@@ -147,7 +150,7 @@
       immediately. The actual stop occurs after the ramp-down completes
       (a few hundred milliseconds at typical speeds).
 
-        <MVE_NACK NOT_RDY>
+    <MVE_NACK NOT_RDY>
       Sent if not in FREE_RUN_MODE.
 
 
@@ -160,9 +163,10 @@
 
   Description:
     Immediately halts all motor movement, regardless of current mode
-    (FREE_RUN or MOVE). Disables timer interrupts, clears step counts,
-    and pulls step pins low. Any pending free-run ramp-down is cancelled.
-    The controller immediately transitions to IDLE_MODE.
+    (FREE_RUN or MOVE). Calls the consolidated emergency_stop() routine
+    which atomically disables timer interrupts, clears step counts, pulls
+    step pins low, and resets all ramp state. Any pending free-run
+    ramp-down is cancelled. The controller immediately transitions to IDLE_MODE.
 
   Parameters:
     None.
@@ -195,7 +199,7 @@
 
 
 ================================================================================
-    6.  <MVST?> - Query motor status
+  6.  <MVST?> - Query motor status
 ================================================================================
 
   Command:
@@ -294,7 +298,88 @@
 
 
 ================================================================================
-  9.  <DEBUG> - Debug information
+  9.  <COORDS?> - Query signed coordinate positions
+================================================================================
+
+  Command:
+    <COORDS?>
+
+  Description:
+    Queries the current signed coordinate positions for both axes.
+    coord_x is incremented for CW horizontal movement and decremented for
+    CCW horizontal movement. coord_y is incremented for CW vertical movement
+    and decremented for CCW vertical movement.
+    These coordinates can be used to track the absolute position of the
+    telescope on the sky. They are reset to zero by the <STEP_COUNTER_RESET>
+    command or on system power-up.
+
+  Parameters:
+    None.
+
+  Responses:
+    <COORDS X:x Y:y>
+      x : int32 - Signed horizontal coordinate.
+                  Positive = CW (west), negative = CCW (east).
+      y : int32 - Signed vertical coordinate.
+                  Positive = CW (north), negative = CCW (south).
+      Example: <COORDS X:1250 Y:-300>
+        Means: 1250 steps CW from origin horizontally,
+               300 steps CCW from origin vertically.
+
+
+================================================================================
+  10. <STEP_COUNTER?> - Query cumulative step counters
+================================================================================
+
+  Command:
+    <STEP_COUNTER?>
+
+  Description:
+    Queries the cumulative total of all steps executed on each axis since
+    the last reset or system start. These counters are unsigned and always
+    increment regardless of direction. Each physical step executed by the
+    motor increments the counter by one.
+    Unlike coord_x / coord_y (which are signed and cancel direction),
+    step counters provide an absolute measure of total motor wear or
+    distance traveled.
+
+  Parameters:
+    None.
+
+  Responses:
+    <STEP_COUNTER X:x Y:y>
+      x : uint32 - Cumulative horizontal steps (always positive).
+      y : uint32 - Cumulative vertical steps (always positive).
+      Example: <STEP_COUNTER X:15234 Y:9876>
+        Means: 15234 total horizontal steps and 9876 total vertical
+               steps have been executed since last reset.
+
+
+================================================================================
+  11. <STEP_COUNTER_RESET> - Reset step counters and coordinates
+================================================================================
+
+  Command:
+    <STEP_COUNTER_RESET>
+
+  Description:
+    Resets the step counters (step_counter_x, step_counter_y) and the
+    signed coordinate positions (coord_x, coord_y) to zero.
+    This is used to re-establish a known home position after mechanical
+    calibration or re-homing. The reset is performed atomically with
+    interrupts disabled to ensure both counters are cleared together.
+
+  Parameters:
+    None.
+
+  Responses:
+    <STEP_COUNTER_RESET_ACK>
+      Sent after successfully resetting all counters to zero.
+      Example: <STEP_COUNTER_RESET_ACK>
+
+
+================================================================================
+  12. <DEBUG> - Debug information
 ================================================================================
 
   Command:
@@ -302,7 +387,8 @@
 
   Description:
     Reports the current step counters for both axes. Useful for diagnostics
-    and testing.
+    and testing. Only displays data when not in FREE_RUN_MODE (free run uses
+    65535 steps_remain which is meaningless for debugging).
 
   Parameters:
     None.
@@ -318,7 +404,7 @@
 
 
 ================================================================================
-  10. AUTOMATIC / UNSOLICITED RESPONSES
+  13. AUTOMATIC / UNSOLICITED RESPONSES
 ================================================================================
 
   These responses are generated by the system automatically, not in direct
@@ -332,11 +418,15 @@
 
   <FATAL_ERROR RCV_BUFFER_OVERFLOW>
     Sent if the incoming command buffer (64 characters) is exceeded.
-    The system continues running but the current buffered data is lost.
+    The controller drains the remaining bytes until the next command
+    terminator or newline, then resets the buffer and continues normal
+    operation. The truncated command is discarded.
 
   <LIMIT HORIZ_WEST>  (or HORIZ_EAST, VERT_NORTH, VERT_SOUTH)
     Sent automatically when a limit switch is triggered during movement.
-    The motors are stopped immediately (emergency stop equivalent to <STOP>).
+    A 2-sample debounce filter is applied: the limit must be pressed for
+    two consecutive loop iterations (~sub-millisecond) before triggering.
+    The motors are stopped via emergency_stop() (equivalent to <STOP>).
     Multiple switch names can appear if more than one limit is active.
 
   <INITIAL OCR1A: value> and <INITIAL OCR3A: value>
@@ -345,7 +435,7 @@
 
 
 ================================================================================
-  11. ERROR RESPONSES
+  14. ERROR RESPONSES
 ================================================================================
 
   These responses can be returned by multiple commands.

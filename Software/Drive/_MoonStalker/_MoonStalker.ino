@@ -1,4 +1,4 @@
-//  MoonStalker
+﻿//  MoonStalker
 //  SW for MoonStalker Drive unit control
 
 //  Variable definitions
@@ -63,11 +63,26 @@ void loop()
 
   if (Serial.available() > 0)
   {
-    if (num_recv_char == 64)
+    if (num_recv_char >= 64)
     {
       Serial.println(F("<FATAL_ERROR RCV_BUFFER_OVERFLOW>"));
+      // Drain remaining bytes until command terminator or newline,
+      // then reset buffer to prevent stack corruption from overflow.
+      while (incoming_char != '>' && incoming_char != 10 && incoming_char != 13)
+      {
+        if (Serial.available() > 0)
+          incoming_char = Serial.read();
+      }
+      *command_buffer = 0;
+      num_recv_char = 0;
+      // Fall through to process the terminator as a fresh command
+      if (incoming_char != '>')
+        return;  // newline only, nothing to process
     }
-    incoming_char = Serial.read();
+    else
+    {
+      incoming_char = Serial.read();
+    }
     // ignore newline characters
     if ((incoming_char != 10) && (incoming_char != 13))
     {
@@ -101,10 +116,10 @@ int get_battery_voltage()
   uint32_t voltage_mv = 0;
 
   value = analogRead(battery_voltage_pin);
-  // Convert read 10 bit value to 0-5000 mV and
-  // multiply with the voltage divider 5088R and 14k93
-  // voltage_mv = value * (5000 * ((5088 + 14930)/5088)/ 1023;
-  voltage_mv = value * 19229 / 1000;
+  // Voltage divider: R1 = 5088 Ohm, R2 = 14930 Ohm
+  // Vbat_mV = ADC * (5000/1023) * (R1+R2)/R1
+  //         = value * 5000 * (5088+14930) / (5088*1023)
+  voltage_mv = (uint32_t)value * 5000L * (5088L + 14930L) / 5088L / 1023L;
 
   return voltage_mv;
 }
@@ -422,19 +437,7 @@ void handle_incoming_command(char *command_buff)
   }
     else if (!strcmp(cmd, "STOP"))
     {
-      noInterrupts();
-      // Stop the movement - clear all step counts and disable timer interrupts
-      StepperController::horiz_steps_remain = 0;
-      StepperController::vert_steps_remain = 0;
-      TIMSK1 &= ~(1 << OCIE1A) & ~(1 << OCIE1B);
-      TIMSK3 &= ~(1 << OCIE3A) & ~(1 << OCIE3B);
-      // Pull step pins low
-      PORTD &= ~(1 << 1);
-      PORTC &= ~(1 << 6);
-      interrupts();
-      // Clear any ongoing free-run ramp-down state
-      StepperController::free_run_ramping_down = false;
-      stepper_controller.free_run_stop(); // Ensures IDLE_MODE
+      StepperController::emergency_stop();
       Serial.println("<STOP_ACK>");
     }
     else if (!strcmp(cmd, "LIM?"))
@@ -582,31 +585,23 @@ void check_limit_switches()
   bool vert_north_active  = (digitalRead(LIMIT_VERT_NORTH)  == LOW);
   bool vert_south_active  = (digitalRead(LIMIT_VERT_SOUTH)  == LOW);
 
-  // If any limit is triggered, stop all motor movement immediately
-  if (horiz_west_active || horiz_east_active || vert_north_active || vert_south_active)
+  // Debounce: require two consecutive loop iterations with a limit pressed
+  static uint8_t debounce_count = 0;
+  bool any_triggered = (horiz_west_active || horiz_east_active || vert_north_active || vert_south_active);
+
+  if (any_triggered)
   {
+    if (debounce_count < 2)
+    {
+      debounce_count++;
+      return;  // Wait for next iteration to confirm
+    }
+
     // Only stop if currently moving (free run or move mode)
     RunningMode mode = stepper_controller.get_running_mode();
     if (mode != RunningMode::IDLE_MODE)
     {
-                  // Force stop: disable timer interrupts and clear step counts
-      noInterrupts();
-      StepperController::horiz_steps_remain = 0;
-      StepperController::vert_steps_remain = 0;
-      TIMSK1 &= ~(1 << OCIE1A) & ~(1 << OCIE1B);
-      TIMSK3 &= ~(1 << OCIE3A) & ~(1 << OCIE3B);
-      // Pull step pins low
-      PORTD &= ~(1 << 1);
-      PORTC &= ~(1 << 6);
-      // Clear any free-run ramp-down state so free_run_stop() doesn't
-      // try to start a new ramp-down on already-stopped motors
-      StepperController::free_run_ramping_down = false;
-      StepperController::free_run_ramp_steps_horiz = 0;
-      StepperController::free_run_ramp_steps_vert = 0;
-      interrupts();
-
-      // Transition to IDLE_MODE (handles both FREE_RUN and MOVE modes)
-      stepper_controller.free_run_stop();
+      StepperController::emergency_stop();
 
       // Report which limit was hit
       Serial.print("<LIMIT");
@@ -616,5 +611,9 @@ void check_limit_switches()
       if (vert_south_active)  Serial.print(" VERT_SOUTH");
       Serial.println(">");
     }
+  }
+  else
+  {
+    debounce_count = 0;  // Reset debounce when all switches released
   }
 }

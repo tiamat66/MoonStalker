@@ -1,4 +1,4 @@
-// StepperController
+﻿// StepperController
 //
 // Class for controlling both horizontal (azimuth) and
 // vertical (altitude) stepper motors on the MoonStalker
@@ -189,10 +189,18 @@ class StepperController
   // calculate_ocr_reg_value
   // -------------------------------------------------------------------------
   // Convert RPM to an OCR compare register value for the timer.
-  // Formula (with 1/64 prescaler, 16 MHz clock, half-period pulse):
-  //   OCR = 7,500,000 / (RPM x steps_per_revolution)
-  // Returns a safe default of 100 if RPM <= 0.
-  int16_t calculate_ocr_reg_value(int16_t rpm_speed);
+  // Formula (with 1/64 prescaler, 16 MHz clock):
+  //   OCR = 15,000,000 / (RPM x steps_per_revolution)
+  // Returns 0 on error (RPM <= 0 or steps_per_rev <= 0).
+  uint16_t calculate_ocr_reg_value(int16_t rpm_speed);
+
+  // -------------------------------------------------------------------------
+  // emergency_stop
+  // -------------------------------------------------------------------------
+  // Immediately stop both motors, disable all timer interrupts, clear step
+  // counts, and transition to IDLE_MODE. Safe to call from any context
+  // (main loop or ISR) — uses noInterrupts() internally for atomicity.
+  static void emergency_stop();
 
   // -------------------------------------------------------------------------
   // get_running_mode
