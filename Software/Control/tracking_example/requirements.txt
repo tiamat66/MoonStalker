@@ -1,0 +1,5 @@
+certifi==2026.6.17
+jplephem==2.24
+numpy==2.5.1
+sgp4==2.27
+skyfield==1.54
