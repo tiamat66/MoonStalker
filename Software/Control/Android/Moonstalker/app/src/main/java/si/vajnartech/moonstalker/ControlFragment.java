@@ -71,9 +71,10 @@ public class ControlFragment extends MyFragment
 
     private void updateDetails(int position)
     {
-        String name = skyObjectAdapter.getItem(position);
         if (act.objectsDatabase != null && act.objectsDatabase.data != null && position < act.objectsDatabase.data.size()) {
+            String name = skyObjectAdapter.getItem(position);
             CelestialObj selected = act.objectsDatabase.data.get(name);
+            assert selected != null;
             String sRa = selected.ra.hours + ":" + selected.ra.minutes + ":" + selected.ra.seconds;
             String sDec = selected.dec.degrees + ":" + selected.dec.minutes + ":" + selected.dec.seconds;
             valueRa.setText(sRa);
