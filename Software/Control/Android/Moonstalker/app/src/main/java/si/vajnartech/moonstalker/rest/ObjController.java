@@ -1,8 +1,5 @@
 package si.vajnartech.moonstalker.rest;
 
-import si.vajnartech.moonstalker.AstroObject;
-import si.vajnartech.moonstalker.processor.AstroObj;
-
 public class ObjController
 {
     public String p1;

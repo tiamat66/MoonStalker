@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 
+import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.rest.RObjAstroData;
 
 public class CmdGetAstroData extends Controller<RObjAstroData>
@@ -28,6 +29,6 @@ public class CmdGetAstroData extends Controller<RObjAstroData>
     @Override
     protected void onPostExecute(RObjAstroData rObjAstroData)
     {
-        Log.i("Pepe", "Tjorba kavcic");
+        machine.set(OpCodes.GOT_ASTRO_DATA, rObjAstroData);
     }
 }

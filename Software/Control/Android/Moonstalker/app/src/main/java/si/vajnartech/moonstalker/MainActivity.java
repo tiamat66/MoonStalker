@@ -1,6 +1,5 @@
 package si.vajnartech.moonstalker;
 
-import static si.vajnartech.moonstalker.C.CALIBRATOR;
 import static si.vajnartech.moonstalker.C.MD_MOVING;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
 import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
@@ -8,7 +7,6 @@ import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
-import static si.vajnartech.moonstalker.OpCodes.GET_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
 
 import android.annotation.SuppressLint;
@@ -33,10 +31,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
-import java.util.ArrayList;
-
-import si.vajnartech.moonstalker.processor.AstroObj;
-import si.vajnartech.moonstalker.processor.DataAstroObj;
+import si.vajnartech.moonstalker.processor.CelestialObj;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
 import si.vajnartech.moonstalker.rest.ObjController;
@@ -45,10 +40,11 @@ import si.vajnartech.moonstalker.rest.RObjAstroData;
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
 {
-//    public DataAstroObj astroData = new DataAstroObj(null);
-    public RObjAstroData objectsDatabase = new RObjAstroData();
+    public RObjAstroData objectsDatabase = new RObjAstroData(null);
 
-    public AstroObject curObject;
+    public CelestialObj curObject;
+    public String curObjName = "";
+
     protected Processor machine = new Processor(this);
 
     MyFragment currentFragment = null;
@@ -59,10 +55,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     FloatingActionButton fab;
     DrawerLayout drawer;
 
-    public void setPosMessage()
-    {
-        terminal.writePosition(curObject);
-    }
+//    public void setPosMessage()
+//    {
+//        terminal.writePosition(curObject);
+//    }
 
     public void setInfoMessage(int val)
     {
@@ -73,11 +69,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     {
         if (val == null) return;
         monitor.update(val);
-    }
-
-    public void hideFab()
-    {
-        runOnUiThread(() -> fab.setVisibility(View.GONE));
     }
 
     public void updateFab(int color)
@@ -158,13 +149,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
-
-        // TODO: preberi podatkovno bazo MSG_GOT_ASTRO_DATA
-        AstroObj obj = new AstroObj();
-        obj.name = CALIBRATOR.name;
-        obj.ra = CALIBRATOR.ra;
-        obj.dec = CALIBRATOR.dec;
-        astroData.data.add(obj);
 
         new Ping(machine);
     }

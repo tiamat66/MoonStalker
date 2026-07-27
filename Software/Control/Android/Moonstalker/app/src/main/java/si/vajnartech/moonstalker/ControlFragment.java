@@ -9,17 +9,14 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import si.vajnartech.moonstalker.processor.AstroObj;
 import si.vajnartech.moonstalker.processor.CelestialObj;
 
 public class ControlFragment extends MyFragment
 {
     private Spinner skyObjects;
-    private View detailsPanel;
     private TextView valueRa;
     private TextView valueDec;
-
-    ArrayAdapter<String> skyObjectAdapter = new ArrayAdapter<>(act, R.layout.spinner_item);
+    ArrayAdapter<String> skyObjectAdapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -27,8 +24,10 @@ public class ControlFragment extends MyFragment
         View res = super.onCreateView(inflater, container, savedInstanceState);
         if (res == null) return null;
 
+        skyObjectAdapter = new ArrayAdapter<>(act, R.layout.spinner_item);
+
         skyObjects = res.findViewById(R.id.aimed_sky_object);
-        detailsPanel = res.findViewById(R.id.object_details_panel);
+        View detailsPanel = res.findViewById(R.id.object_details_panel);
         valueRa = res.findViewById(R.id.value_ra);
         valueDec = res.findViewById(R.id.value_dec);
 
@@ -67,6 +66,9 @@ public class ControlFragment extends MyFragment
             {
             }
         });
+
+        int position = skyObjectAdapter.getPosition(act.curObjName);
+        skyObjects.setSelection(position);
     }
 
     private void updateDetails(int position)

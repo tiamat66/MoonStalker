@@ -31,9 +31,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import si.vajnartech.moonstalker.AstroObject;
 import si.vajnartech.moonstalker.ControlFragment;
@@ -42,15 +44,13 @@ import si.vajnartech.moonstalker.ManualMoveFragment;
 import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.R;
 import si.vajnartech.moonstalker.rest.ObjController;
+import si.vajnartech.moonstalker.rest.RObjAstroData;
 import si.vajnartech.moonstalker.telescope.Status;
 
 public class Processor
 {
     public Status status = new Status();
     public Status mode = new Status();
-
-    protected volatile int curActionID = -1;
-
     protected MainActivity act;
     protected Handler ioQueue;
     protected Handler uxQueue;
@@ -78,8 +78,6 @@ public class Processor
 
     public void set(int id)
     {
-        if (curActionID == id) return;
-
         Ball ball = actions.get(id);
         if (ball != null) {
             if (ball.ioAction != null) {
@@ -96,7 +94,7 @@ public class Processor
         return ioQueue;
     }
 
-    public void set(int id, DataAstroObj data)
+    public void set(int id, RObjAstroData data)
     {
         status.data = data;
         set(id);
@@ -147,7 +145,7 @@ public class Processor
         }));
         // MSG_GOT_ASTRO_DATA
         actions.put(GOT_ASTRO_DATA, new Ball(null, () -> {
-            act.astroData = new DataAstroObj(status.data);
+            act.objectsDatabase = status.data;
         }));
         // MSG_NOT_READY
         actions.put(NOT_READY, new Ball(null,
@@ -193,9 +191,11 @@ public class Processor
         actions.put(CALIBRATED, new Ball(
                 null,
                 () -> {
-                    act.curObject = new AstroObject(CALIBRATOR);
+                    act.curObjName = CALIBRATOR;
+                    act.curObject = act.objectsDatabase.data.get(CALIBRATOR);
                     act.setFragment("control", ControlFragment.class, new Bundle());
                     act.updateMenu(false, true, true, true);
+                    mode.set(OpCodes.CALIBRATED);
                     act.setInfoMessage(R.string.calibrated);
                 }
         ));
@@ -227,12 +227,12 @@ public class Processor
         actions.put(MSG_INFO, new Ball(null,
                 () -> act.logMessage(String.format("...%s", status.message))));
         // MSG_POSITION
-        actions.put(MSG_POSITION, new Ball(null,
-                () -> {
-                    String[] res = status.message.p1.split(" "); // TODO
-                    act.curObject.setPosition(res[0], res[1]);
-                    act.setPosMessage();
-                }));
+//        actions.put(MSG_POSITION, new Ball(null,
+//                () -> {
+//                    String[] res = status.message.p1.split(" "); // TODO
+//                    act.curObject.setPosition(res[0], res[1]);
+//                    act.setPosMessage();
+//                }));
         // MSG_BATTERY
         actions.put(MSG_BATTERY, new Ball(() -> new CmdBattery(this),
                 null

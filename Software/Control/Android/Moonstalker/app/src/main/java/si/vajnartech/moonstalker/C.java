@@ -6,8 +6,7 @@ import java.util.UUID;
 public final class C
 {
   public static final String TAG = "PEPE";
-  public static final AstroObject CALIBRATOR =
-          new AstroObject("Polaris", "2h31m48.704s", "+89°15'50.72", "Ursa Major");
+  public static final String CALIBRATOR = "Polaris";
 
   static final int TRSHLD_BTRY = 11000;  // milivolts
 
