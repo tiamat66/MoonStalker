@@ -44,8 +44,8 @@ public class PositionCalculus implements LocationListener
 
   void setPosition(AstroObject obj)
   {
-    this.ra = obj.ra;
-    this.dec = obj.dec;
+//    this.ra = obj.ra;
+//    this.dec = obj.dec;
     curLocation.setLatitude(DEF_LATITUDE);
     curLocation.setLongitude(DEF_LONGITUDE);
   }

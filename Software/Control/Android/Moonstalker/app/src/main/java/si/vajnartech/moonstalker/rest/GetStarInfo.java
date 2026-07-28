@@ -22,39 +22,39 @@ public class GetStarInfo extends GetSkyObjInfo<CharSequence>
   @Override
   protected void process(String data)
   {
-    String res;
-    if (data == null)
-      return;
-    res = parse(data, "Right Ascension and Declination: ", " (epoch 2000.0)");
-    Log.i(C.TAG, "GetSkyObjInfo: " + data);
-
-    if (res.isEmpty())
-      return;
-
-    // RightAscension and Declination:</B>2h31m48.704s,+89&deg;15'50.72"
-    String a = "RightAscensionandDeclination:</B>";
-    String b = "s,";
-    String c = "s,";
-    Log.i(C.TAG, "GetSkyObjInfo: " + res);
-
-
-    String j1 = res.substring(a.length(), res.indexOf(b));
-    String j2 = res.substring(res.indexOf(c) + 2).replaceAll("&deg;", "d");
-    double i1 = getRaFromString(j1);
-    double i2 = getDecFromString(j2);
-    C.curObj = new AstroObject(name, i1, i2, j1, j2);
-
-    int q1 = parse1(data, "Proper names:");
-    Log.i(C.TAG, "obj: " + C.curObj);
-    res = parse1(data, q1 + "</B>".length() + name.length(), "<BR>");
-    String[] result = res.split(",");
-    Log.i(C.TAG, "result: " + res);
-
-    C.curConstellation = result.length >= 3 ? result[2] : result[1];
-    Log.i(C.TAG, "current constalation = " + C.curConstellation);
-    Log.i(C.TAG, "current object = " + C.curObj);
-    if (skyInterface != null)
-      skyInterface.updateConstellation();
+//    String res;
+//    if (data == null)
+//      return;
+//    res = parse(data, "Right Ascension and Declination: ", " (epoch 2000.0)");
+//    Log.i(C.TAG, "GetSkyObjInfo: " + data);
+//
+//    if (res.isEmpty())
+//      return;
+//
+//    // RightAscension and Declination:</B>2h31m48.704s,+89&deg;15'50.72"
+//    String a = "RightAscensionandDeclination:</B>";
+//    String b = "s,";
+//    String c = "s,";
+//    Log.i(C.TAG, "GetSkyObjInfo: " + res);
+//
+//
+//    String j1 = res.substring(a.length(), res.indexOf(b));
+//    String j2 = res.substring(res.indexOf(c) + 2).replaceAll("&deg;", "d");
+//    double i1 = getRaFromString(j1);
+//    double i2 = getDecFromString(j2);
+//    C.curObj = new AstroObject(name, i1, i2, j1, j2);
+//
+//    int q1 = parse1(data, "Proper names:");
+//    Log.i(C.TAG, "obj: " + C.curObj);
+//    res = parse1(data, q1 + "</B>".length() + name.length(), "<BR>");
+//    String[] result = res.split(",");
+//    Log.i(C.TAG, "result: " + res);
+//
+//    C.curConstellation = result.length >= 3 ? result[2] : result[1];
+//    Log.i(C.TAG, "current constalation = " + C.curConstellation);
+//    Log.i(C.TAG, "current object = " + C.curObj);
+//    if (skyInterface != null)
+//      skyInterface.updateConstellation();
   }
 
   @Override

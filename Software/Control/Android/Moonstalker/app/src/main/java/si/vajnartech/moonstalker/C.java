@@ -5,7 +5,8 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public final class C
 {
-  public static final String TAG = "IZAABELA";
+  public static final String TAG = "PEPE";
+  public static final String CALIBRATOR = "Polaris";
 
   static final int TRSHLD_BTRY = 11000;  // milivolts
 
@@ -14,8 +15,8 @@ public final class C
   static final int MINIMUM_TIME = 10000;  // 10s
   static final int MINIMUM_DISTANCE = 50; // 50m
 
-  static final double DEF_LONGITUDE = 13.82;
-  static final double DEF_LATITUDE = 46.45;
+  public static final double DEF_LONGITUDE = 13.82;
+  public static final double DEF_LATITUDE = 46.45;
 
   // Named of paired BT device which acts like telescope
   static final String SERVER_NAME = "Naprava A32 uporabnika Zoran";
@@ -27,20 +28,19 @@ public final class C
   static final         double K                    = MOTOR_STEPS_NUM * REDUCTOR_TRANSLATION * BELT_TRANSLATION;
 
   // Telescope status values
-  static final int ST_READY =    1;
-  static final int ST_ERROR =    2;
-  static final int ST_TRACING =  5;
-  static final int ST_MOVING =   6;
-  static final int ST_BTRY_LOW = 7;
-  static final int ST_NOT_CAL =  9;
-  static final int ST_NOT_CONNECTED = 10;
-  static final int ST_CONNECTED     = 12;
-  static final int ST_CALIBRATING   = 13;
-  static final int ST_MANUAL   = 14;
-  static final int ST_CALIBRATED   = 17;
-  static final int ST_MOVE_TO_OBJECT = 18;
-  static final int ST_NOT_READY = 19;
-  static final int ST_WAITING_ACK = 20;
+  public static final int ST_ERROR =    2;
+  public static final int ST_NOT_READY = 3;
+  public static final int ST_CONNECTION_ERROR = 4;
+
+  // Telescope mode values
+  static final int MD_TRACING =  1;
+  public static final int MD_MOVING =   2;
+  public static final int MD_NOT_CAL =  3;
+  public static final int MD_CALIBRATING   = 4;
+  public static final int MD_MANUAL   = 5;
+  public static final int MD_CALIBRATED   = 6;
+  public static final int MD_MOVE_TO_OBJECT = 7;
+  public static final int MD_NOT_CALIBRATED   = 8;
 
   // Triggers
   static final int ST_MOVING_S = 16;
@@ -57,12 +57,6 @@ public final class C
   static final String NW = "NW";
   static final String NONE = "NONE";
   static final String CLEAR = "";
-
-  public static String curConstellation = "";
-  static String calObj = "Polaris";
-  static String calConstellation = "Ursa Major";
-  public static AstroObject curObj = new AstroObject(calObj, 0.0, 0.0, "", "");
-
   static boolean monitoring = false;
   static boolean mStatus = false;
   static String  curMessage = "";

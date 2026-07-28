@@ -14,9 +14,6 @@ import java.util.Comparator;
 import si.vajnartech.moonstalker.rest.GetConstellationInfo;
 import si.vajnartech.moonstalker.rest.GetStarInfo;
 
-import static si.vajnartech.moonstalker.C.calConstellation;
-import static si.vajnartech.moonstalker.C.curObj;
-
 public class SelectFragment extends MyFragment
 {
   private Spinner skyObjects;
@@ -40,21 +37,21 @@ public class SelectFragment extends MyFragment
 
   private void scanAstroLine(int position, Spinner sp)
   {
-    if (sp == null) return;
-    String name = sp.getItemAtPosition(position).toString();
-    new GetStarInfo(name, () -> {
-      calConstellation = getCFromStar();
-      setPositionString(act);
-      if (!curObj.name.equals(C.calObj))
-        act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent, null));
-      constellations.setSelection(constellationAdapter.getPosition(calConstellation));
-    });
+//    if (sp == null) return;
+//    String name = sp.getItemAtPosition(position).toString();
+//    new GetStarInfo(name, () -> {
+//      calConstellation = getCFromStar();
+//      setPositionString(act);
+//      if (!curObj.name.equals(C.calObj))
+//        act.terminal.setBackgroundColor(getResources().getColor(R.color.colorAccent, null));
+//      constellations.setSelection(constellationAdapter.getPosition(calConstellation));
+//    });
   }
 
   private void initConstellationObjDropDown()
   {
     constellations.setAdapter(constellationAdapter);
-    constellations.setSelection(constellationAdapter.getPosition(calConstellation));
+//    constellations.setSelection(constellationAdapter.getPosition(calConstellation));
     constellations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
     {
       @Override
@@ -70,7 +67,7 @@ public class SelectFragment extends MyFragment
   private void initAstroObjDropDown()
   {
     skyObjects.setAdapter(skyObjAdapter);
-    skyObjects.setSelection(skyObjAdapter.getPosition(curObj.name));
+//    skyObjects.setSelection(skyObjAdapter.getPosition(curObj.name));
     skyObjects.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
     {
       @Override
@@ -90,46 +87,56 @@ public class SelectFragment extends MyFragment
 
   static String getCFromStar()
   {
-    int i;
-    String buf = C.curConstellation.toLowerCase();
-    if (buf.equals("1UrsaeMinoris".toLowerCase()))
-      return("Ursa Minor");
-    if (buf.contains("16Bo".toLowerCase()))
-      return("Bootes");
-
-    for (i = 0; i < constellationAdapter.getCount(); i++) {
-      String str = constellationAdapter.getItem(i).toString().toLowerCase();
-      if (buf.contains(str)) break;
-    }
-    if (i == constellationAdapter.getCount())
-      return "Error";
-    return constellationAdapter.getItem(i).toString();
+//    int i;
+////    String buf = C.curConstellation.toLowerCase();
+////    if (buf.equals("1UrsaeMinoris".toLowerCase()))
+//      return("Ursa Minor");
+//    if (buf.contains("16Bo".toLowerCase()))
+//      return("Bootes");
+//
+//    for (i = 0; i < constellationAdapter.getCount(); i++) {
+//      String str = constellationAdapter.getItem(i).toString().toLowerCase();
+//      if (buf.contains(str)) break;
+//    }
+//    if (i == constellationAdapter.getCount())
+//      return "Error";
+//    return constellationAdapter.getItem(i).toString();
+    return "";
   }
 
   static void initAstroObjDatabase(MainActivity ctx)
   {
-    skyObjAdapter = ArrayAdapter.createFromResource(ctx, R.array.sky_objects, android.R.layout.simple_spinner_item);
+    skyObjAdapter = new ArrayAdapter<>(ctx, R.layout.spinner_item);
+    skyObjAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+    
+    // Add items from resources
+    String[] objects = ctx.getResources().getStringArray(R.array.sky_objects);
+    for (String obj : objects) {
+        skyObjAdapter.add(obj);
+    }
     skyObjAdapter.sort(Comparator.comparingInt(charSequence -> charSequence.toString().charAt(0)));
 
-    constellationAdapter = new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_item);
+    constellationAdapter = new ArrayAdapter<>(ctx, R.layout.spinner_item);
+    constellationAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
     constellationAdapter.sort(Comparator.comparingInt(charSequence -> charSequence.toString().charAt(0)));
     new GetConstellationInfo(constellationAdapter);
   }
 
   private static String formatPositionString(double azimuth, double height, int mode)
   {
-    DecimalFormat df = new DecimalFormat("000.00");
-    String        az = "A:" + df.format(azimuth);
-    String        h  = "H:" + df.format(height);
-
-    if (mode == 1)
-      return String.format("%s | %s", az, h);
-    return String.format("%s (%s)\n%s | %s", curObj.name, calConstellation, az, h);
+//    DecimalFormat df = new DecimalFormat("000.00");
+//    String        az = "A:" + df.format(azimuth);
+//    String        h  = "H:" + df.format(height);
+//
+//    if (mode == 1)
+//      return String.format("%s | %s", az, h);
+//    return String.format("%s (%s)\n%s | %s", curObj.name, calConstellation, az, h);
+    return "";
   }
 
   public static void setPositionString(MainActivity act)
   {
-    act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h, 0));
+//    act.terminal.setText(formatPositionString(act.ctrl.az, act.ctrl.h, 0));
   }
 
   public static void setTelescopeLocationString(MainActivity ctx, int a, int h)

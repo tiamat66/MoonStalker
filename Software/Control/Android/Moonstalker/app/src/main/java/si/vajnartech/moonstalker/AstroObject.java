@@ -2,39 +2,43 @@ package si.vajnartech.moonstalker;
 
 import androidx.annotation.NonNull;
 
-@SuppressWarnings("unused")
+// To je lokalni astronomski objekt za UI
 public class AstroObject
 {
   public String name;
-  public double ra;
-  public double dec;
-  public String sRa;
-  public String sDec;
+  public String ra;
+  public String dec;
   public String constellation;
+  public String azimuth, altitude;
 
-  public AstroObject(String name, double ra, double dec, String sRa, String sDec)
+  public AstroObject(AstroObject obj)
   {
-    set(name, ra, dec);
-    this.sRa = sRa;
-    this.sDec = sDec;
+    this.name = obj.name;
+    this.ra = obj.ra;
+    this.dec = obj.dec;
+    this.constellation = obj.constellation;
+    this.altitude = "";
+    this.azimuth = "";
   }
 
-  void set(String name, double ra, double dec)
+  public AstroObject(String name, String ra, String dec, String constellation)
   {
     this.name = name;
     this.ra = ra;
     this.dec = dec;
+    this.constellation = constellation;
   }
 
-  @NonNull @Override
+  public void setPosition(String alt, String az)
+  {
+    altitude = alt;
+    azimuth = az;
+  }
+
+  @NonNull
+  @Override
   public String toString()
   {
-    return "AstroObject{" +
-           "name=" + name +
-           ", ra=" + ra +
-           ", dec=" + dec +
-           ", sRa=" + sRa +
-           ", sDec=" + sDec +
-           '}';
+    return (name + " " + ra + " " + dec);
   }
 }

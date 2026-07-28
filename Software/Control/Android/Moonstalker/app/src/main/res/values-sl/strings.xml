@@ -11,7 +11,7 @@
   <string name="connecting">povezujem</string>
   <string name="connected">povezan</string>
   <string name="tracing">sledim</string>
-  <string name="moving">Premikam</string>
+  <string name="moving">premikam</string>
   <string name="initializing">inicializiram</string>
   <string name="calibrated">teleskop kalibriran</string>
   <string name="move">Premakni</string>
@@ -23,7 +23,7 @@
   <string name="calibrating">kalibracija</string>
   <string name="ready">pripravljen</string>
   <string name="warning">Opozorilo</string>
-  <string name="connection_failed">Ne morem se povezati s teleskopom. Preveri BlueTooth povezavo.</string>
+  <string name="connection_failed">napaka v povezavi server pomoje ne lavfa</string>
   <string name="connect">Poveži</string>
   <string name="communicate">Komunikacija</string>
   <string name="to_calibrate">premakni na %s</string>
@@ -36,5 +36,17 @@
   <string name="moonstalker">MoonStalker</string>
   <string name="not_ready">zaposlen</string>
   <string name="msg_no_answer">Ni odgovora, preveri teleskop!</string>
+  <string name="waiting">čakam…</string>
+  <string name="end_limit_sw_trig">Sprozeno stikalo za omejitev gibanja</string>
+  <string name="btry_low">Baterija prazna</string>
+  <string name="timeout">brez odziva</string>
+  <string name="btry_voltage">napetost baterije %s V</string>
+  <string name="error">napaka</string>
+  <string name="right_ascension">Rektascenzija:</string>
+  <string name="declination">Deklinacija:</string>
+  <string name="target_sky_object">Ciljno telo</string>
+  <string name="na">N/D</string>
+  <string name="system_monitor">SISTEMSKI MONITOR</string>
+  <string name="disconnected">NI POVEZAN</string>
 
 </resources>

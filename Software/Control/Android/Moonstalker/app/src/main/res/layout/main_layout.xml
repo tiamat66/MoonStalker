@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/windowBackground"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/label_aimed_object"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Target Sky Object"
+        android:textColor="@color/textColorSecondary"
+        android:textSize="12sp"
+        android:textAllCaps="true"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+    <FrameLayout
+        android:id="@+id/spinner_container"
+        style="@style/ControlPanel"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="4dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/label_aimed_object"
+        tools:visibility="visible">
+
+        <Spinner
+            android:id="@+id/aimed_sky_object"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/keypad"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/spinner_container"
+        app:srcCompat="@drawable/ic_keypad"
+        tools:visibility="gone" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/object_details_panel"
+        style="@style/ControlPanel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:padding="16dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/spinner_container"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/label_ra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Right Ascension:"
+            android:textColor="@color/textColorSecondary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/value_ra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="--"
+            android:textColor="@color/displayText"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/label_ra"
+            app:layout_constraintStart_toEndOf="@id/label_ra" />
+
+        <TextView
+            android:id="@+id/label_dec"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Declination:"
+            android:textColor="@color/textColorSecondary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/label_ra" />
+
+        <TextView
+            android:id="@+id/value_dec"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="--"
+            android:textColor="@color/displayText"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/label_dec"
+            app:layout_constraintStart_toEndOf="@id/label_dec" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
