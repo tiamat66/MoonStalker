@@ -1,10 +1,5 @@
 package si.vajnartech.moonstalker.processor;
 
-import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
-
-import com.google.gson.Gson;
-
 import java.io.BufferedReader;
 
 import si.vajnartech.moonstalker.rest.RObjController;

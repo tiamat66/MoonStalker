@@ -44,6 +44,8 @@
   <string name="error">error</string>
   <string name="right_ascension">Right Ascension:</string>
   <string name="declination">Declination:</string>
+  <string name="azimuth">Azimuth:</string>
+  <string name="elevation">Elevation:</string>
   <string name="target_sky_object">Target Sky Object</string>
   <string name="na">N/A</string>
   <string name="system_monitor">SYSTEM MONITOR</string>
