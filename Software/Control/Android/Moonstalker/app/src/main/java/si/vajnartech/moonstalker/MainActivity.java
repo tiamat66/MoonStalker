@@ -191,7 +191,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             logMessage("Cannot move to itself (" + curObjName + ")");
             return;
         }
-        machine.set(OpCodes.MOVE, new ObjController(toObjName, "", ""));
+        ObjController obj = new ObjController(toObjName, "", "");
+        machine.set(OpCodes.MOVE, obj, OpCodes.MOVING, null, null);
     }
 
     @Override

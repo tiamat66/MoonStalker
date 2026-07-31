@@ -20,7 +20,6 @@ public final class OpCodes
     public static final int POSITION = 16;
     public static final int MOVE_START = 17;
     public static final int MOVE_END = 18;
-    public static final int MSG_MVE_ACK = 20;
     public static final int MSG_CONN_TIMEOUT = 21;
     public static final int GOT_ASTRO_DATA = 22;
     public static final int CONNECTING = 23;
