@@ -169,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void calibrating()
     {
-        machine.set(CALIBRATING, null, null, CALIBRATING, null);
+        machine.set(CALIBRATING, null, CALIBRATING);
     }
 
     public void moveStart(String direction)
@@ -186,13 +186,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void move()
     {
-        if (curObjName.equals(toObjName))
-        {
-            logMessage("Cannot move to itself (" + curObjName + ")");
-            return;
-        }
+
         ObjController obj = new ObjController(toObjName, "", "");
-        machine.set(OpCodes.MOVE, obj, OpCodes.MOVING, null, null);
+        machine.set(OpCodes.MOVE, obj);
     }
 
     @Override

@@ -103,9 +103,6 @@ public class Processor {
 
             // Execute the action mapped to the opcode
             action.run();
-
-            // Transition to new state if specified
-            if (newState != null) status.set(newState);
         }
     }
 
@@ -123,10 +120,14 @@ public class Processor {
                     act.updateFab(R.color.colorError);
                 }
             }
+            status.set(OpCodes.ERROR);
         }));
 
         // Connection sequence
-        actions.put(OpCodes.CONNECTING, new Ball(null, () -> act.setInfoMessage(R.string.connecting)));
+        actions.put(OpCodes.CONNECTING, new Ball(null, () -> {
+            act.setInfoMessage(R.string.connecting);
+            status.set(OpCodes.CONNECTING);
+        }));
 
         actions.put(OpCodes.POS_UPDATE, new Ball(null, () -> {
             try {
@@ -146,6 +147,7 @@ public class Processor {
                     Log.i("PEPE", "CONNECTED " + status.get());
                     if (status.get() == OpCodes.MOVING) set(OpCodes.POSITION);
                     else set(OpCodes.GET_ASTRO_DATA);
+                    status.set(OpCodes.CONNECTED);
                 },
                 () -> {
                     act.setInfoMessage(R.string.connected);
@@ -165,6 +167,7 @@ public class Processor {
             act.setInfoMessage(R.string.connection_failed);
             act.updateFab(R.color.colorError);
             act.logMessage("...connection error");
+            status.set(CONN_ERROR);
         }));
 
         // Data synchronization
@@ -173,7 +176,10 @@ public class Processor {
         // Movement control
         actions.put(OpCodes.MOVE_START, new Ball(() -> new CmdMoveStart(this, status.message), null));
 
-        actions.put(OpCodes.MOVING, new Ball(null, () -> act.setInfoMessage(R.string.moving)));
+        actions.put(OpCodes.MOVING, new Ball(null, () -> {
+            act.setInfoMessage(R.string.moving);
+            status.set(OpCodes.MOVING);
+        }));
 
         actions.put(MSG_CONN_TIMEOUT, new Ball(null, () -> act.setInfoMessage(R.string.timeout)));
 
@@ -205,6 +211,7 @@ public class Processor {
             if (status.message != null) {
                 act.logMessage(status.message.p2);
             }
+            status.set(OpCodes.READY);
         }));
 
         actions.put(MSG_INFO, new Ball(null, () -> {
