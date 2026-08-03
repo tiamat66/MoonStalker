@@ -18,6 +18,7 @@ public class ControlFragment extends MyFragment
     private TextView valueDec;
     private TextView valueAzimuth;
     private TextView valueElevation;
+    private TelescopeView telescopeViz;
     private volatile double elevation = 0;
     private volatile double azimuth = 0;
 
@@ -37,11 +38,13 @@ public class ControlFragment extends MyFragment
         valueDec = res.findViewById(R.id.value_dec);
         valueAzimuth = res.findViewById(R.id.value_azimuth);
         valueElevation = res.findViewById(R.id.value_elevation);
+        telescopeViz = res.findViewById(R.id.telescope_viz);
 
         res.findViewById(R.id.label_aimed_object).setVisibility(View.VISIBLE);
         res.findViewById(R.id.spinner_container).setVisibility(View.VISIBLE);
         skyObjects.setVisibility(View.VISIBLE);
         detailsPanel.setVisibility(View.VISIBLE);
+        if (telescopeViz != null) telescopeViz.setVisibility(View.VISIBLE);
 
         initAstroObjDropDown();
 
@@ -93,6 +96,10 @@ public class ControlFragment extends MyFragment
 
             valueAzimuth.setText(String.format("%.2f°", azimuth));
             valueElevation.setText(String.format("%.2f°", elevation));
+
+            if (telescopeViz != null) {
+                telescopeViz.update((float) azimuth, (float) elevation);
+            }
         }
     }
 
