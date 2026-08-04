@@ -8,6 +8,7 @@ public final class OpCodes
     public static final int CONN_ERROR = 3;
     public static final int READY = 4;
     public static final int NOT_READY = 5;
+    public static final int MANUAL = 6;
     public static final int MSG_ERROR = 7;
     public static final int MSG_WARNING = 8;
     public static final int MSG_INFO = 9;
@@ -20,6 +21,7 @@ public final class OpCodes
     public static final int POSITION = 16;
     public static final int MOVE_START = 17;
     public static final int MOVE_END = 18;
+    public static final int AUTO_CONTROL = 19;
     public static final int MSG_CONN_TIMEOUT = 21;
     public static final int GOT_ASTRO_DATA = 22;
     public static final int CONNECTING = 23;

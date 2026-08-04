@@ -151,7 +151,11 @@ public class Processor {
                 },
                 () -> {
                     act.setInfoMessage(R.string.connected);
-                    act.updateMenu(true, true, false, false);
+                    if (status.mode.get() == CALIBRATED)
+                        act.updateMenu(false, true, true, true);
+                    else
+                        act.updateMenu(true, true, false, false);
+
                 }
         ));
 
@@ -186,6 +190,7 @@ public class Processor {
         // Calibration sequence
         actions.put(CALIBRATING, new Ball(null, () -> {
             act.setFragment("manual", ManualMoveFragment.class, new Bundle());
+            act.showFab(true);
             act.promptToCalibration();
             act.setInfoMessage(R.string.calibrating);
             act.updateFab(R.color.colorOk);
@@ -199,7 +204,7 @@ public class Processor {
                         act.curObject = act.objectsDatabase.data.get(CALIBRATOR);
                     }
                     act.setFragment("control", ControlFragment.class, new Bundle());
-                    act.updateMenu(false, true, true, true);
+                    act.updateMenu(false, true, true, false);
                     act.setInfoMessage(R.string.calibrated);
                 }
         ));
@@ -228,5 +233,19 @@ public class Processor {
         actions.put(MSG_BATTERY_RES, new Ball(null, () -> act.setInfoMessage(R.string.btry_voltage)));
 
         actions.put(MOVE_END, new Ball(() -> new CmdMoveEnd(this), null));
+        actions.put(OpCodes.MANUAL, new Ball(null, () -> {
+            act.setFragment("manual", ManualMoveFragment.class, new Bundle());
+            act.showFab(false);
+            // Tole je zato da uporabnik lahko malo popravi teleskop ce pride do kakih
+            // odstopanj med automatskim premikanjem
+            if (status.mode.get() == CALIBRATED)
+                act.updateMenu(true, false, true, true);
+            else
+                act.updateMenu(true, false, false, false);
+        }));
+        actions.put(OpCodes.AUTO_CONTROL, new Ball(() -> set(OpCodes.POSITION), () -> {
+            act.setFragment("control", ControlFragment.class, new Bundle());
+            act.showFab(true);
+        }));
     }
 }

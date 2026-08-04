@@ -73,10 +73,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         monitor.update(val);
     }
 
+    public void showFab(boolean visible)
+    {
+        if (visible)
+            fab.setVisibility(View.VISIBLE);
+        else
+            fab.setVisibility(View.GONE);
+    }
+
     public void updateFab(int color)
     {
-        fab.setVisibility(View.VISIBLE);
-
         runOnUiThread(() -> {
             fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
 
@@ -172,6 +178,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         machine.set(CALIBRATING, null, CALIBRATING);
     }
 
+    private void manual()
+    {
+        machine.set(OpCodes.MANUAL);
+    }
+
+    private void auto()
+    {
+        machine.set(OpCodes.AUTO_CONTROL);
+    }
+
     public void moveStart(String direction)
     {
         // TODO: speed is 500 RPM, both horizontal and vertical steppers will move this speed
@@ -237,10 +253,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.calibrate) {
             calibrating();
         } else if (id == R.id.manual) {
-            setFragment("manual", ManualMoveFragment.class, new Bundle());
+            manual();
         } else if (id == R.id.track) {
             setFragment("control", ControlFragment.class, new Bundle());
-        } else if (id == R.id.move) {}
+        } else if (id == R.id.move) {
+            auto();
+        }
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
