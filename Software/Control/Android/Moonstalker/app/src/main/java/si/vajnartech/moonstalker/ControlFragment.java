@@ -16,6 +16,12 @@ public class ControlFragment extends MyFragment
     private Spinner skyObjects;
     private TextView valueRa;
     private TextView valueDec;
+    private TextView valueAzimuth;
+    private TextView valueElevation;
+    private TelescopeView telescopeViz;
+    private volatile double elevation = 0;
+    private volatile double azimuth = 0;
+
     ArrayAdapter<String> skyObjectAdapter;
 
     @Override
@@ -30,11 +36,15 @@ public class ControlFragment extends MyFragment
         View detailsPanel = res.findViewById(R.id.object_details_panel);
         valueRa = res.findViewById(R.id.value_ra);
         valueDec = res.findViewById(R.id.value_dec);
+        valueAzimuth = res.findViewById(R.id.value_azimuth);
+        valueElevation = res.findViewById(R.id.value_elevation);
+        telescopeViz = res.findViewById(R.id.telescope_viz);
 
         res.findViewById(R.id.label_aimed_object).setVisibility(View.VISIBLE);
         res.findViewById(R.id.spinner_container).setVisibility(View.VISIBLE);
         skyObjects.setVisibility(View.VISIBLE);
         detailsPanel.setVisibility(View.VISIBLE);
+        if (telescopeViz != null) telescopeViz.setVisibility(View.VISIBLE);
 
         initAstroObjDropDown();
 
@@ -59,6 +69,7 @@ public class ControlFragment extends MyFragment
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
             {
                 updateDetails(position);
+                act.toObjName = skyObjectAdapter.getItem(position);
             }
 
             @Override
@@ -77,10 +88,25 @@ public class ControlFragment extends MyFragment
             String name = skyObjectAdapter.getItem(position);
             CelestialObj selected = act.objectsDatabase.data.get(name);
             assert selected != null;
-            String sRa = selected.ra.hours + ":" + selected.ra.minutes + ":" + selected.ra.seconds;
-            String sDec = selected.dec.degrees + ":" + selected.dec.minutes + ":" + selected.dec.seconds;
+            String sRa = selected.ra.hours + "h " + selected.ra.minutes + "' " + selected.ra.seconds + "\"";
+            String sDec = selected.dec.degrees + "°" + selected.dec.minutes + "' " + selected.dec.seconds + "\"";
+
             valueRa.setText(sRa);
             valueDec.setText(sDec);
+
+            valueAzimuth.setText(String.format("%.2f°", azimuth));
+            valueElevation.setText(String.format("%.2f°", elevation));
+
+            if (telescopeViz != null) {
+                telescopeViz.update((float) azimuth, (float) elevation);
+            }
         }
+    }
+
+    public void update(double elevation, double azimuth)
+    {
+        this.elevation = elevation;
+        this.azimuth = azimuth;
+        updateDetails(skyObjects.getSelectedItemPosition());
     }
 }

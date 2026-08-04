@@ -2,8 +2,6 @@ package si.vajnartech.moonstalker;
 
 import static si.vajnartech.moonstalker.C.MD_MOVING;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
-import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
-import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
@@ -44,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public CelestialObj curObject;
     public String curObjName = "";
+    public String toObjName = "";
 
     protected Processor machine = new Processor(this);
 
@@ -55,10 +54,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     FloatingActionButton fab;
     DrawerLayout drawer;
 
-//    public void setPosMessage()
-//    {
-//        terminal.writePosition(curObject);
-//    }
+    public void setPosMessage(double elevation, double azimuth)
+    {
+        if (currentFragment instanceof ControlFragment) {
+            ((ControlFragment) currentFragment).update(elevation, azimuth);
+            curObjName = toObjName;
+        }
+    }
 
     public void setInfoMessage(int val)
     {
@@ -81,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // Update icon based on state
             if (machine.status.get() == OpCodes.MOVING) {
                 fab.setImageResource(android.R.drawable.ic_media_pause);
-            } else if (machine.status.get() == ST_CONNECTION_ERROR || machine.status.get() == ST_NOT_READY) {
+            } else if (machine.status.get() == OpCodes.CONNECTION_ERROR || machine.status.get() == OpCodes.NOT_READY) {
                 fab.setImageResource(android.R.drawable.stat_sys_data_bluetooth);
             } else if (machine.status.get() == CALIBRATING) {
                 fab.setImageResource(android.R.drawable.ic_menu_save);
@@ -124,13 +126,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SharedPref.setDefault("device_name", SERVER_NAME);
         fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> {
-            if (machine.mode.get() == MD_MOVING &&
+            if (machine.status.mode.get() == MD_MOVING &&
                     machine.status.get() == OpCodes.READY) {
                 moveEnd();
             } else if (machine.status.get() == OpCodes.READY) {
                 connect();
-            } else if (machine.mode.get() == CALIBRATING) {
+            } else if (machine.status.mode.get() == CALIBRATING) {
                 calibrated();
+            } else if (machine.status.mode.get() == CALIBRATED) {
+                move();
             }
         });
 
@@ -165,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void calibrating()
     {
-        machine.set(CALIBRATING);
+        machine.set(CALIBRATING, null, CALIBRATING);
     }
 
     public void moveStart(String direction)
@@ -178,6 +182,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void moveEnd()
     {
         machine.set(MOVE_END);
+    }
+
+    public void move()
+    {
+
+        ObjController obj = new ObjController(toObjName, "", "");
+        machine.set(OpCodes.MOVE, obj);
     }
 
     @Override

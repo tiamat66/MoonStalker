@@ -26,23 +26,8 @@ public class CmdMove extends Controller<ObjController>
     }
 
     @Override
-    protected void onPostExecute(ObjController objController) {
-
+    protected void onPostExecute(ObjController objController)
+    {
     }
-
-//    @Override
-//    protected void onPostExecute(String cmdResult)
-//    {
-//        if (cmdResult != null) {
-//            if (cmdResult.equals("NOT_RDY")) {
-//                machine.set(MSG_NOT_READY);
-//            } else if (cmdResult.equals("TIMEOUT")) {
-//                machine.set(MSG_CONN_ERROR);
-//            } else if (cmdResult.startsWith("MV_ACK")) {
-//                machine.set(MSG_MV_ACK);
-//            }
-//        }
-//    }
-
 }
 
