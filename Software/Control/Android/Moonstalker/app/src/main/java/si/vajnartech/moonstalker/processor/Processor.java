@@ -204,7 +204,6 @@ public class Processor {
         actions.put(CALIBRATING, new Ball(null, () -> {
             act.setFragment("manual", ManualMoveFragment.class, new Bundle());
             act.showFab(true);
-//            act.promptToCalibration();
             act.setInfoMessage(R.string.calibrating);
             act.updateFab(R.color.colorOk);
         }));

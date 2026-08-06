@@ -9,8 +9,6 @@ public final class OpCodes
     public static final int READY = 4;
     public static final int NOT_READY = 5;
     public static final int MANUAL = 6;
-    public static final int MSG_ERROR = 7;
-    public static final int MSG_WARNING = 8;
     public static final int MSG_INFO = 9;
     public static final int MSG_BATTERY = 10;
     public static final int MSG_BATTERY_RES = 11;

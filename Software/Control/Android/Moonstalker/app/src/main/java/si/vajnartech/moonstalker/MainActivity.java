@@ -20,7 +20,6 @@ import android.view.MenuItem;
 import android.view.View;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
@@ -31,7 +30,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
 import si.vajnartech.moonstalker.processor.CelestialObj;
-import si.vajnartech.moonstalker.processor.CmdTrack;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
 import si.vajnartech.moonstalker.rest.ObjController;
@@ -113,11 +111,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menu.findItem(R.id.move).setEnabled(mo);
             drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         });
-    }
-
-    public void promptToCalibration()
-    {
-        runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
     }
 
     @SuppressLint("InflateParams")
@@ -282,38 +275,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    void myMessage(final String msg)
-    {
-        runOnUiThread(() -> {
-
-            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-            alertDialog.setTitle(tx(R.string.warning));
-            alertDialog.setMessage(msg);
-            alertDialog.setButton(
-                    AlertDialog.BUTTON_NEUTRAL, "OK",
-                    (dialog, which) -> dialog.dismiss());
-            alertDialog.show();
-        });
-    }
-
-    @SuppressWarnings("unused")
-    void myMessage(final String msg, final Runnable action)
-    {
-        runOnUiThread(() -> {
-
-            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-            alertDialog.setTitle(tx(R.string.warning));
-            alertDialog.setMessage(msg);
-            alertDialog.setButton(
-                    AlertDialog.BUTTON_POSITIVE, tx(R.string.ok),
-                    (dialog, which) -> action.run());
-            alertDialog.setButton(
-                    AlertDialog.BUTTON_NEGATIVE, tx(android.R.string.cancel),
-                    (dialog, which) -> dialog.dismiss());
-            alertDialog.show();
-        });
     }
 
     public String tx(int stringId, Object... formatArgs)

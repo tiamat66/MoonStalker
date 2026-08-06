@@ -4,7 +4,6 @@ package si.vajnartech.moonstalker.processor;
 import android.util.Log;
 
 import java.io.BufferedReader;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.rest.ObjController;

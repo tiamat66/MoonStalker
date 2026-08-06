@@ -3,7 +3,6 @@ package si.vajnartech.moonstalker.processor;
 import java.io.BufferedReader;
 
 import si.vajnartech.moonstalker.OpCodes;
-import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.rest.RObjController;
 
 public class CmdCalibrated extends Controller<RObjController>
