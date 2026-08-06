@@ -162,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
 
         scheduler.start();
+        showFab(false);
     }
 
     private void connect()

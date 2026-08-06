@@ -224,6 +224,7 @@ public class Processor {
         // Status updates
         actions.put(OpCodes.READY, new Ball(null, () -> {
             act.setInfoMessage(R.string.ready);
+            act.showFab(true);
             act.updateFab(R.color.colorOk);
             if (status.message != null) {
                 act.logMessage(status.message.p2);
