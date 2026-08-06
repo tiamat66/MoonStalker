@@ -63,38 +63,38 @@ public class Processor {
     // --- State setters ---
 
     public void set(int id) {
-        set(id, null, null, null, null);
+        set(id, null, null,  null);
     }
 
     public void set(int id, RObjAstroData data) {
-        set(id, null, null, null, data);
+        set(id, null, null,  data);
     }
 
-    public void set(int id, Integer newState, Integer newMode) {
-        set(id, null, newState, newMode, null);
+    public void set(int id, Integer newMode) {
+        set(id, null, newMode, null);
     }
 
     public void set(int id, ObjController message) {
-        set(id, message, null, null, null);
+        set(id, message,  null, null);
     }
 
     /**
      * Core dispatch method. It schedules actions on IO and UX queues.
      * State updates are synchronized on the status object to ensure consistency.
      */
-    public void set(int id, final ObjController message, final Integer newState, final Integer newMode, final RObjAstroData data) {
+    public void set(int id, final ObjController message, final Integer newMode, final RObjAstroData data) {
         Ball ball = actions.get(id);
         if (ball == null) return;
 
         if (ball.ioAction != null) {
-            ioQueue.post(() -> execute(ball.ioAction, message, newState, newMode, data));
+            ioQueue.post(() -> execute(ball.ioAction, message,  newMode, data));
         }
         if (ball.uxAction != null) {
-            uxQueue.post(() -> execute(ball.uxAction, message, newState, newMode, data));
+            uxQueue.post(() -> execute(ball.uxAction, message,  newMode, data));
         }
     }
 
-    private void execute(Runnable action, ObjController message, Integer newState, Integer newMode, RObjAstroData data) {
+    private void execute(Runnable action, ObjController message, Integer newMode, RObjAstroData data) {
         synchronized (status) {
             // Apply new state parameters
             if (newMode != null) status.mode.set(newMode);
@@ -151,6 +151,7 @@ public class Processor {
                 },
                 () -> {
                     act.setInfoMessage(R.string.connected);
+                    act.updateFab(R.color.colorOk);
                     if (status.mode.get() == CALIBRATED)
                         act.updateMenu(false, true, true, true);
                     else
@@ -162,7 +163,7 @@ public class Processor {
         actions.put(CONNECT, new Ball(
                 () -> {
                     new CmdStatus(this);
-                    set(OpCodes.CONNECTING, OpCodes.CONNECTING, null);
+                    set(OpCodes.CONNECTING);
                 },
                 null
         ));
@@ -178,6 +179,18 @@ public class Processor {
         actions.put(GOT_ASTRO_DATA, new Ball(null, () -> act.objectsDatabase = status.data));
 
         // Movement control
+        actions.put(OpCodes.TRACK, new Ball( () -> new CmdTrack(this, status.message),
+                () -> {
+                    if (status.get() == OpCodes.CONNECTED) {
+                        act.setInfoMessage(R.string.tracing);
+                        act.updateMenu(false, false, false, false);
+                        act.updateFab(R.color.colorError);
+                        status.set(OpCodes.TRACK);
+                    } else if (status.get() == OpCodes.TRACK) {
+                        set(OpCodes.CONNECTED);
+                    }
+                }));
+
         actions.put(OpCodes.MOVE_START, new Ball(() -> new CmdMoveStart(this, status.message), null));
 
         actions.put(OpCodes.MOVING, new Ball(null, () -> {
@@ -191,7 +204,7 @@ public class Processor {
         actions.put(CALIBRATING, new Ball(null, () -> {
             act.setFragment("manual", ManualMoveFragment.class, new Bundle());
             act.showFab(true);
-            act.promptToCalibration();
+//            act.promptToCalibration();
             act.setInfoMessage(R.string.calibrating);
             act.updateFab(R.color.colorOk);
         }));

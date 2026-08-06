@@ -2,16 +2,17 @@ package si.vajnartech.moonstalker.processor;
 
 import java.io.BufferedReader;
 
-import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.rest.RObjController;
 
-public class CmdCalibrated extends Controller<RObjController>
+public class CmdTrack extends Controller<RObjController>
 {
+    protected ObjController data;
 
-    public CmdCalibrated(Processor machine)
+    public CmdTrack(Processor machine, ObjController data)
     {
-        super("calibrated", machine);
+        super("track", machine);
+        this.data = data;
     }
 
     @Override
@@ -23,14 +24,13 @@ public class CmdCalibrated extends Controller<RObjController>
     @Override
     public RObjController backgroundFunc()
     {
-        return callServer(null);
+        return callServer(data);
     }
 
     @Override
     protected void onPostExecute(RObjController rObjController)
     {
-        if (rObjController != null && rObjController.success) {
-            machine.set(OpCodes.POSITION, OpCodes.CALIBRATED);
-        }
+        // zaenkrat je komanda posredovana dobimo message ki je sent in neki text
+        // vse ostalo je na pingu
     }
 }

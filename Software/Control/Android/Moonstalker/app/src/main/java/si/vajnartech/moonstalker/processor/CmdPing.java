@@ -36,19 +36,25 @@ public class CmdPing extends Controller<RObjController>
            switch(res.state) {
                case "ready":
                    if (machine.status.get() == OpCodes.READY) return;
-                   machine.set(OpCodes.READY, new ObjController(res.message, res.error_data, ""), OpCodes.READY, null, null);
+                   machine.set(OpCodes.READY, new ObjController(res.message, res.error_data, ""));
                    break;
                case "connected":
                    if (machine.status.get() == OpCodes.CONNECTED) return;
-                   machine.set(OpCodes.CONNECTED, new ObjController(res.message, res.error_data, ""), OpCodes.CONNECTED, null, null);
+                   if (machine.status.get() == OpCodes.TRACK)  {
+                       machine.set(OpCodes.POSITION);
+                       return;
+                   }
+                   machine.set(OpCodes.CONNECTED, new ObjController(res.message, res.error_data, ""));
                    break;
                case "error":
                    if (machine.status.get() == OpCodes.ERROR) return;
-                   machine.set(OpCodes.ERROR, new ObjController(res.message, "", ""), OpCodes.ERROR, null, null);
+                   machine.set(OpCodes.ERROR, new ObjController(res.message, "", ""));
                    break;
                case "moving":
-                   if (machine.status.get() == OpCodes.MOVING) return;
-                   machine.set(OpCodes.MOVING, new ObjController(res.message, res.error_data, ""), OpCodes.MOVING, null, null);
+                   if (machine.status.get() == OpCodes.MOVING ||
+                           machine.status.get() == OpCodes.TRACK) return;
+
+                   machine.set(OpCodes.MOVING, new ObjController(res.message, res.error_data, ""));
            }
         }
     }

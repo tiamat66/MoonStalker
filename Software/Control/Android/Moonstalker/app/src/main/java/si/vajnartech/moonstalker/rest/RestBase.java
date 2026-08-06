@@ -154,7 +154,7 @@ public abstract class RestBase<Body, R> extends AsyncTaskExecutor<String, Void, 
 
     protected void onFailure()
     {
-        machine.set(OpCodes.CONN_ERROR, OpCodes.CONN_ERROR, null);
+        machine.set(OpCodes.CONN_ERROR);
     }
 
     @Override

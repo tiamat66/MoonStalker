@@ -6,6 +6,7 @@ import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
+import static si.vajnartech.moonstalker.OpCodes.TRACK;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -30,6 +31,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
 import si.vajnartech.moonstalker.processor.CelestialObj;
+import si.vajnartech.moonstalker.processor.CmdTrack;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
 import si.vajnartech.moonstalker.rest.ObjController;
@@ -45,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public String toObjName = "";
 
     protected Processor machine = new Processor(this);
+    private final Ping scheduler = new Ping(machine);
 
     MyFragment currentFragment = null;
     Menu menu;
@@ -93,6 +96,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 fab.setImageResource(android.R.drawable.stat_sys_data_bluetooth);
             } else if (machine.status.get() == CALIBRATING) {
                 fab.setImageResource(android.R.drawable.ic_menu_save);
+            } else if (machine.status.get() == TRACK) {
+                fab.setImageResource(android.R.drawable.ic_media_pause);
             } else {
                 fab.setImageResource(android.R.drawable.ic_menu_directions);
             }
@@ -139,8 +144,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 connect();
             } else if (machine.status.mode.get() == CALIBRATING) {
                 calibrated();
-            } else if (machine.status.mode.get() == CALIBRATED) {
+            } else if (machine.status.mode.get() == CALIBRATED &&
+                    machine.status.get() == OpCodes.CONNECTED) {
                 move();
+            } else if (machine.status.get() == OpCodes.TRACK) {
+                track(false);
             }
         });
 
@@ -160,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
 
-        new Ping(machine);
+        scheduler.start();
     }
 
     private void connect()
@@ -175,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void calibrating()
     {
-        machine.set(CALIBRATING, null, CALIBRATING);
+        machine.set(CALIBRATING, CALIBRATING);
     }
 
     private void manual()
@@ -205,6 +213,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         ObjController obj = new ObjController(toObjName, "", "");
         machine.set(OpCodes.MOVE, obj);
+    }
+
+    private void track(boolean track)
+    {
+        String action;
+        if (track)
+            action = "start_track";
+        else
+            action = "stop_track";
+        ObjController obj = new ObjController(action, "", "");
+
+        machine.set(OpCodes.TRACK, obj);
     }
 
     @Override
@@ -255,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (id == R.id.manual) {
             manual();
         } else if (id == R.id.track) {
-            setFragment("control", ControlFragment.class, new Bundle());
+            track(true);
         } else if (id == R.id.move) {
             auto();
         }
@@ -330,6 +350,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onDestroy()
     {
+        scheduler.stop();
         machine.quit();
         super.onDestroy();
     }
