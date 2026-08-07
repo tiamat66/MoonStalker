@@ -47,6 +47,7 @@ public class CmdPing extends Controller<RObjController>
                    machine.set(OpCodes.READY, new ObjController(res.message, res.error_data, ""), OpCodes.NOT_READY, null);
                    break;
                case "connected":
+
                    if (machine.status.get() == OpCodes.CONNECTED) return;
                    if (machine.status.get() == OpCodes.TRACK)  {
                        machine.set(OpCodes.POSITION);
@@ -67,11 +68,11 @@ public class CmdPing extends Controller<RObjController>
         }
 
         // BATTERY, INFO, WARNING, ERROR from Telescope
-//        private void processUnsoliciedAction(RObjController res)
-//        {
-//            if (res.battery != null && res,)
-//            machine.set(OpCodes.GOT_BATTERY, new ObjController(res.battery, "", ""));
-//        }
+        private void processUnsoliciedAction(RObjController res)
+        {
+            if (res.battery != null && !res.battery.isEmpty())
+                machine.set(OpCodes.GOT_BATTERY, new ObjController(res.battery, "", ""));
+        }
     }
 
 
