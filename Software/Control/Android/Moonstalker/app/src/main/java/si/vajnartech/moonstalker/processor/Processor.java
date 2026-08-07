@@ -7,7 +7,6 @@ import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.GOT_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
-import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
@@ -23,6 +22,7 @@ import java.util.Map;
 
 import si.vajnartech.moonstalker.ControlFragment;
 import si.vajnartech.moonstalker.MainActivity;
+import si.vajnartech.moonstalker.MainFragment;
 import si.vajnartech.moonstalker.ManualMoveFragment;
 import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.R;
@@ -110,6 +110,14 @@ public class Processor {
         return ioQueue;
     }
 
+    public Handler getUxQueue() {
+        return uxQueue;
+    }
+
+    public MainActivity getAct() {
+        return act;
+    }
+
     private void initTable() {
         // Error handling
         actions.put(OpCodes.ERROR, new Ball(null, () -> {
@@ -173,6 +181,7 @@ public class Processor {
             act.updateFab(R.color.colorError);
             act.logMessage("...connection error");
             status.set(CONN_ERROR);
+
         }));
 
         // Data synchronization
@@ -226,6 +235,7 @@ public class Processor {
             act.setInfoMessage(R.string.ready);
             act.showFab(true);
             act.updateFab(R.color.colorOk);
+            act.setFragment("main", MainFragment.class, new Bundle());
             if (status.message != null) {
                 act.logMessage(status.message.p2);
             }
@@ -238,7 +248,10 @@ public class Processor {
             }
         }));
 
-        actions.put(MSG_BATTERY, new Ball(() -> new CmdBattery(this), null));
+        actions.put(OpCodes.GOT_BATTERY, new Ball(null, () -> {
+            status.battery = status.message.p1;
+            act.updateIndicators();
+        }));
 
         actions.put(OpCodes.MOVE, new Ball(() -> new CmdMove(this, status.message),
                 () -> act.setInfoMessage(R.string.moving)));

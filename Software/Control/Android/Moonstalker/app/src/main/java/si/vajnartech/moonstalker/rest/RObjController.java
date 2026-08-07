@@ -6,4 +6,6 @@ public class RObjController
     public String message;
     public String state;
     public String error_data;
+    public String battery;
+    public Boolean alarm;
 }

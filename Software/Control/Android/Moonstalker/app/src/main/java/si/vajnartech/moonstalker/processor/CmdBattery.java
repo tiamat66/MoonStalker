@@ -23,22 +23,10 @@ public class CmdBattery extends Controller<RObjController>
     }
 
     @Override
-    protected void onPostExecute(RObjController rObjController)
+    protected void onPostExecute(RObjController res)
     {
-        // TODO
+        if (res == null) return;
+        if (res.battery != null) machine.status.battery = res.battery;
+        if (res.alarm != null) machine.status.alarm = res.alarm;
     }
-
-//    @Override
-//    protected void onPostExecute(String cmdResult)
-//    {
-//        String msg = getParams(cmdResult);
-//
-//        if (cmdResult.startsWith("BTRY")) {
-//            machine.set(MSG_BATTERY_RES, msg);
-//        }  else if (cmdResult.equals("TIMEOUT")) {
-//            machine.set(MSG_CONN_ERROR);
-//        }
-//    }
-
-
 }

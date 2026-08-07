@@ -13,6 +13,8 @@ public final class Status
     public volatile ObjController message = null;
     public volatile RObjAstroData data = null;
     public volatile AtomicInteger mode  = new AtomicInteger(OpCodes.NOT_READY);
+    public volatile String battery = "";
+    public volatile boolean alarm = false;
 
 
     public void set(int val)

@@ -18,6 +18,8 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -54,6 +56,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     Monitor monitor;
     FloatingActionButton fab;
     DrawerLayout drawer;
+
+    ImageView indicatorAlarm;
+    ImageView indicatorBattery;
+    TextView batteryText;
 
     public void setPosMessage(double elevation, double azimuth)
     {
@@ -98,6 +104,27 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 fab.setImageResource(android.R.drawable.ic_media_pause);
             } else {
                 fab.setImageResource(android.R.drawable.ic_menu_directions);
+            }
+            updateIndicators();
+        });
+    }
+
+    public void updateIndicators()
+    {
+        runOnUiThread(() -> {
+            indicatorAlarm.setVisibility(machine.status.alarm ? View.VISIBLE : View.GONE);
+            batteryText.setText(machine.status.battery);
+            if (!machine.status.battery.isEmpty()) {
+                try {
+                    float v = Float.parseFloat(machine.status.battery.replace("V", "").trim());
+                    if (v > 12.0) indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorOk, null)));
+                    else if (v > 11.0) indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorMoving, null)));
+                    else indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorError, null)));
+                } catch (Exception e) {
+                    indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorNeutral, null)));
+                }
+            } else {
+                indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorNeutral, null)));
             }
         });
     }
@@ -160,6 +187,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
+
+        indicatorAlarm = findViewById(R.id.indicator_alarm);
+        indicatorBattery = findViewById(R.id.indicator_battery);
+        batteryText = findViewById(R.id.battery_text);
 
         scheduler.start();
         showFab(false);
