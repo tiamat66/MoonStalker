@@ -3,14 +3,14 @@ package si.vajnartech.moonstalker.processor;
 import java.io.BufferedReader;
 
 import si.vajnartech.moonstalker.OpCodes;
+import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.rest.RObjController;
 
-public class CmdCalibrated extends Controller<RObjController>
+public class CmdPosition extends Controller<RObjController>
 {
-
-    public CmdCalibrated(Processor machine)
+    public CmdPosition(Processor machine)
     {
-        super("calibrated", machine);
+        super("position", machine);
     }
 
     @Override
@@ -26,10 +26,11 @@ public class CmdCalibrated extends Controller<RObjController>
     }
 
     @Override
-    protected void onPostExecute(RObjController rObjController)
+    protected void onPostExecute(RObjController res)
     {
-        if (rObjController != null && rObjController.success) {
-            machine.set(OpCodes.POSITION, OpCodes.CALIBRATED);
-        }
+        if (res == null || !res.success) return;
+
+        String[] s = res.message.split(" ");
+        machine.set(OpCodes.POS_UPDATE, new ObjController(s[0], s[1], s[2]));
     }
 }

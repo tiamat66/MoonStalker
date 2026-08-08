@@ -44,6 +44,8 @@
   <string name="error">napaka</string>
   <string name="right_ascension">Rektascenzija:</string>
   <string name="declination">Deklinacija:</string>
+  <string name="azimuth">Azimut:</string>
+  <string name="elevation">Elevacija:</string>
   <string name="target_sky_object">Ciljno telo</string>
   <string name="na">N/D</string>
   <string name="system_monitor">SISTEMSKI MONITOR</string>

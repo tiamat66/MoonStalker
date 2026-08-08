@@ -1,31 +1,16 @@
 package si.vajnartech.moonstalker.processor;
 
 import static si.vajnartech.moonstalker.C.CALIBRATOR;
-import static si.vajnartech.moonstalker.C.MD_MOVING;
-import static si.vajnartech.moonstalker.C.MD_NOT_CALIBRATED;
-import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
-import static si.vajnartech.moonstalker.C.ST_ERROR;
-import static si.vajnartech.moonstalker.C.ST_NOT_READY;
-import static si.vajnartech.moonstalker.OpCodes.ERROR;
-import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
-import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
-import static si.vajnartech.moonstalker.OpCodes.MSG_ERROR;
-import static si.vajnartech.moonstalker.OpCodes.GET_ASTRO_DATA;
+import static si.vajnartech.moonstalker.OpCodes.CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.GOT_ASTRO_DATA;
-import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MOVE;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MVE_ACK;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MVS_ACK;
-import static si.vajnartech.moonstalker.OpCodes.MSG_MV_ACK;
-import static si.vajnartech.moonstalker.OpCodes.NOT_READY;
-import static si.vajnartech.moonstalker.OpCodes.MSG_POSITION;
-import static si.vajnartech.moonstalker.OpCodes.MSG_WARNING;
+import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
+import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
+import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
+import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,10 +19,8 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.util.HashMap;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
 
-import si.vajnartech.moonstalker.AstroObject;
 import si.vajnartech.moonstalker.ControlFragment;
 import si.vajnartech.moonstalker.MainActivity;
 import si.vajnartech.moonstalker.ManualMoveFragment;
@@ -47,220 +30,235 @@ import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.rest.RObjAstroData;
 import si.vajnartech.moonstalker.telescope.Status;
 
-public class Processor
-{
-    public Status status = new Status();
-    public Status mode = new Status();
-    protected MainActivity act;
-    protected Handler ioQueue;
-    protected Handler uxQueue;
-    protected HashMap<Integer, Ball> actions = new HashMap<>();
+/**
+ * Processor handles the telescope control logic by dispatching commands and UI updates
+ * based on operational codes (OpCodes). It manages a background IO thread and main UI queue.
+ */
+public class Processor {
+    public final Status status = new Status();
+    private final MainActivity act;
+    private final Handler ioQueue;
+    private final Handler uxQueue;
+    private final Map<Integer, Ball> actions = new HashMap<>();
+    private final HandlerThread ioThread;
 
-    protected HandlerThread ioThread;
-
-    public Processor(MainActivity act)
-    {
+    public Processor(MainActivity act) {
         this.act = act;
-        uxQueue = new Handler(Looper.getMainLooper());
-        
-        ioThread = new HandlerThread("ProcessorIO");
-        ioThread.start();
-        ioQueue = new Handler(ioThread.getLooper());
+        this.uxQueue = new Handler(Looper.getMainLooper());
 
-        initTable(this);
-        mode.set(MD_NOT_CALIBRATED);
+        this.ioThread = new HandlerThread("ProcessorIO");
+        this.ioThread.start();
+        this.ioQueue = new Handler(ioThread.getLooper());
+
+        initTable();
     }
 
-    public void quit()
-    {
+    /**
+     * Safely shuts down the processor's background thread.
+     */
+    public void quit() {
         ioThread.quitSafely();
     }
 
-    public void set(int id)
-    {
+    // --- State setters ---
+
+    public void set(int id) {
+        set(id, null, null,  null);
+    }
+
+    public void set(int id, RObjAstroData data) {
+        set(id, null, null,  data);
+    }
+
+    public void set(int id, Integer newMode) {
+        set(id, null, newMode, null);
+    }
+
+    public void set(int id, ObjController message) {
+        set(id, message,  null, null);
+    }
+
+    /**
+     * Core dispatch method. It schedules actions on IO and UX queues.
+     * State updates are synchronized on the status object to ensure consistency.
+     */
+    public void set(int id, final ObjController message, final Integer newMode, final RObjAstroData data) {
         Ball ball = actions.get(id);
-        if (ball != null) {
-            if (ball.ioAction != null) {
-                ioQueue.post(ball.ioAction);
-            }
-            if (ball.uxAction != null) {
-                uxQueue.post(ball.uxAction);
-            }
+        if (ball == null) return;
+
+        if (ball.ioAction != null) {
+            ioQueue.post(() -> execute(ball.ioAction, message,  newMode, data));
+        }
+        if (ball.uxAction != null) {
+            uxQueue.post(() -> execute(ball.uxAction, message,  newMode, data));
         }
     }
 
-    public Handler getIoQueue()
-    {
+    private void execute(Runnable action, ObjController message, Integer newMode, RObjAstroData data) {
+        synchronized (status) {
+            // Apply new state parameters
+            if (newMode != null) status.mode.set(newMode);
+            if (data != null) status.data = data;
+            if (message != null) status.message = message;
+
+            // Execute the action mapped to the opcode
+            action.run();
+        }
+    }
+
+    public Handler getIoQueue() {
         return ioQueue;
     }
 
-    public void set(int id, RObjAstroData data)
-    {
-        status.data = data;
-        set(id);
-    }
-
-    public void set(int id, ObjController message)
-    {
-        status.message = message;
-        set(id);
-    }
-
-    private void initTable(Processor machine)
-    {
-        actions.put(OpCodes.ERROR, new Ball(null, new Runnable() {
-            @Override
-            public void run() {
+    private void initTable() {
+        // Error handling
+        actions.put(OpCodes.ERROR, new Ball(null, () -> {
+            if (status.message != null) {
                 act.logMessage(status.message.p2);
-                if (Objects.equals(status.message.p1, "NOT_RDY"))
-                    return;
-                act.setInfoMessage(R.string.error);
-                act.updateFab(R.color.colorError);
-                status.set(ERROR);
+                if (!"NOT_RDY".equals(status.message.p1)) {
+                    act.setInfoMessage(R.string.error);
+                    act.updateFab(R.color.colorError);
+                }
             }
+            status.set(OpCodes.ERROR);
         }));
-        actions.put(OpCodes.CONNECTING, new Ball(null,
-                () -> {
+
+        // Connection sequence
+        actions.put(OpCodes.CONNECTING, new Ball(null, () -> {
             act.setInfoMessage(R.string.connecting);
             status.set(OpCodes.CONNECTING);
         }));
-        actions.put(OpCodes.CONNECTED, new Ball(() -> new CmdGetAstroData(machine),
+
+        actions.put(OpCodes.POS_UPDATE, new Ball(null, () -> {
+            try {
+                if (status.message != null) {
+                    double el = Double.parseDouble(status.message.p2);
+                    double az = Double.parseDouble(status.message.p3);
+                    act.setPosMessage(el, az);
+                }
+            } catch (NumberFormatException ignored) {}
+        }));
+
+        actions.put(OpCodes.POSITION, new Ball(() -> new CmdPosition(this), null));
+        actions.put(OpCodes.GET_ASTRO_DATA, new Ball(() -> new CmdGetAstroData(this), null));
+
+        actions.put(OpCodes.CONNECTED, new Ball(
+                () -> {
+                    Log.i("PEPE", "CONNECTED " + status.get());
+                    if (status.get() == OpCodes.MOVING) set(OpCodes.POSITION);
+                    else set(OpCodes.GET_ASTRO_DATA);
+                    status.set(OpCodes.CONNECTED);
+                },
                 () -> {
                     act.setInfoMessage(R.string.connected);
-                    status.set(OpCodes.CONNECTED);
-                    act.updateMenu(true, true, false, false);
-                }));
-        // MSG_CONNECT
-        actions.put(CONNECT, new Ball(() -> {
-            new CmdStatus(this);
-            machine.set(OpCodes.CONNECTING);
-        },
-                null));
-        // MSG_CONN_ERROR
-        actions.put(MSG_CONN_ERROR, new Ball(null, () -> {
-            act.setInfoMessage(R.string.connection_failed);
-            act.updateFab(R.color.colorError);
-            act.logMessage("...connection error");
-            status.set(ST_CONNECTION_ERROR);
-        }));
-        // MSG_GOT_ASTRO_DATA
-        actions.put(GOT_ASTRO_DATA, new Ball(null, () -> {
-            act.objectsDatabase = status.data;
-        }));
-        // MSG_NOT_READY
-        actions.put(NOT_READY, new Ball(null,
-                () -> {
-                    act.setInfoMessage(R.string.not_ready);
-                    status.set(ST_NOT_READY);
+                    act.updateFab(R.color.colorOk);
+                    if (status.mode.get() == CALIBRATED)
+                        act.updateMenu(false, true, true, true);
+                    else
+                        act.updateMenu(true, true, false, false);
+
                 }
         ));
-        // MSG_MOVE_START
-        actions.put(OpCodes.MOVE_START, new Ball(
+
+        actions.put(CONNECT, new Ball(
                 () -> {
-                    new CmdMoveStart(machine, status.message);
-                    machine.set(OpCodes.MOVING);
+                    new CmdStatus(this);
+                    set(OpCodes.CONNECTING);
                 },
                 null
         ));
-        actions.put(OpCodes.MOVING, new Ball(null,
+
+        actions.put(CONN_ERROR, new Ball(null, () -> {
+            act.setInfoMessage(R.string.connection_failed);
+            act.updateFab(R.color.colorError);
+            act.logMessage("...connection error");
+            status.set(CONN_ERROR);
+        }));
+
+        // Data synchronization
+        actions.put(GOT_ASTRO_DATA, new Ball(null, () -> act.objectsDatabase = status.data));
+
+        // Movement control
+        actions.put(OpCodes.TRACK, new Ball( () -> new CmdTrack(this, status.message),
                 () -> {
-                    act.setInfoMessage(R.string.moving);
-                    status.set(OpCodes.MOVING);
+                    if (status.get() == OpCodes.CONNECTED) {
+                        act.setInfoMessage(R.string.tracing);
+                        act.updateMenu(false, false, false, false);
+                        act.updateFab(R.color.colorError);
+                        status.set(OpCodes.TRACK);
+                    } else if (status.get() == OpCodes.TRACK) {
+                        set(OpCodes.CONNECTED);
+                    }
                 }));
-        // MSG_CONN_TIMEOUT
-        actions.put(MSG_CONN_TIMEOUT, new Ball(null,
-                () -> act.setInfoMessage(R.string.timeout)));
-        // MSG_MVS_ACK
-        actions.put(MSG_MVS_ACK, new Ball(null,
-                () -> {
-                    act.setInfoMessage(R.string.moving);
-                    act.updateFab(R.color.colorMoving);
-                    mode.set(MD_MOVING);
-                 }));
-        // MSG_CALIBRATING
-        actions.put(CALIBRATING, new Ball(null,
-                () -> {
-                    act.setFragment("manual", ManualMoveFragment.class, new Bundle());
-                    act.promptToCalibration();
-                    act.setInfoMessage(R.string.calibrating);
-                    act.updateFab(R.color.colorOk);
-                    mode.set(CALIBRATING);
-                    act.setInfoMessage(R.string.calibrating);
-                }));
-        // MSG_CALIBRATED
+
+        actions.put(OpCodes.MOVE_START, new Ball(() -> new CmdMoveStart(this, status.message), null));
+
+        actions.put(OpCodes.MOVING, new Ball(null, () -> {
+            act.setInfoMessage(R.string.moving);
+            status.set(OpCodes.MOVING);
+        }));
+
+        actions.put(MSG_CONN_TIMEOUT, new Ball(null, () -> act.setInfoMessage(R.string.timeout)));
+
+        // Calibration sequence
+        actions.put(CALIBRATING, new Ball(null, () -> {
+            act.setFragment("manual", ManualMoveFragment.class, new Bundle());
+            act.showFab(true);
+            act.setInfoMessage(R.string.calibrating);
+            act.updateFab(R.color.colorOk);
+        }));
+
         actions.put(CALIBRATED, new Ball(
-                null,
+                () -> new CmdCalibrated(this),
                 () -> {
                     act.curObjName = CALIBRATOR;
-                    act.curObject = act.objectsDatabase.data.get(CALIBRATOR);
+                    if (act.objectsDatabase != null && act.objectsDatabase.data != null) {
+                        act.curObject = act.objectsDatabase.data.get(CALIBRATOR);
+                    }
                     act.setFragment("control", ControlFragment.class, new Bundle());
-                    act.updateMenu(false, true, true, true);
-                    mode.set(OpCodes.CALIBRATED);
+                    act.updateMenu(false, true, true, false);
                     act.setInfoMessage(R.string.calibrated);
                 }
         ));
-        // MSG_READY
-        actions.put(OpCodes.READY, new Ball(null,
-                () -> {
-                    act.setInfoMessage(R.string.ready);
-                    act.updateFab(R.color.colorOk);
-                    status.set(OpCodes.READY);
-                    act.logMessage(status.message.p2);
-                }
-                ));
-        // MSG_ERROR
-        actions.put(MSG_ERROR, new Ball(null,
-                () -> {
-                    if (Objects.equals(status.message, "END_LIMIT_SW_TRIG"))
-                        act.setInfoMessage(R.string.end_limit_sw_trig);
-                    status.set(ST_ERROR);
-                }
-                ));
-        // MSG_WARNING
-        actions.put(MSG_WARNING, new Ball(null,
-                () -> {
-                    if (Objects.equals(status.message, "BTRY_LOW"))
-                        act.setInfoMessage(R.string.btry_low);
-                }
-                ));
-        // MSG_INFO
-        actions.put(MSG_INFO, new Ball(null,
-                () -> act.logMessage(String.format("...%s", status.message))));
-        // MSG_POSITION
-//        actions.put(MSG_POSITION, new Ball(null,
-//                () -> {
-//                    String[] res = status.message.p1.split(" "); // TODO
-//                    act.curObject.setPosition(res[0], res[1]);
-//                    act.setPosMessage();
-//                }));
-        // MSG_BATTERY
-        actions.put(MSG_BATTERY, new Ball(() -> new CmdBattery(this),
-                null
-                ));
-        // MSG_MOVE
-        actions.put(MSG_MOVE, new Ball(() -> new CmdMove(this, status.message),
-                null
-                ));
-        // MSG_MV_ACK
-        actions.put(MSG_MV_ACK, new Ball(null,
-                () -> {
-                    act.setInfoMessage(R.string.moving);
-                    act.updateFab(R.color.colorMoving);
-                    mode.set(MD_MOVING);
-                }));
-        // MSG_BATTERY_RES
-        actions.put(MSG_BATTERY_RES, new Ball(null,
-                () -> act.setInfoMessage(R.string.btry_voltage)));
-        // MSG_MOVE_END
-        actions.put(MOVE_END, new Ball(() -> new CmdMoveEnd(this),
-                null));
-        // MSG_MVE_ACK
-        actions.put(MSG_MVE_ACK, new Ball(null,
-                () -> {
-                    act.setInfoMessage(R.string.ready);
-                    status.set(OpCodes.READY);
-                    act.updateFab(R.color.design_default_color_primary);
-                }));
-    }
 
+        // Status updates
+        actions.put(OpCodes.READY, new Ball(null, () -> {
+            act.setInfoMessage(R.string.ready);
+            act.showFab(true);
+            act.updateFab(R.color.colorOk);
+            if (status.message != null) {
+                act.logMessage(status.message.p2);
+            }
+            status.set(OpCodes.READY);
+        }));
+
+        actions.put(MSG_INFO, new Ball(null, () -> {
+            if (status.message != null) {
+                act.logMessage("..." + status.message);
+            }
+        }));
+
+        actions.put(MSG_BATTERY, new Ball(() -> new CmdBattery(this), null));
+
+        actions.put(OpCodes.MOVE, new Ball(() -> new CmdMove(this, status.message),
+                () -> act.setInfoMessage(R.string.moving)));
+
+        actions.put(MSG_BATTERY_RES, new Ball(null, () -> act.setInfoMessage(R.string.btry_voltage)));
+
+        actions.put(MOVE_END, new Ball(() -> new CmdMoveEnd(this), null));
+        actions.put(OpCodes.MANUAL, new Ball(null, () -> {
+            act.setFragment("manual", ManualMoveFragment.class, new Bundle());
+            act.showFab(false);
+            // Tole je zato da uporabnik lahko malo popravi teleskop ce pride do kakih
+            // odstopanj med automatskim premikanjem
+            if (status.mode.get() == CALIBRATED)
+                act.updateMenu(true, false, true, true);
+            else
+                act.updateMenu(true, false, false, false);
+        }));
+        actions.put(OpCodes.AUTO_CONTROL, new Ball(() -> set(OpCodes.POSITION), () -> {
+            act.setFragment("control", ControlFragment.class, new Bundle());
+            act.showFab(true);
+        }));
+    }
 }

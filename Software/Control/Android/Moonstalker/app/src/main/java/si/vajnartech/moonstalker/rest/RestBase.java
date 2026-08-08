@@ -1,7 +1,5 @@
 package si.vajnartech.moonstalker.rest;
 
-
-import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_ERROR;
 import static si.vajnartech.moonstalker.processor.Controller.URL;
 
 import com.google.gson.Gson;
@@ -16,6 +14,7 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 
+import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.processor.Processor;
 
 // Body so parametri, ki jih posljemo v telesu requesta
@@ -155,7 +154,7 @@ public abstract class RestBase<Body, R> extends AsyncTaskExecutor<String, Void, 
 
     protected void onFailure()
     {
-        machine.set(MSG_CONN_ERROR);
+        machine.set(OpCodes.CONN_ERROR);
     }
 
     @Override

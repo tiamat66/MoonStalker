@@ -2,12 +2,11 @@ package si.vajnartech.moonstalker;
 
 import static si.vajnartech.moonstalker.C.MD_MOVING;
 import static si.vajnartech.moonstalker.C.SERVER_NAME;
-import static si.vajnartech.moonstalker.C.ST_CONNECTION_ERROR;
-import static si.vajnartech.moonstalker.C.ST_NOT_READY;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATED;
 import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
+import static si.vajnartech.moonstalker.OpCodes.TRACK;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -21,7 +20,6 @@ import android.view.MenuItem;
 import android.view.View;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
@@ -44,8 +42,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public CelestialObj curObject;
     public String curObjName = "";
+    public String toObjName = "";
 
     protected Processor machine = new Processor(this);
+    private final Ping scheduler = new Ping(machine);
 
     MyFragment currentFragment = null;
     Menu menu;
@@ -55,10 +55,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     FloatingActionButton fab;
     DrawerLayout drawer;
 
-//    public void setPosMessage()
-//    {
-//        terminal.writePosition(curObject);
-//    }
+    public void setPosMessage(double elevation, double azimuth)
+    {
+        if (currentFragment instanceof ControlFragment) {
+            ((ControlFragment) currentFragment).update(elevation, azimuth);
+            curObjName = toObjName;
+        }
+    }
 
     public void setInfoMessage(int val)
     {
@@ -71,20 +74,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         monitor.update(val);
     }
 
+    public void showFab(boolean visible)
+    {
+        if (visible)
+            fab.setVisibility(View.VISIBLE);
+        else
+            fab.setVisibility(View.GONE);
+    }
+
     public void updateFab(int color)
     {
-        fab.setVisibility(View.VISIBLE);
-
         runOnUiThread(() -> {
             fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(color, null)));
 
             // Update icon based on state
             if (machine.status.get() == OpCodes.MOVING) {
                 fab.setImageResource(android.R.drawable.ic_media_pause);
-            } else if (machine.status.get() == ST_CONNECTION_ERROR || machine.status.get() == ST_NOT_READY) {
+            } else if (machine.status.get() == OpCodes.CONNECTION_ERROR || machine.status.get() == OpCodes.NOT_READY) {
                 fab.setImageResource(android.R.drawable.stat_sys_data_bluetooth);
             } else if (machine.status.get() == CALIBRATING) {
                 fab.setImageResource(android.R.drawable.ic_menu_save);
+            } else if (machine.status.get() == TRACK) {
+                fab.setImageResource(android.R.drawable.ic_media_pause);
             } else {
                 fab.setImageResource(android.R.drawable.ic_menu_directions);
             }
@@ -100,11 +111,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menu.findItem(R.id.move).setEnabled(mo);
             drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         });
-    }
-
-    public void promptToCalibration()
-    {
-        runOnUiThread(() -> myMessage(tx(R.string.calibration_ntfy)));
     }
 
     @SuppressLint("InflateParams")
@@ -124,13 +130,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SharedPref.setDefault("device_name", SERVER_NAME);
         fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> {
-            if (machine.mode.get() == MD_MOVING &&
+            if (machine.status.mode.get() == MD_MOVING &&
                     machine.status.get() == OpCodes.READY) {
                 moveEnd();
             } else if (machine.status.get() == OpCodes.READY) {
                 connect();
-            } else if (machine.mode.get() == CALIBRATING) {
+            } else if (machine.status.mode.get() == CALIBRATING) {
                 calibrated();
+            } else if (machine.status.mode.get() == CALIBRATED &&
+                    machine.status.get() == OpCodes.CONNECTED) {
+                move();
+            } else if (machine.status.get() == OpCodes.TRACK) {
+                track(false);
             }
         });
 
@@ -150,7 +161,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
 
-        new Ping(machine);
+        scheduler.start();
+        showFab(false);
     }
 
     private void connect()
@@ -165,7 +177,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void calibrating()
     {
-        machine.set(CALIBRATING);
+        machine.set(CALIBRATING, CALIBRATING);
+    }
+
+    private void manual()
+    {
+        machine.set(OpCodes.MANUAL);
+    }
+
+    private void auto()
+    {
+        machine.set(OpCodes.AUTO_CONTROL);
     }
 
     public void moveStart(String direction)
@@ -178,6 +200,25 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void moveEnd()
     {
         machine.set(MOVE_END);
+    }
+
+    public void move()
+    {
+
+        ObjController obj = new ObjController(toObjName, "", "");
+        machine.set(OpCodes.MOVE, obj);
+    }
+
+    private void track(boolean track)
+    {
+        String action;
+        if (track)
+            action = "start_track";
+        else
+            action = "stop_track";
+        ObjController obj = new ObjController(action, "", "");
+
+        machine.set(OpCodes.TRACK, obj);
     }
 
     @Override
@@ -226,45 +267,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.calibrate) {
             calibrating();
         } else if (id == R.id.manual) {
-            setFragment("manual", ManualMoveFragment.class, new Bundle());
+            manual();
         } else if (id == R.id.track) {
-            setFragment("control", ControlFragment.class, new Bundle());
-        } else if (id == R.id.move) {}
+            track(true);
+        } else if (id == R.id.move) {
+            auto();
+        }
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    void myMessage(final String msg)
-    {
-        runOnUiThread(() -> {
-
-            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-            alertDialog.setTitle(tx(R.string.warning));
-            alertDialog.setMessage(msg);
-            alertDialog.setButton(
-                    AlertDialog.BUTTON_NEUTRAL, "OK",
-                    (dialog, which) -> dialog.dismiss());
-            alertDialog.show();
-        });
-    }
-
-    @SuppressWarnings("unused")
-    void myMessage(final String msg, final Runnable action)
-    {
-        runOnUiThread(() -> {
-
-            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-            alertDialog.setTitle(tx(R.string.warning));
-            alertDialog.setMessage(msg);
-            alertDialog.setButton(
-                    AlertDialog.BUTTON_POSITIVE, tx(R.string.ok),
-                    (dialog, which) -> action.run());
-            alertDialog.setButton(
-                    AlertDialog.BUTTON_NEGATIVE, tx(android.R.string.cancel),
-                    (dialog, which) -> dialog.dismiss());
-            alertDialog.show();
-        });
     }
 
     public String tx(int stringId, Object... formatArgs)
@@ -301,6 +312,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onDestroy()
     {
+        scheduler.stop();
         machine.quit();
         super.onDestroy();
     }

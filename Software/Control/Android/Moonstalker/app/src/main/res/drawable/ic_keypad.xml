@@ -1,9 +1,55 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-  <path
-      android:fillColor="#FF00FF00"
-      android:pathData="M10,9h4L14,6h3l-5,-5 -5,5h3v3zM9,10L6,10L6,7l-5,5 5,5v-3h3v-4zM23,12l-5,-5v3h-3v4h3v3l5,-5zM14,15h-4v3L7,18l5,5 5,-5h-3v-3z"/>
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Outer Ring -->
+    <path
+        android:fillColor="#1C1C1E"
+        android:strokeColor="#757575"
+        android:strokeWidth="1"
+        android:pathData="M100,100m-95,0a95,95 0,1 1,190 0a95,95 0,1 1,-190 0" />
+
+    <!-- Directions Overlay (Subtle lines) -->
+    <path
+        android:strokeColor="#333333"
+        android:strokeWidth="1"
+        android:pathData="M100,5 L100,195 M5,100 L195,100 M32.8,32.8 L167.2,167.2 M32.8,167.2 L167.2,32.8" />
+
+    <!-- Center Joystick Area -->
+    <path
+        android:fillColor="#2C2C2E"
+        android:pathData="M100,100m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <path
+        android:fillColor="#3A3A3C"
+        android:pathData="M100,100m-35,0a35,35 0,1 1,70 0a35,35 0,1 1,-70 0" />
+
+    <!-- Arrow N -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M100,15 l-8,12 h16 z" />
+    <!-- Arrow S -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M100,185 l-8,-12 h16 z" />
+    <!-- Arrow E -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M185,100 l-12,-8 v16 z" />
+    <!-- Arrow W -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M15,100 l12,-8 v16 z" />
+
+    <!-- Diagonal Indicators (Dots or small triangles) -->
+    <!-- NE -->
+    <path android:fillColor="#00E676" android:pathData="M160.1,39.9 l-8,2 l6,6 z" />
+    <!-- NW -->
+    <path android:fillColor="#00E676" android:pathData="M39.9,39.9 l8,2 l-6,6 z" />
+    <!-- SE -->
+    <path android:fillColor="#00E676" android:pathData="M160.1,160.1 l-8,-2 l6,-6 z" />
+    <!-- SW -->
+    <path android:fillColor="#00E676" android:pathData="M39.9,160.1 l8,-2 l-6,-6 z" />
+
 </vector>
