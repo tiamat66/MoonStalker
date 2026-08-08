@@ -62,11 +62,6 @@ volatile StepperDirection StepperController::vert_direction_state = StepperDirec
 //       Already adjusted for sync mode scaling before being stored here.
 //   start_ocr_horiz/vert_isr - The slow-speed OCR value at ramp start.
 //       Fixed at MAX_OCR_RAMP (2000 ticks ~ 8 ms between steps).
-//   total_steps_horiz/vert - The full step count for the current move.
-//       Used in ramp-down calculation: ramp starts when
-//       steps_remain <= ramp_steps.
-//   scaled_ocr_horiz/vert - Intermediate value from sync scaling.
-//       Used as the source for target_ocr_*_isr after ramping setup.
 //   sync_mode_enabled - True if set_sync_mode(true) was called.
 volatile uint16_t StepperController::ramp_steps_horiz = 0;
 volatile uint16_t StepperController::ramp_steps_vert = 0;
@@ -74,20 +69,23 @@ volatile uint16_t StepperController::target_ocr_horiz_isr = 0;
 volatile uint16_t StepperController::target_ocr_vert_isr = 0;
 volatile uint16_t StepperController::start_ocr_horiz_isr = 0;
 volatile uint16_t StepperController::start_ocr_vert_isr = 0;
-volatile uint16_t StepperController::total_steps_horiz = 0;
-volatile uint16_t StepperController::total_steps_vert = 0;
-volatile uint16_t StepperController::scaled_ocr_horiz = 0;
-volatile uint16_t StepperController::scaled_ocr_vert = 0;
 volatile bool StepperController::sync_mode_enabled = true;
 
 // Free-run ramping state:
+//   free_run_active_horiz/vert - True from the moment a free run starts on
+//       that axis until it has fully stopped. The ISRs branch on this to
+//       choose free-run behaviour over MOVE_MODE ramping.
 //   free_run_ramp_steps_horiz/vert - Number of steps allocated for the
-//       free-run acceleration and deceleration ramps.
+//       free-run acceleration and deceleration ramps. Cleared to 0 when the
+//       ramp-up completes, which is why it cannot double as the
+//       "this axis is in free run" flag.
 //   free_run_ramping_down - Set to true by free_run_stop() to indicate
 //       that the motors should decelerate to a stop.
 //   free_run_target_ocr_horiz/vert - The steady-speed OCR value for the
 //       free run. Stored separately from target_ocr_horiz_isr so that
 //       MOVE_MODE ramping does not interfere with FREE_RUN_MODE.
+volatile bool     StepperController::free_run_active_horiz = false;
+volatile bool     StepperController::free_run_active_vert = false;
 volatile uint16_t StepperController::free_run_ramp_steps_horiz = 0;
 volatile uint16_t StepperController::free_run_ramp_steps_vert = 0;
 volatile bool     StepperController::free_run_ramping_down = false;
@@ -188,6 +186,9 @@ void StepperController::set_running_mode_idle()
 // Uses noInterrupts() internally for atomic register access.
 void StepperController::emergency_stop()
 {
+  // Save and restore the global interrupt flag instead of calling
+  // interrupts() unconditionally, so this stays safe to call from an ISR.
+  uint8_t sreg = SREG;
   noInterrupts();
   horiz_steps_remain = 0;
   vert_steps_remain = 0;
@@ -196,10 +197,12 @@ void StepperController::emergency_stop()
   PORTD &= ~(1 << 1);
   PORTC &= ~(1 << 6);
   free_run_ramping_down = false;
+  free_run_active_horiz = false;
+  free_run_active_vert = false;
   free_run_ramp_steps_horiz = 0;
   free_run_ramp_steps_vert = 0;
   running_mode = RunningMode::IDLE_MODE;
-  interrupts();
+  SREG = sreg;
 }
 
 // ============================================================================
@@ -273,29 +276,31 @@ bool StepperController::free_run_start(int16_t speed_horiz,
       free_run_target_ocr_horiz = ocr_val;
       horiz_steps_current = 0;
 
-      if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767)
+      free_run_active_horiz = true;
+
+      // Ramping is pointless when the requested speed is already slower
+      // than the ramp's start speed; starting the ramp would run the motor
+      // faster than asked for.
+      if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767 &&
+          ocr_val < MAX_OCR_RAMP)
       {
         // Ramp-up: start slow, accelerate over free_run_ramp_steps
         free_run_ramp_steps_horiz = free_run_ramp_steps;
         start_ocr_horiz_isr = MAX_OCR_RAMP;
         target_ocr_horiz_isr = free_run_target_ocr_horiz;
         OCR1A = start_ocr_horiz_isr;
-        // Set steps_remain to ramp_steps + 1 so the ISR processes all ramp
-        // steps without hitting steps_remain == 0 prematurely. On the final
-        // ramp step, step_idx >= ramp_steps, so the ISR enters the "else"
-        // branch which sets steps_remain = 65535 for unlimited steady-state.
-        // Without this +1, the last ramp iteration would decrement
-        // steps_remain to 0, triggering a premature IDLE transition
-        // (the MVE bug: MVE would see IDLE_MODE and return NOT_RDY).
-        horiz_steps_remain = free_run_ramp_steps_horiz + 1;
       }
       else
       {
-        // No ramp: go directly to target speed, unlimited steps
+        // No ramp: go directly to target speed
         free_run_ramp_steps_horiz = 0;
+        target_ocr_horiz_isr = free_run_target_ocr_horiz;
         OCR1A = ocr_val;
-        horiz_steps_remain = 65535;
       }
+      // Free run is unbounded. The ISR keeps this budget topped up for as
+      // long as the run lasts; it is only allowed to count down to zero
+      // once free_run_stop() has started the ramp-down.
+      horiz_steps_remain = 65535;
       TIMSK1 |= (1 << OCIE1A); // Enable COMPA interrupt
     }
   }
@@ -303,6 +308,7 @@ bool StepperController::free_run_start(int16_t speed_horiz,
   {
     // Clear stale ramp state from previous runs so free_run_stop()
     // does not falsely detect a phantom ramp for an unused axis.
+    free_run_active_horiz = false;
     free_run_ramp_steps_horiz = 0;
     horiz_steps_remain = 0;
     horiz_steps_current = 0;
@@ -320,22 +326,25 @@ bool StepperController::free_run_start(int16_t speed_horiz,
       free_run_target_ocr_vert = ocr_val;
       vert_steps_current = 0;
 
-      if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767)
+      free_run_active_vert = true;
+
+      if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767 &&
+          ocr_val < MAX_OCR_RAMP)
       {
         // Ramp-up: start slow, accelerate over free_run_ramp_steps
         free_run_ramp_steps_vert = free_run_ramp_steps;
         start_ocr_vert_isr = MAX_OCR_RAMP;
         target_ocr_vert_isr = free_run_target_ocr_vert;
         OCR3A = start_ocr_vert_isr;
-        vert_steps_remain = free_run_ramp_steps_vert + 1;
       }
       else
       {
-        // No ramp: go directly to target speed, unlimited steps
+        // No ramp: go directly to target speed
         free_run_ramp_steps_vert = 0;
+        target_ocr_vert_isr = free_run_target_ocr_vert;
         OCR3A = ocr_val;
-        vert_steps_remain = 65535;
       }
+      vert_steps_remain = 65535;
       TIMSK3 |= (1 << OCIE3A); // Enable COMPA interrupt
     }
   }
@@ -343,6 +352,7 @@ bool StepperController::free_run_start(int16_t speed_horiz,
   {
     // Clear stale ramp state from previous runs so free_run_stop()
     // does not falsely detect a phantom ramp for an unused axis.
+    free_run_active_vert = false;
     free_run_ramp_steps_vert = 0;
     vert_steps_remain = 0;
     vert_steps_current = 0;
@@ -376,6 +386,16 @@ bool StepperController::free_run_stop(void)
     return false;
   }
 
+  // A finite move carries no free-run ramp state to unwind, and the
+  // ramp-down path below keys off free_run_active_*, which is false during
+  // a move. Stop it outright instead of falling through and marking the
+  // controller IDLE while the motors are still stepping.
+  if (running_mode != RunningMode::FREE_RUN_MODE)
+  {
+    emergency_stop();
+    return true;
+  }
+
   if (free_run_ramp_steps > 0 && free_run_ramp_steps < 32767)
   {
     // --- Ramp-down setup ---
@@ -384,32 +404,46 @@ bool StepperController::free_run_stop(void)
     // still at 65535, or vice versa).
     noInterrupts();
 
-    // Track whether any axis actually needs ramp-down steps.
+    // An axis needs a ramp-down exactly when it is currently running.
     // This is evaluated BEFORE any modifications to the ramp state,
     // so we capture the pre-ramp-down condition of each axis.
-    bool need_ramp_horiz = (free_run_ramp_steps_horiz > 0 || horiz_steps_remain > 0);
-    bool need_ramp_vert  = (free_run_ramp_steps_vert  > 0 || vert_steps_remain  > 0);
+    bool need_ramp_horiz = free_run_active_horiz;
+    bool need_ramp_vert  = free_run_active_vert;
 
     // Horizontal axis: set up ramp-down steps and target
     if (need_ramp_horiz)
     {
-      // The steady-state phase uses 65535 steps. Replace with ramp steps
-      // so the ISR can count down and stop when done.
       // Use the current OCR as the starting fast speed for ramp-down.
       uint16_t current_ocr_h = OCR1A;
       // Clamp the computed ramp steps
       uint16_t ramp_steps = free_run_ramp_steps;
       if (ramp_steps > 10000) ramp_steps = 10000;
 
-      // Re-purpose start_ocr/target_ocr for ramp-down:
-      // We interpolate from current_ocr (fast) to MAX_OCR_RAMP (slow).
-      // Store the start (current speed) in target_ocr_*, and the
-      // end (slow) in start_ocr_* so the ISR ramp-down code works.
-      free_run_ramp_steps_horiz = ramp_steps;
-      start_ocr_horiz_isr = MAX_OCR_RAMP;          // End of ramp = slow
-      target_ocr_horiz_isr = current_ocr_h;        // Start of ramp = current
-      horiz_steps_remain = ramp_steps;              // Count down
-      horiz_steps_current = 0;                      // Reset for ramp tracking
+      if (current_ocr_h >= MAX_OCR_RAMP)
+      {
+        // Already at or below the speed a ramp would decelerate to, so
+        // there is nothing to decelerate from and the axis can stop at
+        // once. Ramping here would interpolate toward MAX_OCR_RAMP and so
+        // speed the motor UP on its way to stopping.
+        free_run_ramp_steps_horiz = 0;
+        free_run_active_horiz = false;
+        horiz_steps_remain = 0;
+        TIMSK1 &= ~(1 << OCIE1A);
+      }
+      else
+      {
+        // The steady-state phase uses 65535 steps. Replace with ramp steps
+        // so the ISR can count down and stop when done.
+        // Re-purpose start_ocr/target_ocr for ramp-down:
+        // We interpolate from current_ocr (fast) to MAX_OCR_RAMP (slow).
+        // Store the start (current speed) in target_ocr_*, and the
+        // end (slow) in start_ocr_* so the ISR ramp-down code works.
+        free_run_ramp_steps_horiz = ramp_steps;
+        start_ocr_horiz_isr = MAX_OCR_RAMP;          // End of ramp = slow
+        target_ocr_horiz_isr = current_ocr_h;        // Start of ramp = current
+        horiz_steps_remain = ramp_steps;              // Count down
+        horiz_steps_current = 0;                      // Reset for ramp tracking
+      }
     }
 
     // Vertical axis: same logic
@@ -419,11 +453,22 @@ bool StepperController::free_run_stop(void)
       uint16_t ramp_steps = free_run_ramp_steps;
       if (ramp_steps > 10000) ramp_steps = 10000;
 
-      free_run_ramp_steps_vert = ramp_steps;
-      start_ocr_vert_isr = MAX_OCR_RAMP;
-      target_ocr_vert_isr = current_ocr_v;
-      vert_steps_remain = ramp_steps;
-      vert_steps_current = 0;
+      if (current_ocr_v >= MAX_OCR_RAMP)
+      {
+        // See the horizontal axis above.
+        free_run_ramp_steps_vert = 0;
+        free_run_active_vert = false;
+        vert_steps_remain = 0;
+        TIMSK3 &= ~(1 << OCIE3A);
+      }
+      else
+      {
+        free_run_ramp_steps_vert = ramp_steps;
+        start_ocr_vert_isr = MAX_OCR_RAMP;
+        target_ocr_vert_isr = current_ocr_v;
+        vert_steps_remain = ramp_steps;
+        vert_steps_current = 0;
+      }
     }
 
     // Now that all ramp-down state is fully configured, atomically flag
@@ -433,10 +478,11 @@ bool StepperController::free_run_stop(void)
 
     interrupts();
 
-    // If neither axis needed ramp-down (already stopped), transition
-    // immediately to IDLE_MODE. Otherwise the ISR handles the ramp-down
-    // and check_free_run_complete() transitions to IDLE when both finish.
-    if (!need_ramp_horiz && !need_ramp_vert)
+    // If no axis is left running -- either nothing was moving, or every
+    // moving axis was slow enough to stop at once -- transition to
+    // IDLE_MODE right away. Otherwise the ISRs handle the ramp-down and
+    // check_free_run_complete() transitions to IDLE when both finish.
+    if (!free_run_active_horiz && !free_run_active_vert)
     {
       free_run_ramping_down = false;
       free_run_ramp_steps_horiz = 0;
@@ -470,13 +516,10 @@ void StepperController::check_free_run_complete()
 {
   if (free_run_ramping_down)
   {
-    // Check if both axes have finished their ramp-down steps
-    bool horiz_done = (horiz_steps_remain == 0 ||
-                       free_run_ramp_steps_horiz == 0);
-    bool vert_done  = (vert_steps_remain == 0 ||
-                       free_run_ramp_steps_vert == 0);
-
-    if (horiz_done && vert_done)
+    // Each ISR clears its own free_run_active_* flag once that axis has
+    // run out its ramp-down steps, so both flags clear means both axes
+    // have physically stopped.
+    if (!free_run_active_horiz && !free_run_active_vert)
     {
       // Both axes have stopped; final cleanup
       noInterrupts();
@@ -536,8 +579,38 @@ bool StepperController::move_steppers(int16_t speed_horiz,
     return false;
   }
 
+  // --- Guard: reject a move with nothing to do. Entering MOVE_MODE with
+  // both step counts at zero would wedge the controller: neither ISR body
+  // ever runs, so nothing would ever call set_running_mode_idle() and every
+  // later command would be refused with NOT_RDY until <STOP>.
+  if (horiz_steps <= 0 && vert_steps <= 0)
+  {
+    return false;
+  }
+
+  // --- Calculate base OCR from RPM
+  // Done before any state is touched so an unusable speed leaves the
+  // controller exactly as it was. calculate_ocr_reg_value() returns 0 for a
+  // non-positive RPM; arming an axis with OCR 0 would match on every timer
+  // tick and step at 250 kHz instead of the requested rate.
+  uint16_t ocr_h = calculate_ocr_reg_value(speed_horiz);
+  uint16_t ocr_v = calculate_ocr_reg_value(speed_vert);
+
+  if ((horiz_steps > 0 && ocr_h == 0) || (vert_steps > 0 && ocr_v == 0))
+  {
+    return false;
+  }
+
   // Activate step counting
   step_counters_initialized = true;
+
+  // No free run is in progress (we are in IDLE_MODE); make sure the ISRs
+  // take the MOVE_MODE path.
+  free_run_active_horiz = false;
+  free_run_active_vert = false;
+  free_run_ramping_down = false;
+  free_run_ramp_steps_horiz = 0;
+  free_run_ramp_steps_vert = 0;
 
   // --- Set direction pins
   horiz_direction_state = horiz_direction;
@@ -552,85 +625,103 @@ bool StepperController::move_steppers(int16_t speed_horiz,
   horiz_steps_current = 0;
   vert_steps_current = 0;
 
-  // --- Calculate base OCR from RPM
-  uint16_t ocr_h = calculate_ocr_reg_value(speed_horiz);
-  uint16_t ocr_v = calculate_ocr_reg_value(speed_vert);
-
   if (ocr_h != 0) target_ocr_horiz_isr = ocr_h;
   if (ocr_v != 0) target_ocr_vert_isr = ocr_v;
-
-  total_steps_horiz = (uint16_t)horiz_steps;
-  total_steps_vert = (uint16_t)vert_steps;
 
   // --- Sync mode: scale OCR for proportional finish time
   // If one axis has fewer steps, it must run slower so it lasts as
   // long as the axis with more steps.
   // OCR is inversely proportional to speed, so:
   //   scaled_ocr = target_ocr * (max_steps / this_axis_steps)
-  scaled_ocr_horiz = target_ocr_horiz_isr;
-  scaled_ocr_vert = target_ocr_vert_isr;
+  uint16_t scaled_ocr_horiz = target_ocr_horiz_isr;
+  uint16_t scaled_ocr_vert = target_ocr_vert_isr;
   if (sync_mode_enabled && horiz_steps > 0 && vert_steps > 0)
   {
     uint16_t max_steps = ((uint16_t)horiz_steps > (uint16_t)vert_steps) ?
                           (uint16_t)horiz_steps : (uint16_t)vert_steps;
+
+    // Saturate at the 16-bit register range rather than truncating: a very
+    // lopsided step ratio can scale the slower axis past 65535 ticks.
     uint32_t scale_h = (uint32_t)max_steps * 256 / (uint16_t)horiz_steps;
-    scaled_ocr_horiz = (uint16_t)(((uint32_t)target_ocr_horiz_isr * scale_h) / 256);
-    if (scaled_ocr_horiz > 65535) scaled_ocr_horiz = 65535;
-    if (scaled_ocr_horiz < 1) scaled_ocr_horiz = 1;
+    uint32_t wide_h = ((uint32_t)target_ocr_horiz_isr * scale_h) / 256;
+    if (wide_h > 65535UL) wide_h = 65535UL;
+    if (wide_h < 1UL) wide_h = 1UL;
+    scaled_ocr_horiz = (uint16_t)wide_h;
 
     uint32_t scale_v = (uint32_t)max_steps * 256 / (uint16_t)vert_steps;
-    scaled_ocr_vert = (uint16_t)(((uint32_t)target_ocr_vert_isr * scale_v) / 256);
-    if (scaled_ocr_vert > 65535) scaled_ocr_vert = 65535;
-    if (scaled_ocr_vert < 1) scaled_ocr_vert = 1;
+    uint32_t wide_v = ((uint32_t)target_ocr_vert_isr * scale_v) / 256;
+    if (wide_v > 65535UL) wide_v = 65535UL;
+    if (wide_v < 1UL) wide_v = 1UL;
+    scaled_ocr_vert = (uint16_t)wide_v;
   }
 
-  // --- Ramping setup
-  if (ramp_steps > 0)
+  // --- Ramping setup and timer arming, per axis
+  // Each axis is configured and armed independently. An axis with no steps
+  // to run must be left disarmed: its OCR would otherwise be loaded with a
+  // stale value from the previous move, or with 0 on the first move after
+  // boot. OCR 0 in CTC mode matches on every timer tick, so the COMPA
+  // interrupt would fire at 250 kHz doing no work, starving the main loop
+  // and jittering the step timing of the axis that is actually moving.
+
+  // Horizontal ramp: cap at half total steps to leave room for cruise
+  if (horiz_steps > 0)
   {
-    // Horizontal ramp: cap at half total steps to leave room for cruise
-    if (horiz_steps > 0)
+    uint16_t half_steps_h = (uint16_t)horiz_steps / 2;
+    ramp_steps_horiz = (ramp_steps < half_steps_h) ? ramp_steps : half_steps_h;
+
+    // Skip the ramp when the target is already slower than the ramp's start
+    // speed. Ramping from MAX_OCR_RAMP down to a larger (slower) target OCR
+    // would run the axis FASTER than requested for the whole ramp phase --
+    // the case for any speed below ~18.75 RPM at 200 steps/rev.
+    if (scaled_ocr_horiz >= MAX_OCR_RAMP) ramp_steps_horiz = 0;
+
+    target_ocr_horiz_isr = scaled_ocr_horiz; // sync-aware target
+    if (ramp_steps_horiz > 0)
     {
-      ramp_steps_horiz = (ramp_steps < (uint16_t)horiz_steps / 2) ?
-                          ramp_steps : (uint16_t)horiz_steps / 2;
+      // Start at the slow ramp speed and accelerate from there
       start_ocr_horiz_isr = MAX_OCR_RAMP;
-      target_ocr_horiz_isr = scaled_ocr_horiz; // sync-aware target
+      OCR1A = start_ocr_horiz_isr;
     }
     else
     {
-      ramp_steps_horiz = 0;
+      // Ramping disabled, or the move is too short for a ramp phase:
+      // go straight to the target speed
+      OCR1A = scaled_ocr_horiz;
     }
-
-    // Vertical ramp: same logic
-    if (vert_steps > 0)
-    {
-      ramp_steps_vert = (ramp_steps < (uint16_t)vert_steps / 2) ?
-                          ramp_steps : (uint16_t)vert_steps / 2;
-      start_ocr_vert_isr = MAX_OCR_RAMP;
-      target_ocr_vert_isr = scaled_ocr_vert;
-    }
-    else
-    {
-      ramp_steps_vert = 0;
-    }
-
-    // Start both motors at the slow ramp speed
-    OCR1A = start_ocr_horiz_isr;
-    OCR3A = start_ocr_vert_isr;
+    TIMSK1 |= (1 << OCIE1A);
   }
   else
   {
-    // No ramping: go directly to target speed
     ramp_steps_horiz = 0;
-    ramp_steps_vert = 0;
-    target_ocr_horiz_isr = scaled_ocr_horiz;
-    target_ocr_vert_isr = scaled_ocr_vert;
-    OCR1A = scaled_ocr_horiz;
-    OCR3A = scaled_ocr_vert;
+    TIMSK1 &= ~(1 << OCIE1A);
   }
 
-  // --- Enable COMPA interrupts to begin pulse generation
-  TIMSK1 |= (1 << OCIE1A);
-  TIMSK3 |= (1 << OCIE3A);
+  // Vertical ramp: same logic
+  if (vert_steps > 0)
+  {
+    uint16_t half_steps_v = (uint16_t)vert_steps / 2;
+    ramp_steps_vert = (ramp_steps < half_steps_v) ? ramp_steps : half_steps_v;
+
+    // See the horizontal axis above.
+    if (scaled_ocr_vert >= MAX_OCR_RAMP) ramp_steps_vert = 0;
+
+    target_ocr_vert_isr = scaled_ocr_vert;
+    if (ramp_steps_vert > 0)
+    {
+      start_ocr_vert_isr = MAX_OCR_RAMP;
+      OCR3A = start_ocr_vert_isr;
+    }
+    else
+    {
+      OCR3A = scaled_ocr_vert;
+    }
+    TIMSK3 |= (1 << OCIE3A);
+  }
+  else
+  {
+    ramp_steps_vert = 0;
+    TIMSK3 &= ~(1 << OCIE3A);
+  }
 
   running_mode = RunningMode::MOVE_MODE;
   return true;
@@ -671,8 +762,9 @@ void StepperController::initialize_timer1()
   OCR1A = initial_ocr1a;
 
   interrupts();
-  Serial.print("Initial ocr1a: ");
-  Serial.println(initial_ocr1a);
+  Serial.print("<INFO Initial OCR1A: ");
+  Serial.print(initial_ocr1a);
+  Serial.println(">");
 }
 
 // ============================================================================
@@ -705,8 +797,9 @@ void StepperController::initialize_timer3()
   OCR3A = initial_ocr3a;
 
   interrupts();
-  Serial.print("Initial ocr3a: ");
-  Serial.println(initial_ocr3a);
+  Serial.print("<INFO Initial OCR3A: ");
+  Serial.print(initial_ocr3a);
+  Serial.println(">");
 }
 
 // ============================================================================
@@ -827,13 +920,22 @@ static uint16_t compute_ramp_ocr(uint16_t current_step,
 
   // Fixed-point interpolation: multiply step by 256 for fractional precision
   uint32_t progress = (uint32_t)current_step * 256 / ramp_steps;
+  if (progress > 256) progress = 256;
   uint32_t delta = (uint32_t)target_ocr * progress +
                    (uint32_t)start_ocr * (256 - progress);
   uint16_t new_ocr = (uint16_t)(delta / 256);
 
-  // Clamp to safe operating range
+  // Clamp to the interval this ramp actually spans, so rounding can never
+  // push the result past either endpoint. Clamping to a fixed MAX_OCR_RAMP
+  // here would be wrong whenever an endpoint lies beyond it: the motor
+  // would be driven faster than the slower endpoint asks for.
+  uint16_t lo = (start_ocr < target_ocr) ? start_ocr : target_ocr;
+  uint16_t hi = (start_ocr < target_ocr) ? target_ocr : start_ocr;
+  if (new_ocr < lo) new_ocr = lo;
+  if (new_ocr > hi) new_ocr = hi;
+
+  // Never exceed the fastest safe step rate
   if (new_ocr < MIN_OCR_SAFE) new_ocr = MIN_OCR_SAFE;
-  if (new_ocr > MAX_OCR_RAMP) new_ocr = MAX_OCR_RAMP;
 
   return new_ocr;
 }
@@ -895,14 +997,13 @@ ISR(TIMER1_COMPA_vect)
     TIMSK1 |= (1 << OCIE1B);
 
     // --- Determine if this is MOVE_MODE or FREE_RUN_MODE ramping ---
-    bool is_free_run = (StepperController::free_run_ramp_steps_horiz > 0);
-
-    if (is_free_run)
+    if (StepperController::free_run_active_horiz)
     {
       if (StepperController::free_run_ramping_down)
       {
         // FREE-RUN RAMP-DOWN: decelerate from target (current) to slow (start)
-        // current_step counts forward 0..ramp_steps-1 during ramp-down
+        // current_step counts forward 0..ramp_steps-1 during ramp-down.
+        // steps_remain is finite here and counts down to the stop.
         if (step_idx < StepperController::free_run_ramp_steps_horiz)
         {
           // Interpolate from target_ocr (fast) to start_ocr (slow)
@@ -916,9 +1017,10 @@ ISR(TIMER1_COMPA_vect)
       }
       else
       {
-        // FREE-RUN RAMP-UP: accelerate from start_ocr (slow) to target_ocr (fast)
-        if (step_idx < StepperController::free_run_ramp_steps_horiz)
+        if (StepperController::free_run_ramp_steps_horiz > 0 &&
+            step_idx < StepperController::free_run_ramp_steps_horiz)
         {
+          // FREE-RUN RAMP-UP: accelerate from start_ocr (slow) to target_ocr
           OCR1A = compute_ramp_ocr(step_idx,
                                     StepperController::free_run_ramp_steps_horiz,
                                     StepperController::start_ocr_horiz_isr,
@@ -926,11 +1028,18 @@ ISR(TIMER1_COMPA_vect)
         }
         else
         {
-          // Ramp-up complete: switch to unlimited steady-state
+          // FREE-RUN STEADY STATE: hold the target speed.
+          // Clearing the ramp step count makes this branch sticky, so the
+          // wrap-around of the 16-bit step_idx cannot restart the ramp.
           OCR1A = StepperController::target_ocr_horiz_isr;
           StepperController::free_run_ramp_steps_horiz = 0;
-          StepperController::horiz_steps_remain = 65535;
         }
+
+        // Re-arm the step budget on every step. Free run is unbounded, so
+        // letting the countdown from 65535 expire would silently stop the
+        // axis (about 5.5 minutes at 60 RPM with 200 steps/rev). Only the
+        // ramp-down above is allowed to run steps_remain down to zero.
+        StepperController::horiz_steps_remain = 65535;
       }
     }
     else
@@ -968,6 +1077,8 @@ ISR(TIMER1_COMPA_vect)
     if (StepperController::horiz_steps_remain == 0)
     {
       StepperController::free_run_ramp_steps_horiz = 0;  // cleanup stale state
+      // Signals check_free_run_complete() that this axis has come to rest.
+      StepperController::free_run_active_horiz = false;
       TIMSK1 &= ~(1 << OCIE1A);
       // Transition to IDLE_MODE when both axes have completed.
       // The last axis to finish sets the mode. We check if the other axis
@@ -1021,9 +1132,7 @@ ISR(TIMER3_COMPA_vect)
     TIMSK3 |= (1 << OCIE3B);
 
     // --- Determine if this is MOVE_MODE or FREE_RUN_MODE ramping ---
-    bool is_free_run = (StepperController::free_run_ramp_steps_vert > 0);
-
-    if (is_free_run)
+    if (StepperController::free_run_active_vert)
     {
       if (StepperController::free_run_ramping_down)
       {
@@ -1038,9 +1147,10 @@ ISR(TIMER3_COMPA_vect)
       }
       else
       {
-        // FREE-RUN RAMP-UP: accelerate from start_ocr (slow) to target_ocr (fast)
-        if (step_idx < StepperController::free_run_ramp_steps_vert)
+        if (StepperController::free_run_ramp_steps_vert > 0 &&
+            step_idx < StepperController::free_run_ramp_steps_vert)
         {
+          // FREE-RUN RAMP-UP: accelerate from start_ocr (slow) to target_ocr
           OCR3A = compute_ramp_ocr(step_idx,
                                     StepperController::free_run_ramp_steps_vert,
                                     StepperController::start_ocr_vert_isr,
@@ -1048,11 +1158,14 @@ ISR(TIMER3_COMPA_vect)
         }
         else
         {
-          // Ramp-up complete: switch to unlimited steady-state
+          // FREE-RUN STEADY STATE: hold the target speed (sticky, see the
+          // horizontal ISR for the reasoning).
           OCR3A = StepperController::target_ocr_vert_isr;
           StepperController::free_run_ramp_steps_vert = 0;
-          StepperController::vert_steps_remain = 65535;
         }
+
+        // Re-arm the step budget; free run is unbounded. See TIMER1_COMPA.
+        StepperController::vert_steps_remain = 65535;
       }
     }
     else
@@ -1086,6 +1199,8 @@ ISR(TIMER3_COMPA_vect)
         if (StepperController::vert_steps_remain == 0)
     {
       StepperController::free_run_ramp_steps_vert = 0;  // cleanup stale state
+      // Signals check_free_run_complete() that this axis has come to rest.
+      StepperController::free_run_active_vert = false;
       TIMSK3 &= ~(1 << OCIE3A);
       // Transition to IDLE_MODE when both axes have completed.
       if (StepperController::horiz_steps_remain == 0)

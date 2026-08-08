@@ -59,32 +59,35 @@ void loop()
 {
   static char command_buffer[65] = "";
   static int num_recv_char = 0;
-  char incoming_char = 0;
+  // Set after a receive buffer overflow: the rest of the oversized command
+  // is thrown away one byte per loop() iteration until its terminator
+  // arrives. Draining in the main loop (instead of spinning on
+  // Serial.available()) keeps the limit switch watchdog running even if the
+  // sender stalls mid-command.
+  static bool discarding = false;
 
   if (Serial.available() > 0)
   {
-    if (num_recv_char >= 64)
+    char incoming_char = Serial.read();
+
+    if (discarding)
+    {
+      if (incoming_char == '>' || incoming_char == 10 || incoming_char == 13)
+        discarding = false;
+    }
+    else if (num_recv_char >= 64)
     {
       Serial.println(F("<FATAL_ERROR RCV_BUFFER_OVERFLOW>"));
-      // Drain remaining bytes until command terminator or newline,
-      // then reset buffer to prevent stack corruption from overflow.
-      while (incoming_char != '>' && incoming_char != 10 && incoming_char != 13)
-      {
-        if (Serial.available() > 0)
-          incoming_char = Serial.read();
-      }
+      // Reset the buffer and discard the remainder of the oversized command.
+      // The truncated command is never executed.
       *command_buffer = 0;
       num_recv_char = 0;
-      // Fall through to process the terminator as a fresh command
-      if (incoming_char != '>')
-        return;  // newline only, nothing to process
-    }
-    else
-    {
-      incoming_char = Serial.read();
+      discarding = (incoming_char != '>' &&
+                    incoming_char != 10 &&
+                    incoming_char != 13);
     }
     // ignore newline characters
-    if ((incoming_char != 10) && (incoming_char != 13))
+    else if ((incoming_char != 10) && (incoming_char != 13))
     {
       command_buffer[num_recv_char] = incoming_char;
       command_buffer[num_recv_char + 1] = 0;
@@ -119,7 +122,16 @@ int get_battery_voltage()
   // Voltage divider: R1 = 5088 Ohm, R2 = 14930 Ohm
   // Vbat_mV = ADC * (5000/1023) * (R1+R2)/R1
   //         = value * 5000 * (5088+14930) / (5088*1023)
-  voltage_mv = (uint32_t)value * 5000L * (5088L + 14930L) / 5088L / 1023L;
+  //
+  // The multiplications are interleaved with the divisions so no
+  // intermediate result exceeds 32 bits. Evaluating value*5000*20018
+  // first would overflow uint32_t for any ADC reading above 42.
+  // Worst-case intermediates below (value = 1023):
+  //   1023 * 20018 = 20,478,414
+  //   20,478,414 / 5088 * 5000 = 20,120,000
+  // Both fit comfortably; the residual rounding error (~5 mV at 19.7 V)
+  // is well under the ADC's own 4.9 mV per LSB quantisation.
+  voltage_mv = (uint32_t)value * (5088UL + 14930UL) / 5088UL * 5000UL / 1023UL;
 
   return voltage_mv;
 }
@@ -152,9 +164,18 @@ void handle_incoming_command(char *command_buff)
   // extract command without starting '<'
   // and ending '>'
   strcpy(command, command_buff + 1);
-  command[strlen(command) - 1] = 0;
+  size_t command_len = strlen(command);
+  // Nothing between the brackets (e.g. "<>"): without this guard the
+  // terminator strip below would write to command[-1].
+  if (command_len == 0)
+    return;
+  command[command_len - 1] = 0;
 
   cmd = strtok(command, " ");
+  // Empty command body, no token to dispatch on.
+  if (cmd == NULL)
+    return;
+
     if (!strcmp(cmd, "MV"))
   {
     char *horiz_steps_str;
@@ -173,9 +194,45 @@ void handle_incoming_command(char *command_buff)
     vert_steps_str = strtok(NULL, " ");
     rpm_speed_str = strtok(NULL, " ");
 
-    horiz_steps = atoi(horiz_steps_str);
-    vert_steps = atoi(vert_steps_str);
-    rpm_speed = atoi(rpm_speed_str);
+    // strtok returns NULL for a missing parameter; passing that to atoi()
+    // dereferences a null pointer.
+    if (horiz_steps_str == NULL || vert_steps_str == NULL || rpm_speed_str == NULL)
+    {
+      Serial.println("<MV_NACK BAD_PARAMS>");
+      return;
+    }
+
+    // Parse as long, then range check, so out-of-range input is rejected
+    // rather than silently wrapping. The lower bound is -32767 and not
+    // -32768 because the sign is stripped by negation below, and negating
+    // INT16_MIN overflows.
+    long horiz_steps_long = atol(horiz_steps_str);
+    long vert_steps_long  = atol(vert_steps_str);
+    long rpm_speed_long   = atol(rpm_speed_str);
+
+    // A non-positive speed has no valid timer value; the axes would run at
+    // whatever speed the previous move left configured.
+    if (rpm_speed_long <= 0 || rpm_speed_long > 32767L ||
+        horiz_steps_long < -32767L || horiz_steps_long > 32767L ||
+        vert_steps_long  < -32767L || vert_steps_long  > 32767L)
+    {
+      Serial.println("<MV_NACK BAD_PARAMS>");
+      return;
+    }
+
+    // Nothing to do. Passing this through would leave the controller stuck
+    // in MOVE_MODE, because neither axis would ever step and so nothing
+    // would return it to IDLE_MODE.
+    if (horiz_steps_long == 0 && vert_steps_long == 0)
+    {
+      Serial.println("<MV_NACK NO_MOVEMENT>");
+      return;
+    }
+
+    horiz_steps = (int)horiz_steps_long;
+    vert_steps  = (int)vert_steps_long;
+    rpm_speed   = (int)rpm_speed_long;
+
     Serial.print("<MV_ACK ");
     Serial.print(horiz_steps);
     Serial.print(" ");
@@ -205,9 +262,9 @@ void handle_incoming_command(char *command_buff)
 
     // Check if movement is blocked by an active limit switch before starting the move.
     // Direction-to-limit mapping:
-    //   Horizontal CW  (west = CCW for StepperController, since we defined CW as increasing azimuth)
+    //   Horizontal CW  (west)
     //     → blocked if LIMIT_HORIZ_WEST  is pressed (pin LOW)
-    //   Horizontal CCW (east = CW for StepperController)
+    //   Horizontal CCW (east)
     //     → blocked if LIMIT_HORIZ_EAST  is pressed (pin LOW)
     //   Vertical CW    (north = altitude increasing)
     //     → blocked if LIMIT_VERT_NORTH  is pressed (pin LOW)
@@ -261,7 +318,24 @@ void handle_incoming_command(char *command_buff)
     direction_str = strtok(NULL, " ");
     rpm_speed_str = strtok(NULL, " ");
 
-        rpm_speed = atoi(rpm_speed_str);
+    // strtok returns NULL for a missing parameter. A bare "<MVS>" would
+    // otherwise reach strcmp(direction_str, "N") with a null pointer.
+    if (direction_str == NULL || rpm_speed_str == NULL)
+    {
+      Serial.println("<MVS_NACK BAD_PARAMS>");
+      return;
+    }
+
+    // A non-positive speed produces no valid timer value, so no axis would
+    // actually start while the controller still entered FREE_RUN_MODE.
+    long rpm_speed_long = atol(rpm_speed_str);
+    if (rpm_speed_long <= 0 || rpm_speed_long > 32767L)
+    {
+      Serial.println("<MVS_NACK BAD_PARAMS>");
+      return;
+    }
+    rpm_speed = (int)rpm_speed_long;
+
     // Check if movement is blocked by an active limit switch before starting free run.
     // Direction-to-limit mapping for MVS commands:
     //   N  (north  = vertical CW)    → blocked if LIMIT_VERT_NORTH  is pressed
@@ -400,6 +474,11 @@ void handle_incoming_command(char *command_buff)
       Serial.print(StepperController::vert_steps_current);
       Serial.println(">");
     }
+    else
+    {
+      // Always answer, so a client waiting on a reply does not hang.
+      Serial.println("<DEBUG_NA FREE_RUN>");
+    }
   }
     else if (!strcmp(cmd, "STEP_COUNTER?"))
   {
@@ -460,6 +539,14 @@ void handle_incoming_command(char *command_buff)
     if (horiz_east_active) Serial.print(" HORIZ_EAST");  else Serial.print(" horiz_east");
     if (vert_north_active) Serial.print(" VERT_NORTH");  else Serial.print(" vert_north");
     if (vert_south_active) Serial.print(" VERT_SOUTH");  else Serial.print(" vert_south");
+    Serial.println(">");
+  }
+  else
+  {
+    // Unrecognised command tag. Always answer, so a client waiting on a
+    // reply does not hang waiting for a response that will never come.
+    Serial.print("<ERR UNKNOWN_COMMAND ");
+    Serial.print(cmd);
     Serial.println(">");
   }
 }
@@ -561,18 +648,34 @@ void initialize_pins()
   digitalWrite(vert_reset_pin, HIGH);
 }
 
-// Poll limit switches and stop motors if any limit is triggered.
+// Poll limit switches and stop motors if an axis is travelling into a limit.
 // This function is called once per loop() iteration to provide a safety watchdog
 // that catches mechanical over-travel even if the movement was started before the
 // limit was pressed, or if movement erroneously starts toward a limit.
 //
-// When a limit switch is pressed (pin reads LOW), the function checks whether the
-// motors are currently running. If so, it performs an emergency stop:
+// The check is direction-aware: an axis is only stopped when it is actually
+// moving toward the pressed switch, using the same mapping the <MV> and <MVS>
+// handlers apply before starting a move:
+//   horizontal CW  -> west,  horizontal CCW -> east
+//   vertical   CW  -> north, vertical   CCW -> south
+// A pressed limit therefore does not cancel a recovery move that drives away
+// from it. Stopping on any pressed limit regardless of direction would make it
+// impossible to back off a switch once it was hit, because this watchdog would
+// abort the recovery move on its very first loop iteration.
+//
+// An axis counts as moving only while its steps_remain is non-zero, so the
+// stale direction state of an idle axis (for example the vertical axis during
+// "<MV 200 0 60>", or an IGNORE axis in free run) cannot trigger a stop.
+//
+// When a stop is warranted the function performs an emergency stop:
 //   1. Disables timer interrupts (TIMSK1/TIMSK3)
 //   2. Clears all remaining step counts
 //   3. Pulls both step pins LOW to release the driver signal
 //   4. Sets the controller back to IDLE_MODE
 //   5. Reports which limit(s) triggered the stop over Bluetooth, e.g. <LIMIT HORIZ_WEST>
+//
+// Note that the stop halts both axes (emergency_stop() is all-or-nothing), so a
+// diagonal move driving only one axis into a limit stops the other axis too.
 //
 // The stop code is identical to the <STOP> command handler.
 // This polling approach was chosen over pin-change interrupts to avoid any risk of
@@ -585,35 +688,61 @@ void check_limit_switches()
   bool vert_north_active  = (digitalRead(LIMIT_VERT_NORTH)  == LOW);
   bool vert_south_active  = (digitalRead(LIMIT_VERT_SOUTH)  == LOW);
 
-  // Debounce: require two consecutive loop iterations with a limit pressed
-  static uint8_t debounce_count = 0;
+  // Debounce: a limit must read pressed continuously for LIMIT_DEBOUNCE_MS
+  // before it is acted on. The previous filter required two consecutive
+  // loop() iterations, which span only tens of microseconds and so filtered
+  // nothing; mechanical contact bounce on these switches lasts a few
+  // milliseconds. The cost is at most a couple of extra steps of
+  // over-travel before the stop takes effect.
+  const unsigned long LIMIT_DEBOUNCE_MS = 5;
+  static bool          debounce_running = false;
+  static unsigned long debounce_start_ms = 0;
+
   bool any_triggered = (horiz_west_active || horiz_east_active || vert_north_active || vert_south_active);
 
-  if (any_triggered)
+  if (!any_triggered)
   {
-    if (debounce_count < 2)
-    {
-      debounce_count++;
-      return;  // Wait for next iteration to confirm
-    }
-
-    // Only stop if currently moving (free run or move mode)
-    RunningMode mode = stepper_controller.get_running_mode();
-    if (mode != RunningMode::IDLE_MODE)
-    {
-      StepperController::emergency_stop();
-
-      // Report which limit was hit
-      Serial.print("<LIMIT");
-      if (horiz_west_active)  Serial.print(" HORIZ_WEST");
-      if (horiz_east_active)  Serial.print(" HORIZ_EAST");
-      if (vert_north_active)  Serial.print(" VERT_NORTH");
-      if (vert_south_active)  Serial.print(" VERT_SOUTH");
-      Serial.println(">");
-    }
+    debounce_running = false;  // Reset debounce when all switches released
+    return;
   }
-  else
+
+  if (!debounce_running)
   {
-    debounce_count = 0;  // Reset debounce when all switches released
+    debounce_running = true;
+    debounce_start_ms = millis();
+    return;  // Wait for the switch to settle
   }
+
+  if (millis() - debounce_start_ms < LIMIT_DEBOUNCE_MS)
+    return;  // Still settling
+
+  // Only stop if currently moving (free run or move mode)
+  if (stepper_controller.get_running_mode() == RunningMode::IDLE_MODE)
+    return;
+
+  // Snapshot the motion state atomically; the ISRs update these.
+  noInterrupts();
+  bool horiz_moving = (StepperController::horiz_steps_remain > 0);
+  bool vert_moving  = (StepperController::vert_steps_remain  > 0);
+  StepperDirection horiz_dir = StepperController::horiz_direction_state;
+  StepperDirection vert_dir  = StepperController::vert_direction_state;
+  interrupts();
+
+  bool horiz_into_west  = (horiz_moving && horiz_dir == StepperDirection::CW  && horiz_west_active);
+  bool horiz_into_east  = (horiz_moving && horiz_dir == StepperDirection::CCW && horiz_east_active);
+  bool vert_into_north  = (vert_moving  && vert_dir  == StepperDirection::CW  && vert_north_active);
+  bool vert_into_south  = (vert_moving  && vert_dir  == StepperDirection::CCW && vert_south_active);
+
+  if (!horiz_into_west && !horiz_into_east && !vert_into_north && !vert_into_south)
+    return;  // Limit pressed, but nothing is driving into it
+
+  StepperController::emergency_stop();
+
+  // Report which limit was driven into
+  Serial.print("<LIMIT");
+  if (horiz_into_west)  Serial.print(" HORIZ_WEST");
+  if (horiz_into_east)  Serial.print(" HORIZ_EAST");
+  if (vert_into_north)  Serial.print(" VERT_NORTH");
+  if (vert_into_south)  Serial.print(" VERT_SOUTH");
+  Serial.println(">");
 }

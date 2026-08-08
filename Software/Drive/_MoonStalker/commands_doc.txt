@@ -44,16 +44,23 @@
     The motors run for exactly the specified number of steps and then stop
     automatically. The controller transitions back to IDLE_MODE when both
     axes have completed their step counts.
-    Ramping (acceleration/deceleration) applies if configured via the
-    set_ramp_steps() method (default: off).
+    Ramping (acceleration/deceleration) applies as configured via the
+    set_ramp_steps() method (default: 100 steps). The ramp is capped at half
+    an axis's step count, and is skipped entirely for an axis whose speed is
+    already at or below the ramp's start speed (~18.75 RPM at 200 steps per
+    revolution), since there would be nothing to accelerate from.
 
   Parameters:
     horiz_steps  : int  - Number of azimuth steps. Positive = CW, negative
                           = CCW. Zero = no horizontal movement.
+                          Range -32767..32767.
     vert_steps   : int  - Number of altitude steps. Positive = CW, negative
                           = CCW. Zero = no vertical movement.
+                          Range -32767..32767.
     rpm_speed    : int  - Motor speed in revolutions per minute. Applied to
-                          both axes. Must be > 0.
+                          both axes. Must be > 0 and <= 32767.
+
+    At least one of horiz_steps and vert_steps must be non-zero.
 
   Example:
     <MV 200 100 60>   Move 200 steps horizontal CW, 100 steps vertical CW,
@@ -75,6 +82,16 @@
     <MV_NACK NOT_RDY>
       Sent if not in IDLE_MODE (a move or free run is already in progress).
 
+    <MV_NACK BAD_PARAMS>
+      Sent if any of the three parameters is missing, if rpm_speed is not
+      greater than zero, or if any parameter is outside its valid range.
+      No movement occurs.
+
+    <MV_NACK NO_MOVEMENT>
+      Sent if both horiz_steps and vert_steps are zero. The command is
+      rejected rather than accepted as a no-op, because a zero-step move
+      would leave the controller in MOVE_MODE with no motion to end it.
+
 
 ================================================================================
   2.  <MVS> - Move Start (free run / continuous movement)
@@ -85,9 +102,12 @@
 
   Description:
     Starts continuous (free run) movement in the specified direction at the
-    given speed. The motors run indefinitely until <MVE> or <STOP> is sent.
-    Ramping (acceleration) applies if configured via set_free_run_ramp_steps()
-    (default: 50 steps).
+    given speed. The motors run indefinitely until <MVE> or <STOP> is sent;
+    there is no step limit or timeout on a free run.
+    Ramping (acceleration) applies as configured via
+    set_free_run_ramp_steps() (default: 50 steps). As with <MV>, the ramp is
+    skipped for a speed already at or below the ramp's start speed
+    (~18.75 RPM at 200 steps per revolution).
 
   Parameters:
     direction  : string - One of the eight cardinal and intercardinal
@@ -101,7 +121,7 @@
        SW  - South-west  (vertical CCW + horizontal CW)
        SE  - South-east  (vertical CCW + horizontal CCW)
 
-    rpm_speed : int - Motor speed in RPM. Must be > 0.
+    rpm_speed : int - Motor speed in RPM. Must be > 0 and <= 32767.
 
   Example:
     <MVS N 30>      Move North (vertical CW) at 30 RPM.
@@ -125,6 +145,10 @@
     <MVS_NACK UNKNOWN_DIRECTION>
       Sent if the direction string is not one of: N, S, W, E, NW, NE, SW, SE.
 
+    <MVS_NACK BAD_PARAMS>
+      Sent if the direction or rpm_speed parameter is missing, or if
+      rpm_speed is not greater than zero. No movement occurs.
+
 
 ================================================================================
   3.  <MVE> - Move End (stop free run)
@@ -137,6 +161,9 @@
     Stops free run (continuous) movement. The motors decelerate smoothly
     over free_run_ramp_steps (default: 50) and then stop. Once the ramp-down
     is complete, the controller transitions to IDLE_MODE automatically.
+    An axis already running at or below the ramp's start speed
+    (~18.75 RPM at 200 steps per revolution) stops immediately instead,
+    since it is already slow enough to stop without decelerating.
 
   Parameters:
     None.
@@ -387,8 +414,8 @@
 
   Description:
     Reports the current step counters for both axes. Useful for diagnostics
-    and testing. Only displays data when not in FREE_RUN_MODE (free run uses
-    65535 steps_remain which is meaningless for debugging).
+    and testing. Only reports data when not in FREE_RUN_MODE (free run holds
+    steps_remain at 65535, which is meaningless for debugging).
 
   Parameters:
     None.
@@ -396,11 +423,14 @@
   Responses:
     <MV_REMAIN X: horiz_steps Y: vert_steps>
       Steps remaining on each axis.
-      For free run mode, remaining = 65535 during steady-state.
 
     <MV_CURRENT X: horiz_steps Y: vert_steps>
       Steps completed so far on each axis since the last command start.
       Resets to 0 on each new <MV> or <MVS> command.
+
+    <DEBUG_NA FREE_RUN>
+      Sent instead of the two responses above when in FREE_RUN_MODE, so a
+      client waiting on a reply is not left hanging.
 
 
 ================================================================================
@@ -418,18 +448,32 @@
 
   <FATAL_ERROR RCV_BUFFER_OVERFLOW>
     Sent if the incoming command buffer (64 characters) is exceeded.
-    The controller drains the remaining bytes until the next command
-    terminator or newline, then resets the buffer and continues normal
-    operation. The truncated command is discarded.
+    The controller then discards the remaining bytes of that command until
+    its terminator ('>') or a newline arrives, and resumes normal operation.
+    The truncated command is never executed. The discard runs one byte per
+    main loop iteration, so limit switch monitoring continues uninterrupted
+    even if the sender stalls in the middle of an oversized command.
 
   <LIMIT HORIZ_WEST>  (or HORIZ_EAST, VERT_NORTH, VERT_SOUTH)
-    Sent automatically when a limit switch is triggered during movement.
+    Sent automatically when an axis moves into a pressed limit switch.
     A 2-sample debounce filter is applied: the limit must be pressed for
     two consecutive loop iterations (~sub-millisecond) before triggering.
     The motors are stopped via emergency_stop() (equivalent to <STOP>).
-    Multiple switch names can appear if more than one limit is active.
+    Multiple switch names can appear if more than one axis is driving into
+    a limit.
 
-  <INITIAL OCR1A: value> and <INITIAL OCR3A: value>
+    The check is direction-aware and uses the same mapping the <MV> and
+    <MVS> handlers apply before starting a move (horizontal CW = west,
+    horizontal CCW = east, vertical CW = north, vertical CCW = south).
+    A pressed limit therefore does NOT stop a move that is driving away
+    from it, which is what allows the telescope to be backed off a switch
+    once it has been hit. Use <LIM?> or <ALARMS?> to see every pressed
+    switch regardless of direction of travel.
+
+    Note that the stop halts both axes, so a diagonal move that drives only
+    one axis into a limit stops the other axis as well.
+
+  <INFO Initial OCR1A: value> and <INFO Initial OCR3A: value>
     Sent once during timer initialization at boot. Reports the initial OCR
     value set for each timer. For diagnostic purposes only.
 
@@ -446,10 +490,17 @@
         NOT_RDY            - The controller is busy with another operation.
         LIMIT_BLOCKED      - The movement would travel toward a pressed limit.
         UNKNOWN_DIRECTION  - (MVS only) Invalid direction string.
+        BAD_PARAMS         - A required parameter is missing, out of range,
+                             or rpm_speed is not greater than zero.
+        NO_MOVEMENT        - (MV only) Both step counts are zero.
+
+  <ERR UNKNOWN_COMMAND tag>
+    The command tag is not recognised. The tag as received is echoed back.
+    Sent so that a client is always answered, even for a malformed command.
 
   <LIMIT HORIZ_WEST>  (and variants)
-    An active limit switch triggered an emergency stop. Sent automatically
-    by check_limit_switches() polling function.
+    An axis moving into an active limit switch triggered an emergency stop.
+    Sent automatically by the check_limit_switches() polling function.
 
 
 ================================================================================

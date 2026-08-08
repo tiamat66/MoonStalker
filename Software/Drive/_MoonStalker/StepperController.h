@@ -110,11 +110,16 @@ class StepperController
   // -------------------------------------------------------------------------
   // free_run_stop
   // -------------------------------------------------------------------------
-  // Initiate a ramped stop in FREE_RUN_MODE.
+  // Initiate a ramped stop.
   // Instead of stopping instantly, the motors decelerate smoothly over
   // free_run_ramp_steps steps. Once the ramp-down completes, the controller
   // transitions to IDLE_MODE automatically.
-  // Returns false if not in FREE_RUN_MODE.
+  // If free_run_ramp_steps is 0 the motors stop immediately via
+  // emergency_stop().
+  // Returns false only when already in IDLE_MODE. Called in MOVE_MODE it
+  // stops the move outright via emergency_stop(), since a finite move has
+  // no free-run ramp state to unwind. (The <MVE> command handler
+  // additionally restricts itself to FREE_RUN_MODE.)
   bool free_run_stop();
 
   // -------------------------------------------------------------------------
@@ -156,7 +161,13 @@ class StepperController
   // Sync: If sync mode is enabled, the axis with fewer steps runs slower
   //   so both axes complete at the same time.
   //
-  // Returns false if not in IDLE_MODE.
+  // Returns false, leaving the controller untouched, if:
+  //   - not in IDLE_MODE, or
+  //   - both step counts are zero (nothing to do; entering MOVE_MODE would
+  //     wedge the controller because no ISR would run to return it to
+  //     IDLE_MODE), or
+  //   - an axis that has steps was given a speed with no valid timer value
+  //     (RPM <= 0).
   bool move_steppers(int16_t speed_horiz,
                      StepperDirection horiz_direction,
                      int16_t horiz_steps,
@@ -169,10 +180,12 @@ class StepperController
   // -------------------------------------------------------------------------
   // Set the number of steps used for acceleration (ramp up) and
   // deceleration (ramp down) at the start and end of a move.
-  // Set to 0 (default) to disable ramping.
+  // Default is 100 steps; set to 0 to disable ramping.
   //
   // The ramp length is automatically capped to half the total step count
-  // so there is always a steady-state cruise phase in between.
+  // so there is always a steady-state cruise phase in between. Ramping is
+  // also skipped for an axis whose target speed is already slower than the
+  // ramp's start speed, since there would be nothing to accelerate from.
   void set_ramp_steps(uint16_t steps);
 
   // -------------------------------------------------------------------------
@@ -199,7 +212,9 @@ class StepperController
   // -------------------------------------------------------------------------
   // Immediately stop both motors, disable all timer interrupts, clear step
   // counts, and transition to IDLE_MODE. Safe to call from any context
-  // (main loop or ISR) — uses noInterrupts() internally for atomicity.
+  // (main loop or ISR): the interrupt enable flag is saved and restored
+  // rather than unconditionally re-enabled, so calling this from an ISR
+  // does not re-enable interrupts part way through that ISR.
   static void emergency_stop();
 
   // -------------------------------------------------------------------------
@@ -233,8 +248,6 @@ class StepperController
   //   ramp_steps_horiz/vert - how many steps the ramp covers
   //   target_ocr_horiz/vert_isr - steady-state speed OCR (sync-aware)
   //   start_ocr_horiz/vert_isr - slow speed OCR at ramp start
-  //   total_steps_horiz/vert - total steps in this move
-  //   scaled_ocr_horiz/vert - sync-adjusted OCR (before ramp overwrite)
   //   sync_mode_enabled - whether sync mode is active
   static volatile uint16_t horiz_steps_remain;
   static volatile uint16_t vert_steps_remain;
@@ -248,10 +261,6 @@ class StepperController
   static volatile uint16_t target_ocr_vert_isr;
   static volatile uint16_t start_ocr_horiz_isr;
   static volatile uint16_t start_ocr_vert_isr;
-  static volatile uint16_t total_steps_horiz;
-  static volatile uint16_t total_steps_vert;
-  static volatile uint16_t scaled_ocr_horiz;
-  static volatile uint16_t scaled_ocr_vert;
   static volatile bool sync_mode_enabled;
 
   // Transition the controller to IDLE_MODE.
@@ -260,9 +269,18 @@ class StepperController
   static void set_running_mode_idle();
 
   // Free-run ramping state
-  //   free_run_ramp_steps_horiz/vert - steps allocated for free-run ramp
+  //   free_run_active_horiz/vert - true for the whole life of a free run on
+  //       that axis (ramp-up, steady state and ramp-down). This is what the
+  //       ISRs use to select free-run behaviour; free_run_ramp_steps_* must
+  //       not be used for that purpose because it is cleared to 0 as soon as
+  //       the ramp-up finishes, which would drop the axis into MOVE_MODE
+  //       ramping logic for the rest of the run.
+  //   free_run_ramp_steps_horiz/vert - steps allocated for free-run ramp,
+  //       0 once the ramp-up has completed (steady state)
   //   free_run_ramping_down - true after free_run_stop() initiates ramp-down
   //   free_run_target_ocr_horiz/vert - the steady-speed OCR for free run
+  static volatile bool     free_run_active_horiz;
+  static volatile bool     free_run_active_vert;
   static volatile uint16_t free_run_ramp_steps_horiz;
   static volatile uint16_t free_run_ramp_steps_vert;
   static volatile bool     free_run_ramping_down;
@@ -295,7 +313,6 @@ class StepperController
   private:
 
   int16_t     steps_per_revolution;
-  char        error[256];
 
   // Number of steps for acceleration/deceleration ramp.
   // Set via set_ramp_steps(). 0 = no ramping.
