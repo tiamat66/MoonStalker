@@ -28,4 +28,5 @@ public final class OpCodes
     public static final int ERROR = 25;
     public static final int MOVING = 26;
     public static final int POS_UPDATE = 27;
+    public static final int SET_ALARM = 28;
 }

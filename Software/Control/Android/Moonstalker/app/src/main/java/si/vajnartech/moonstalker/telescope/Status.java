@@ -15,6 +15,7 @@ public final class Status
     public volatile AtomicInteger mode  = new AtomicInteger(OpCodes.NOT_READY);
     public volatile String battery = "";
     public volatile boolean alarm = false;
+    public volatile String alarmMessage = "";
 
 
     public void set(int val)

@@ -33,13 +33,7 @@ public class CmdPing extends Controller<RObjController>
     {
            if (res == null) return;
 
-           if (res.battery != null) machine.status.battery = res.battery;
-           if (res.alarm != null) machine.status.alarm = res.alarm;
-
-           machine.getUxQueue().post(machine.getAct()::updateIndicators);
-
            Log.i("CmdPing", res.state + " " + res.message + " " + res.error_data);
-//           processUnsoliciedAction(res);
 
            switch(res.state) {
                case "ready":
@@ -47,6 +41,8 @@ public class CmdPing extends Controller<RObjController>
                    machine.set(OpCodes.READY, new ObjController(res.message, res.error_data, ""), OpCodes.NOT_READY, null);
                    break;
                case "connected":
+                   if (res.data != null && !res.data.isEmpty())
+                       machine.set(OpCodes.GOT_BATTERY, new ObjController(res.data, "", ""));
 
                    if (machine.status.get() == OpCodes.CONNECTED) return;
                    if (machine.status.get() == OpCodes.TRACK)  {
@@ -65,13 +61,6 @@ public class CmdPing extends Controller<RObjController>
 
                    machine.set(OpCodes.MOVING, new ObjController(res.message, res.error_data, ""));
            }
-        }
-
-        // BATTERY, INFO, WARNING, ERROR from Telescope
-        private void processUnsoliciedAction(RObjController res)
-        {
-            if (res.battery != null && !res.battery.isEmpty())
-                machine.set(OpCodes.GOT_BATTERY, new ObjController(res.battery, "", ""));
         }
     }
 

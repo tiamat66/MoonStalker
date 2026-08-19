@@ -110,14 +110,6 @@ public class Processor {
         return ioQueue;
     }
 
-    public Handler getUxQueue() {
-        return uxQueue;
-    }
-
-    public MainActivity getAct() {
-        return act;
-    }
-
     private void initTable() {
         // Error handling
         actions.put(OpCodes.ERROR, new Ball(null, () -> {
@@ -180,6 +172,9 @@ public class Processor {
             act.setInfoMessage(R.string.connection_failed);
             act.updateFab(R.color.colorError);
             act.logMessage("...connection error");
+            status.alarm = true;
+            status.alarmMessage = "Server connection error";
+            act.updateIndicators();
             status.set(CONN_ERROR);
 
         }));
@@ -239,6 +234,8 @@ public class Processor {
             if (status.message != null) {
                 act.logMessage(status.message.p2);
             }
+            status.alarm = false;
+            act.updateIndicators();
             status.set(OpCodes.READY);
         }));
 
@@ -251,6 +248,15 @@ public class Processor {
         actions.put(OpCodes.GOT_BATTERY, new Ball(null, () -> {
             status.battery = status.message.p1;
             act.updateIndicators();
+        }));
+
+        actions.put(OpCodes.SET_ALARM, new Ball(null, () -> {
+            status.alarmMessage = status.message.p1;
+            status.alarm = !status.alarmMessage.isEmpty();
+            act.updateIndicators();
+            if (status.alarmMessage.startsWith("Stop"))
+                act.setInfoMessage(R.string.end_limit_sw_trig);
+            // Todo kaj mijesto riti ce pride do tega? Kalibracija
         }));
 
         actions.put(OpCodes.MOVE, new Ball(() -> new CmdMove(this, status.message),
