@@ -32,6 +32,8 @@ import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.Objects;
+
 import si.vajnartech.moonstalker.processor.CelestialObj;
 import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
@@ -120,6 +122,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     {
         runOnUiThread(() -> {
             indicatorAlarm.setVisibility(machine.status.alarm ? View.VISIBLE : View.GONE);
+            if (Objects.equals(machine.status.severity, "error"))
+                indicatorAlarm.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorError, null)));
+            else if (Objects.equals(machine.status.severity, "warning"))
+                indicatorAlarm.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorYellow, null)));
+
             batteryText.setText(machine.status.battery);
             if (!machine.status.battery.isEmpty()) {
                 try {
@@ -164,7 +171,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SharedPref.setDefault("device_name", SERVER_NAME);
         fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> {
-            if (machine.status.mode.get() == MD_MOVING &&
+            if (machine.status.get() == OpCodes.ERROR)
+                reset();
+            else if (machine.status.mode.get() == MD_MOVING &&
                     machine.status.get() == OpCodes.READY) {
                 moveEnd();
             } else if (machine.status.get() == OpCodes.READY) {
@@ -243,6 +252,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void moveEnd()
     {
         machine.set(MOVE_END);
+    }
+
+    public void reset()
+    {
+       machine.set(OpCodes.RESET);
     }
 
     public void move()

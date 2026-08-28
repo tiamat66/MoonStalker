@@ -50,5 +50,6 @@
   <string name="na">N/D</string>
   <string name="system_monitor">SISTEMSKI MONITOR</string>
   <string name="disconnected">NI POVEZAN</string>
+  <string name="reset">ponastavljam</string>
 
 </resources>

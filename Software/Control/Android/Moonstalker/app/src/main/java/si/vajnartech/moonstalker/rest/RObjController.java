@@ -7,4 +7,6 @@ public class RObjController
     public String state;
     public String error_data;
     public String data;
+    public String warning;
+    public String info;
 }
