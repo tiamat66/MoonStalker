@@ -50,6 +50,7 @@
   <string name="na">N/A</string>
   <string name="system_monitor">SYSTEM MONITOR</string>
   <string name="disconnected">DISCONNECTED</string>
+  <string name="reset">resetting</string>
 
 
   <string-array name="sky_objects">

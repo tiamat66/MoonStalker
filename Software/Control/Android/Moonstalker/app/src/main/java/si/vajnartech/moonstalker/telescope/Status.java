@@ -16,6 +16,7 @@ public final class Status
     public volatile String battery = "";
     public volatile boolean alarm = false;
     public volatile String alarmMessage = "";
+    public volatile String severity = "";
 
 
     public void set(int val)

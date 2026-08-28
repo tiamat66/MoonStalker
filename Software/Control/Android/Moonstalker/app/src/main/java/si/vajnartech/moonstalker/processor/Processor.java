@@ -112,10 +112,17 @@ public class Processor {
 
     private void initTable() {
         // Error handling
+        actions.put(OpCodes.RESET, new Ball(() -> new CmdReset(this),
+                () -> act.setInfoMessage(R.string.reset)));
         actions.put(OpCodes.ERROR, new Ball(null, () -> {
             if (status.message != null) {
                 act.logMessage(status.message.p2);
                 if (!"NOT_RDY".equals(status.message.p1)) {
+                    status.set(OpCodes.ERROR);
+                    status.alarm = true;
+                    status.alarmMessage = status.message.p2;
+                    act.showFab(true);
+                    act.updateIndicators();
                     act.setInfoMessage(R.string.error);
                     act.updateFab(R.color.colorError);
                 }
