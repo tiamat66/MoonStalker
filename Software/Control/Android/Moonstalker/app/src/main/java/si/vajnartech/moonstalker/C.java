@@ -22,7 +22,7 @@ public final class C
   static final String SERVER_NAME = "Naprava A32 uporabnika Zoran";
 
   // Mechanical characteristics
-  private static final double MOTOR_STEPS_NUM      = 200.0;
+  private static final double MOTOR_STEPS_NUM      = 3200.0;
   private static final double REDUCTOR_TRANSLATION = 30.0;
   private static final double BELT_TRANSLATION     = 48.0 / 14.0;
   static final         double K                    = MOTOR_STEPS_NUM * REDUCTOR_TRANSLATION * BELT_TRANSLATION;

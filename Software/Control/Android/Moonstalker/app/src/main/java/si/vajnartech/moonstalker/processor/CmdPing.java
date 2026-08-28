@@ -31,13 +31,19 @@ public class CmdPing extends Controller<RObjController>
     @Override
     protected void onPostExecute(RObjController res)
     {
+           if (res == null) return;
+
            Log.i("CmdPing", res.state + " " + res.message + " " + res.error_data);
+
            switch(res.state) {
                case "ready":
                    if (machine.status.get() == OpCodes.READY) return;
-                   machine.set(OpCodes.READY, new ObjController(res.message, res.error_data, ""));
+                   machine.set(OpCodes.READY, new ObjController(res.message, res.error_data, ""), OpCodes.NOT_READY, null);
                    break;
                case "connected":
+                   if (res.data != null && !res.data.isEmpty())
+                       machine.set(OpCodes.GOT_BATTERY, new ObjController(res.data, "", ""));
+
                    if (machine.status.get() == OpCodes.CONNECTED) return;
                    if (machine.status.get() == OpCodes.TRACK)  {
                        machine.set(OpCodes.POSITION);

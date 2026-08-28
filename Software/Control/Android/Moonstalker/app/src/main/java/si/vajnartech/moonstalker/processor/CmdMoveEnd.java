@@ -28,18 +28,4 @@ public class CmdMoveEnd extends Controller<RObjController>
     {
 
     }
-
-//    @Override
-//    protected void onPostExecute(String cmdResult)
-//    {
-//        if (cmdResult != null) {
-//           if (cmdResult.equals("TIMEOUT")) {
-//               machine.set(MSG_CONN_ERROR) ;
-//            } else if (cmdResult.startsWith("MVE_ACK")) {
-//               machine.set(MSG_MVE_ACK);
-//            }
-//        }
-//    }
-
-
 }

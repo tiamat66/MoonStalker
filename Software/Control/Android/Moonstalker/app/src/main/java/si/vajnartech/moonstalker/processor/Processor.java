@@ -7,7 +7,6 @@ import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.GOT_ASTRO_DATA;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
-import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
 import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
@@ -23,6 +22,7 @@ import java.util.Map;
 
 import si.vajnartech.moonstalker.ControlFragment;
 import si.vajnartech.moonstalker.MainActivity;
+import si.vajnartech.moonstalker.MainFragment;
 import si.vajnartech.moonstalker.ManualMoveFragment;
 import si.vajnartech.moonstalker.OpCodes;
 import si.vajnartech.moonstalker.R;
@@ -172,7 +172,11 @@ public class Processor {
             act.setInfoMessage(R.string.connection_failed);
             act.updateFab(R.color.colorError);
             act.logMessage("...connection error");
+            status.alarm = true;
+            status.alarmMessage = "Server connection error";
+            act.updateIndicators();
             status.set(CONN_ERROR);
+
         }));
 
         // Data synchronization
@@ -226,9 +230,12 @@ public class Processor {
             act.setInfoMessage(R.string.ready);
             act.showFab(true);
             act.updateFab(R.color.colorOk);
+            act.setFragment("main", MainFragment.class, new Bundle());
             if (status.message != null) {
                 act.logMessage(status.message.p2);
             }
+            status.alarm = false;
+            act.updateIndicators();
             status.set(OpCodes.READY);
         }));
 
@@ -238,7 +245,19 @@ public class Processor {
             }
         }));
 
-        actions.put(MSG_BATTERY, new Ball(() -> new CmdBattery(this), null));
+        actions.put(OpCodes.GOT_BATTERY, new Ball(null, () -> {
+            status.battery = status.message.p1;
+            act.updateIndicators();
+        }));
+
+        actions.put(OpCodes.SET_ALARM, new Ball(null, () -> {
+            status.alarmMessage = status.message.p1;
+            status.alarm = !status.alarmMessage.isEmpty();
+            act.updateIndicators();
+            if (status.alarmMessage.startsWith("Stop"))
+                act.setInfoMessage(R.string.end_limit_sw_trig);
+            // Todo kaj mijesto riti ce pride do tega? Kalibracija
+        }));
 
         actions.put(OpCodes.MOVE, new Ball(() -> new CmdMove(this, status.message),
                 () -> act.setInfoMessage(R.string.moving)));

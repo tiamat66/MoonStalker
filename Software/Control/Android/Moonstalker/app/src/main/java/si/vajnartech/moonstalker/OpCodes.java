@@ -10,7 +10,7 @@ public final class OpCodes
     public static final int NOT_READY = 5;
     public static final int MANUAL = 6;
     public static final int MSG_INFO = 9;
-    public static final int MSG_BATTERY = 10;
+    public static final int GOT_BATTERY = 10;
     public static final int MSG_BATTERY_RES = 11;
     public static final int CONNECTION_ERROR = 12;
     public static final int GET_ASTRO_DATA = 13;
@@ -28,4 +28,5 @@ public final class OpCodes
     public static final int ERROR = 25;
     public static final int MOVING = 26;
     public static final int POS_UPDATE = 27;
+    public static final int SET_ALARM = 28;
 }

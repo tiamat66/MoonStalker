@@ -13,5 +13,6 @@
   <color name="panelBackground">#1C1C1E</color>
   <color name="textColorPrimary">#FFFFFF</color>
   <color name="textColorSecondary">#B0B0B0</color>
-  <color name="displayText">#00E676</color> <!-- Neon Green for the "Terminal" feel -->
+  <color name="displayText">#00E676</color>
+  <color name="colorYellow">#FFC107</color> <!-- Neon Green for the "Terminal" feel -->
 </resources>

@@ -18,8 +18,11 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
@@ -34,6 +37,12 @@ import si.vajnartech.moonstalker.processor.Ping;
 import si.vajnartech.moonstalker.processor.Processor;
 import si.vajnartech.moonstalker.rest.ObjController;
 import si.vajnartech.moonstalker.rest.RObjAstroData;
+
+// TODO:
+// Severity od alarmov
+// Ikonca
+// prazen zaslon
+// settings
 
 @SuppressWarnings("ConstantConditions")
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
@@ -54,6 +63,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     Monitor monitor;
     FloatingActionButton fab;
     DrawerLayout drawer;
+
+    ImageView indicatorAlarm;
+    ImageView indicatorBattery;
+    TextView batteryText;
 
     public void setPosMessage(double elevation, double azimuth)
     {
@@ -98,6 +111,27 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 fab.setImageResource(android.R.drawable.ic_media_pause);
             } else {
                 fab.setImageResource(android.R.drawable.ic_menu_directions);
+            }
+            updateIndicators();
+        });
+    }
+
+    public void updateIndicators()
+    {
+        runOnUiThread(() -> {
+            indicatorAlarm.setVisibility(machine.status.alarm ? View.VISIBLE : View.GONE);
+            batteryText.setText(machine.status.battery);
+            if (!machine.status.battery.isEmpty()) {
+                try {
+                    float v = Float.parseFloat(machine.status.battery.replace("V", "").trim());
+                    if (v > 12.0) indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorOk, null)));
+                    else if (v > 11.0) indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorYellow, null)));
+                    else indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorError, null)));
+                } catch (Exception e) {
+                    indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorNeutral, null)));
+                }
+            } else {
+                indicatorBattery.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorNeutral, null)));
             }
         });
     }
@@ -160,6 +194,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         monitor = new Monitor(inflater.inflate(R.layout.frag_monitor, null, false));
+
+        indicatorAlarm = findViewById(R.id.indicator_alarm);
+        indicatorAlarm.setOnClickListener(v -> {
+            if (machine.status.alarm) {
+                myMessage(machine.status.alarmMessage);
+            }
+        });
+        indicatorBattery = findViewById(R.id.indicator_battery);
+        batteryText = findViewById(R.id.battery_text);
 
         scheduler.start();
         showFab(false);
@@ -283,6 +326,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (formatArgs.length > 0)
             return getString(stringId, formatArgs);
         return getString(stringId);
+    }
+
+    void myMessage(final String msg)
+    {
+        runOnUiThread(() -> {
+            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+            alertDialog.setTitle(tx(R.string.warning));
+            alertDialog.setMessage(msg);
+            alertDialog.setButton(
+                    AlertDialog.BUTTON_NEUTRAL, "OK",
+                    (dialog, which) -> dialog.dismiss());
+            alertDialog.show();
+        });
     }
 
     private MyFragment createFragment(String tag, Class<? extends MyFragment> cls, Bundle params)

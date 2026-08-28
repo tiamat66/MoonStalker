@@ -28,6 +28,43 @@
                 android:textStyle="bold"
                 android:letterSpacing="0.1" />
 
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingEnd="16dp">
+
+                <ImageView
+                    android:id="@+id/indicator_alarm"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:contentDescription="@null"
+                    android:visibility="gone"
+                    app:srcCompat="@android:drawable/stat_sys_warning"
+                    app:tint="@color/colorError" />
+
+                <TextView
+                    android:id="@+id/battery_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text=""
+                    android:textColor="@color/textColorSecondary"
+                    android:textSize="12sp" />
+
+                <ImageView
+                    android:id="@+id/indicator_battery"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@null"
+                    app:srcCompat="@android:drawable/ic_lock_idle_low_battery"
+                    app:tint="@color/colorNeutral" />
+
+            </LinearLayout>
+
         </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
