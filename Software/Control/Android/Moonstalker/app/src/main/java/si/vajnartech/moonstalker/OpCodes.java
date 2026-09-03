@@ -9,7 +9,7 @@ public final class OpCodes
     public static final int READY = 4;
     public static final int NOT_READY = 5;
     public static final int MANUAL = 6;
-    public static final int MSG_INFO = 9;
+    public static final int GOT_INFO = 9;
     public static final int GOT_BATTERY = 10;
     public static final int MSG_BATTERY_RES = 11;
     public static final int CONNECTION_ERROR = 12;
@@ -30,4 +30,5 @@ public final class OpCodes
     public static final int POS_UPDATE = 27;
     public static final int SET_ALARM = 28;
     public static final int RESET = 29;
+    public static final int GOT_WARNING = 30;
 }

@@ -6,10 +6,11 @@ import static si.vajnartech.moonstalker.OpCodes.CALIBRATING;
 import static si.vajnartech.moonstalker.OpCodes.CONNECT;
 import static si.vajnartech.moonstalker.OpCodes.CONN_ERROR;
 import static si.vajnartech.moonstalker.OpCodes.GOT_ASTRO_DATA;
+import static si.vajnartech.moonstalker.OpCodes.GOT_INFO;
+import static si.vajnartech.moonstalker.OpCodes.GOT_WARNING;
 import static si.vajnartech.moonstalker.OpCodes.MOVE_END;
 import static si.vajnartech.moonstalker.OpCodes.MSG_BATTERY_RES;
 import static si.vajnartech.moonstalker.OpCodes.MSG_CONN_TIMEOUT;
-import static si.vajnartech.moonstalker.OpCodes.MSG_INFO;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -121,6 +122,7 @@ public class Processor {
                     status.set(OpCodes.ERROR);
                     status.alarm = true;
                     status.alarmMessage = status.message.p2;
+                    status.severity = "error";
                     act.showFab(true);
                     act.updateIndicators();
                     act.setInfoMessage(R.string.error);
@@ -246,9 +248,18 @@ public class Processor {
             status.set(OpCodes.READY);
         }));
 
-        actions.put(MSG_INFO, new Ball(null, () -> {
+        actions.put(GOT_INFO, new Ball(null, () -> {
             if (status.message != null) {
-                act.logMessage("..." + status.message);
+                act.logMessage("..." + status.message.p1);
+            }
+        }));
+
+        actions.put(GOT_WARNING, new Ball(null, () -> {
+            if (status.message != null) {
+                status.alarm = true;
+                status.alarmMessage = status.message.p1;
+                status.severity = "warning";
+                act.updateIndicators();
             }
         }));
 

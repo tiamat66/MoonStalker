@@ -43,10 +43,14 @@ public class CmdPing extends Controller<RObjController>
                case "connected":
                    if (res.data != null && !res.data.isEmpty())
                        machine.set(OpCodes.GOT_BATTERY, new ObjController(res.data, "", ""));
-                   if (res.warning != null && !res.warning.isEmpty())
+                   if (res.warning != null && !res.warning.isEmpty()) {
                        Log.i("TODO", "handle warning message " + res.warning);
-                   if (res.info != null && !res.info.isEmpty())
+                       machine.set(OpCodes.GOT_WARNING, new ObjController(res.warning, "", ""));
+                   }
+                   if (res.info != null && !res.info.isEmpty()) {
                        Log.i("TODO", "handle info message" + res.info);
+                       machine.set(OpCodes.GOT_INFO, new ObjController(res.info, "", ""));
+                   }
 
                    if (machine.status.get() == OpCodes.CONNECTED) return;
                    if (machine.status.get() == OpCodes.TRACK)  {
